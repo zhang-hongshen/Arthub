@@ -1,0 +1,592 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		705DF6E22B6C9F76006D9726 /* ArthubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705DF6E12B6C9F76006D9726 /* ArthubApp.swift */; };
+		705DF6E42B6C9F76006D9726 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705DF6E32B6C9F76006D9726 /* ContentView.swift */; };
+		705DF6E62B6C9F76006D9726 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705DF6E52B6C9F76006D9726 /* Item.swift */; };
+		705DF6E82B6C9F77006D9726 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 705DF6E72B6C9F77006D9726 /* Assets.xcassets */; };
+		705DF6EB2B6C9F77006D9726 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 705DF6EA2B6C9F77006D9726 /* Preview Assets.xcassets */; };
+		705DF6F62B6C9F77006D9726 /* ArthubTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705DF6F52B6C9F77006D9726 /* ArthubTests.swift */; };
+		705DF7002B6C9F77006D9726 /* ArthubUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705DF6FF2B6C9F77006D9726 /* ArthubUITests.swift */; };
+		705DF7022B6C9F77006D9726 /* ArthubUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705DF7012B6C9F77006D9726 /* ArthubUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		705DF6F22B6C9F77006D9726 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 705DF6D62B6C9F76006D9726 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 705DF6DD2B6C9F76006D9726;
+			remoteInfo = Arthub;
+		};
+		705DF6FC2B6C9F77006D9726 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 705DF6D62B6C9F76006D9726 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 705DF6DD2B6C9F76006D9726;
+			remoteInfo = Arthub;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		705DF6DE2B6C9F76006D9726 /* Arthub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Arthub.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		705DF6E12B6C9F76006D9726 /* ArthubApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArthubApp.swift; sourceTree = "<group>"; };
+		705DF6E32B6C9F76006D9726 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		705DF6E52B6C9F76006D9726 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
+		705DF6E72B6C9F77006D9726 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		705DF6EA2B6C9F77006D9726 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		705DF6EC2B6C9F77006D9726 /* Arthub.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Arthub.entitlements; sourceTree = "<group>"; };
+		705DF6F12B6C9F77006D9726 /* ArthubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ArthubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		705DF6F52B6C9F77006D9726 /* ArthubTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArthubTests.swift; sourceTree = "<group>"; };
+		705DF6FB2B6C9F77006D9726 /* ArthubUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ArthubUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		705DF6FF2B6C9F77006D9726 /* ArthubUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArthubUITests.swift; sourceTree = "<group>"; };
+		705DF7012B6C9F77006D9726 /* ArthubUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArthubUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		705DF6DB2B6C9F76006D9726 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		705DF6EE2B6C9F77006D9726 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		705DF6F82B6C9F77006D9726 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		705DF6D52B6C9F76006D9726 = {
+			isa = PBXGroup;
+			children = (
+				705DF6E02B6C9F76006D9726 /* Arthub */,
+				705DF6F42B6C9F77006D9726 /* ArthubTests */,
+				705DF6FE2B6C9F77006D9726 /* ArthubUITests */,
+				705DF6DF2B6C9F76006D9726 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		705DF6DF2B6C9F76006D9726 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				705DF6DE2B6C9F76006D9726 /* Arthub.app */,
+				705DF6F12B6C9F77006D9726 /* ArthubTests.xctest */,
+				705DF6FB2B6C9F77006D9726 /* ArthubUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		705DF6E02B6C9F76006D9726 /* Arthub */ = {
+			isa = PBXGroup;
+			children = (
+				705DF6E12B6C9F76006D9726 /* ArthubApp.swift */,
+				705DF6E32B6C9F76006D9726 /* ContentView.swift */,
+				705DF6E52B6C9F76006D9726 /* Item.swift */,
+				705DF6E72B6C9F77006D9726 /* Assets.xcassets */,
+				705DF6EC2B6C9F77006D9726 /* Arthub.entitlements */,
+				705DF6E92B6C9F77006D9726 /* Preview Content */,
+			);
+			path = Arthub;
+			sourceTree = "<group>";
+		};
+		705DF6E92B6C9F77006D9726 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				705DF6EA2B6C9F77006D9726 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		705DF6F42B6C9F77006D9726 /* ArthubTests */ = {
+			isa = PBXGroup;
+			children = (
+				705DF6F52B6C9F77006D9726 /* ArthubTests.swift */,
+			);
+			path = ArthubTests;
+			sourceTree = "<group>";
+		};
+		705DF6FE2B6C9F77006D9726 /* ArthubUITests */ = {
+			isa = PBXGroup;
+			children = (
+				705DF6FF2B6C9F77006D9726 /* ArthubUITests.swift */,
+				705DF7012B6C9F77006D9726 /* ArthubUITestsLaunchTests.swift */,
+			);
+			path = ArthubUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		705DF6DD2B6C9F76006D9726 /* Arthub */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 705DF7052B6C9F77006D9726 /* Build configuration list for PBXNativeTarget "Arthub" */;
+			buildPhases = (
+				705DF6DA2B6C9F76006D9726 /* Sources */,
+				705DF6DB2B6C9F76006D9726 /* Frameworks */,
+				705DF6DC2B6C9F76006D9726 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Arthub;
+			productName = Arthub;
+			productReference = 705DF6DE2B6C9F76006D9726 /* Arthub.app */;
+			productType = "com.apple.product-type.application";
+		};
+		705DF6F02B6C9F77006D9726 /* ArthubTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 705DF7082B6C9F77006D9726 /* Build configuration list for PBXNativeTarget "ArthubTests" */;
+			buildPhases = (
+				705DF6ED2B6C9F77006D9726 /* Sources */,
+				705DF6EE2B6C9F77006D9726 /* Frameworks */,
+				705DF6EF2B6C9F77006D9726 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				705DF6F32B6C9F77006D9726 /* PBXTargetDependency */,
+			);
+			name = ArthubTests;
+			productName = ArthubTests;
+			productReference = 705DF6F12B6C9F77006D9726 /* ArthubTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		705DF6FA2B6C9F77006D9726 /* ArthubUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 705DF70B2B6C9F77006D9726 /* Build configuration list for PBXNativeTarget "ArthubUITests" */;
+			buildPhases = (
+				705DF6F72B6C9F77006D9726 /* Sources */,
+				705DF6F82B6C9F77006D9726 /* Frameworks */,
+				705DF6F92B6C9F77006D9726 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				705DF6FD2B6C9F77006D9726 /* PBXTargetDependency */,
+			);
+			name = ArthubUITests;
+			productName = ArthubUITests;
+			productReference = 705DF6FB2B6C9F77006D9726 /* ArthubUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		705DF6D62B6C9F76006D9726 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					705DF6DD2B6C9F76006D9726 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+					705DF6F02B6C9F77006D9726 = {
+						CreatedOnToolsVersion = 15.2;
+						TestTargetID = 705DF6DD2B6C9F76006D9726;
+					};
+					705DF6FA2B6C9F77006D9726 = {
+						CreatedOnToolsVersion = 15.2;
+						TestTargetID = 705DF6DD2B6C9F76006D9726;
+					};
+				};
+			};
+			buildConfigurationList = 705DF6D92B6C9F76006D9726 /* Build configuration list for PBXProject "Arthub" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 705DF6D52B6C9F76006D9726;
+			productRefGroup = 705DF6DF2B6C9F76006D9726 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				705DF6DD2B6C9F76006D9726 /* Arthub */,
+				705DF6F02B6C9F77006D9726 /* ArthubTests */,
+				705DF6FA2B6C9F77006D9726 /* ArthubUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		705DF6DC2B6C9F76006D9726 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				705DF6EB2B6C9F77006D9726 /* Preview Assets.xcassets in Resources */,
+				705DF6E82B6C9F77006D9726 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		705DF6EF2B6C9F77006D9726 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		705DF6F92B6C9F77006D9726 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		705DF6DA2B6C9F76006D9726 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				705DF6E42B6C9F76006D9726 /* ContentView.swift in Sources */,
+				705DF6E62B6C9F76006D9726 /* Item.swift in Sources */,
+				705DF6E22B6C9F76006D9726 /* ArthubApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		705DF6ED2B6C9F77006D9726 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				705DF6F62B6C9F77006D9726 /* ArthubTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		705DF6F72B6C9F77006D9726 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				705DF7022B6C9F77006D9726 /* ArthubUITestsLaunchTests.swift in Sources */,
+				705DF7002B6C9F77006D9726 /* ArthubUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		705DF6F32B6C9F77006D9726 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 705DF6DD2B6C9F76006D9726 /* Arthub */;
+			targetProxy = 705DF6F22B6C9F77006D9726 /* PBXContainerItemProxy */;
+		};
+		705DF6FD2B6C9F77006D9726 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 705DF6DD2B6C9F76006D9726 /* Arthub */;
+			targetProxy = 705DF6FC2B6C9F77006D9726 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		705DF7032B6C9F77006D9726 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		705DF7042B6C9F77006D9726 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		705DF7062B6C9F77006D9726 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Arthub/Arthub.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Arthub/Preview Content\"";
+				DEVELOPMENT_TEAM = DTZV6LDYD5;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhanghongshen.Arthub;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		705DF7072B6C9F77006D9726 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Arthub/Arthub.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Arthub/Preview Content\"";
+				DEVELOPMENT_TEAM = DTZV6LDYD5;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhanghongshen.Arthub;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		705DF7092B6C9F77006D9726 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DTZV6LDYD5;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhanghongshen.ArthubTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Arthub.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Arthub";
+			};
+			name = Debug;
+		};
+		705DF70A2B6C9F77006D9726 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DTZV6LDYD5;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhanghongshen.ArthubTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Arthub.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Arthub";
+			};
+			name = Release;
+		};
+		705DF70C2B6C9F77006D9726 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DTZV6LDYD5;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhanghongshen.ArthubUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Arthub;
+			};
+			name = Debug;
+		};
+		705DF70D2B6C9F77006D9726 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DTZV6LDYD5;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhanghongshen.ArthubUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Arthub;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		705DF6D92B6C9F76006D9726 /* Build configuration list for PBXProject "Arthub" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				705DF7032B6C9F77006D9726 /* Debug */,
+				705DF7042B6C9F77006D9726 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		705DF7052B6C9F77006D9726 /* Build configuration list for PBXNativeTarget "Arthub" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				705DF7062B6C9F77006D9726 /* Debug */,
+				705DF7072B6C9F77006D9726 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		705DF7082B6C9F77006D9726 /* Build configuration list for PBXNativeTarget "ArthubTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				705DF7092B6C9F77006D9726 /* Debug */,
+				705DF70A2B6C9F77006D9726 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		705DF70B2B6C9F77006D9726 /* Build configuration list for PBXNativeTarget "ArthubUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				705DF70C2B6C9F77006D9726 /* Debug */,
+				705DF70D2B6C9F77006D9726 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 705DF6D62B6C9F76006D9726 /* Project object */;
+}
