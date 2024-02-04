@@ -1,59 +1,59 @@
 //
 //  ContentView.swift
-//  Arthub
+//  shelf
 //
-//  Created by 张鸿燊 on 2/2/2024.
+//  Created by 张鸿燊 on 31/1/2024.
 //
 
 import SwiftUI
 import SwiftData
 
+
+enum MediaType {
+    case movie, music
+}
+
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    
+    @State private var selectedMediaType: MediaType? = nil
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @StateObject private var arthubPlayer: ArthubPlayer = ArthubPlayer()
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-            .toolbar {
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            SidebarView()
         } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            if let mediaType = selectedMediaType {
+                Group {
+                    switch mediaType {
+                    case .movie:
+                        MovieView(columnVisibility: $columnVisibility)
+                    case .music:
+                        MusicView(columnVisibility: $columnVisibility)
+                    }
+                }
+                .environmentObject(arthubPlayer)
             }
+        }
+    }
+}
+
+extension ContentView {
+    @ViewBuilder
+    func SidebarView() -> some View {
+        List(selection: $selectedMediaType) {
+            Text("Arthub")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            Group {
+                Label("sidebar.movie", systemImage: "film").tag(MediaType.movie)
+                Label("sidebar.music", systemImage: "music.note").tag(MediaType.music)
+            }
+            .font(.title2)
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }

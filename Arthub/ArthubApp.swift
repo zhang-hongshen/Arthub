@@ -12,7 +12,8 @@ import SwiftData
 struct ArthubApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Movie.self,
+            Music.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -27,6 +28,30 @@ struct ArthubApp: App {
         WindowGroup {
             ContentView()
         }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
         .modelContainer(sharedModelContainer)
+        
+        Settings {
+            SettingsView()
+        }
+        WindowGroup("", id: "window.progress", for: Double.self) { current in
+            if let value = current.wrappedValue {
+                VStack {
+                    ProgressView(value: value) {
+                        Text(value.rounded().formatted())
+                    }
+                    .padding(10)
+                    .frame(width: 300, height: 60)
+                    .fixedSize()
+                    Button("cancel") {
+                        
+                    }
+                }
+                .padding(10)
+            }
+        }
+        .defaultPosition(.center)
+        .windowResizability(.contentSize)
     }
 }
