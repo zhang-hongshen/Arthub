@@ -1,5 +1,5 @@
 //
-//  MoviePlayer.swift
+//  VideoPlayer.swift
 //  shelf
 //
 //  Created by 张鸿燊 on 1/2/2024.

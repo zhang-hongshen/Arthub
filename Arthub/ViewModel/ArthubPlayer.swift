@@ -11,25 +11,28 @@ import AVKit
 class ArthubPlayer: ObservableObject {
     @Published var videoPlayer: AVPlayer? = nil
     @Published var audioPlayer: AVAudioPlayer? = nil
-    @Published var currentDuration: TimeInterval = 0
-    @Published var totalDuration: TimeInterval = 0
+    @Published var currentTime: TimeInterval = 0
+    @Published var duration: TimeInterval = 0
     
     @MainActor
-    func setVideoPlayer(url: URL) async throws{
+    func setVideoPlayer(url: URL, startTime: TimeInterval = 0) async throws{
         reset()
         self.videoPlayer = AVPlayer(url: url)
         guard let player = videoPlayer else  {
             return
         }
-        guard let curretnPlayerItem = player.currentItem else {
+        guard let currentPlayerItem = player.currentItem else {
             return
         }
-
-        self.totalDuration = try await curretnPlayerItem.asset.load(.duration).seconds
+        self.duration = try await currentPlayerItem.asset.load(.duration).seconds
+        debugPrint("self.duration  = \(duration.description)")
         player.addPeriodicTimeObserver(
             forInterval: .init(value: 1, timescale: 1),
             queue: .main) {  CMTime in
-                self.currentDuration  = player.currentTime().seconds
+                self.currentTime  = player.currentTime().seconds
+        }
+        if startTime > 0 && startTime <= duration {
+            await player.seek(to: .init(seconds: startTime, preferredTimescale: 1))
         }
     }
     
@@ -40,24 +43,25 @@ class ArthubPlayer: ObservableObject {
         guard let player = audioPlayer else  {
             return
         }
-        self.totalDuration = player.duration
+        while(!player.prepareToPlay()){}
+        self.duration = player.duration
     }
     
     @MainActor
     func reset() {
-        if let videoPlayer = videoPlayer {
-            videoPlayer.pause()
-        }
-        if let audioPlayer = audioPlayer {
-            audioPlayer.pause()
-        }
+//        if let videoPlayer = videoPlayer {
+//            videoPlayer.pause()
+//        }
+//        if let audioPlayer = audioPlayer {
+//            audioPlayer.pause()
+//        }
         self.videoPlayer = nil
         self.audioPlayer = nil
-        self.currentDuration = 0
-        self.totalDuration = 0
+        self.currentTime = 0
+        self.duration = 0
     }
     
-    func totalDurationValid() -> Bool {
-        return !totalDuration.isZero && !totalDuration.isNaN
+    func durationValid() -> Bool {
+        return !duration.isZero && !duration.isNaN
     }
 }

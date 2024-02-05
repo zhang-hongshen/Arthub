@@ -6,7 +6,16 @@
 //
 
 import Foundation
+import SwiftUI
 
 extension CGFloat {
-    static let defaultCornerRadius: CGFloat = 6
+    
+    static var defaultCornerRadius: CGFloat = 6 
+//    {
+//        NSApplication.shared.windows.first
+//        if let window = NSApplication.shared.windows.first {
+//            let cornerRadius =
+//            print("Window cornerRadius: \(cornerRadius)")
+//        }
+//    }
 }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, keybindings
+    case general, keybindings, locations
     var id: Self { self }
 }
 
@@ -22,10 +22,15 @@ struct SettingsView: View {
                     Image(systemName: "gearshape")
                     Text("settings.tab.general")
                 }
-            KeybindingsView().tag(SettingsTab.keybindings)
+            KeybindingView().tag(SettingsTab.keybindings)
                 .tabItem {
                     Image(systemName: "keyboard")
                     Text("settings.tab.keybindings")
+                }
+            LocationView().tag(SettingsTab.locations)
+                .tabItem {
+                    Image(systemName: "externaldrive")
+                    Text("settings.tab.locations")
                 }
         }
         .frame(width: 500, height: 500)

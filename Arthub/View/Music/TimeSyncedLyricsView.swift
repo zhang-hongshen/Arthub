@@ -8,49 +8,43 @@
 import SwiftUI
 import AVKit
 struct TimeSyncedLyricsView: View {
-    @State var lyrics: String
-    @Binding var  currentDuration: TimeInterval
     
-    @EnvironmentObject var arthubPlayer: ArthubPlayer
-    @State private var lyricSegments: [LyricSegment] = LyricSegment.examples()
+    @State var lyrics: [LyricSegment] = LyricSegment.examples()
+    @Binding var currentTime: TimeInterval
+    @State var onLyricClicked : (LyricSegment) -> Void = { _ in }
+
     
-    @State private var currentLyricIndex : Int? = nil
-    @State private var hoveringLyricIndex : Int? = nil
+    @State private var currentLyricID : UUID? = nil
+    @State private var hoveringLyricID : UUID? = nil
     
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading) {
-                    if let player = arthubPlayer.audioPlayer {
-                        ForEach(lyricSegments.indices, id:\.self) { i in
-                            let lyric = lyricSegments[i]
-                            let shown = (lyric.startedAt != nil) && (lyric.endedAt != nil)
-                            && lyric.startedAt! <= currentDuration
-                            && lyric.endedAt! >= currentDuration
-                            
-                            Button {
-                                if let startedAt = lyric.startedAt {
-                                    player.seek(time: startedAt)
-                                }
-                            } label: {
-                                Text(lyric.text)
-                                    .multilineTextAlignment(.leading)
-                                    .padding(15)
-                                    .blur(radius: shown ? 0.0 : 1.5)
-                            }
-                            .buttonStyle(.borderless)
-                            .id(i)
-                            .background{
-                                RoundedRectangle(cornerRadius: .defaultCornerRadius)
-                                    .fill(hoveringLyricIndex == i ? .highlightColor.opacity(0.4) : Color.clear)
-                            }
-                            .onHover { hovering in
-                                hoveringLyricIndex = hovering ? i : nil
-                            }
-                            .onChange(of: shown, initial: true) {
-                                if shown {
-                                    currentLyricIndex = i
-                                }
+                    ForEach(lyrics) { lyric in
+                        let shown = lyric.startedAt <= currentTime
+                            && lyric.endedAt >= currentTime
+                        
+                        Button {
+                            onLyricClicked(lyric)
+                        } label: {
+                            Text(lyric.content)
+                                .multilineTextAlignment(.leading)
+                                .padding(15)
+                                .blur(radius: shown ? 0.0 : 1.5)
+                        }
+                        .buttonStyle(.borderless)
+                        .id(lyric.id)
+                        .background{
+                            RoundedRectangle(cornerRadius: .defaultCornerRadius)
+                                .fill(hoveringLyricID == lyric.id ? .highlightColor.opacity(0.4) : Color.clear)
+                        }
+                        .onHover { hovering in
+                            hoveringLyricID = hovering ? lyric.id : nil
+                        }
+                        .onChange(of: shown, initial: true) {
+                            if shown {
+                                currentLyricID = lyric.id
                             }
                         }
                     }
@@ -59,9 +53,9 @@ struct TimeSyncedLyricsView: View {
                 .fontWeight(.bold)
             }
             .scrollIndicators(.never)
-            .onChange(of: currentLyricIndex, initial: true) {
+            .onChange(of: currentLyricID, initial: true) {
                 withAnimation(Animation.smooth()) {
-                    proxy.scrollTo(currentLyricIndex, anchor: .center)
+                    proxy.scrollTo(currentLyricID, anchor: .center)
                 }
             }
         }
@@ -69,6 +63,6 @@ struct TimeSyncedLyricsView: View {
 }
 
 #Preview {
-    TimeSyncedLyricsView(lyrics: "", currentDuration: .constant(10))
+    TimeSyncedLyricsView(lyrics: LyricSegment.examples(), currentTime: .constant(10))
         .frame(width: 500, height: 500)
 }

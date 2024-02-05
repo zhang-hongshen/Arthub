@@ -10,8 +10,8 @@ import SwiftData
 
 @Model
 class Movie {
-    var id = UUID()
-    var createdAt: Date = Date.now
+    @Attribute(.unique) let id = UUID()
+    let createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     
     var name: String
@@ -20,17 +20,17 @@ class Movie {
     var releaseYear: String
     
     // User Metrics
-    var currentDuration: TimeInterval
+    var currentTime: TimeInterval
     var progress: Double
     var count: Int64
     
     init(name: String = "" , filepath: String = "", thumbnail: String = "",
-         releaseYear: String = "", currentDuration: TimeInterval = 0, progress: Double = 0, count: Int64 = 0) {
+         releaseYear: String = "", currentTime: TimeInterval = 0, progress: Double = 0, count: Int64 = 0) {
         self.name = name
         self.filepath = filepath
         self.thumbnail = thumbnail
         self.releaseYear = releaseYear
-        self.currentDuration = currentDuration
+        self.currentTime = currentTime
         self.progress = progress
         self.count = count
     }
@@ -46,9 +46,9 @@ extension Movie: Hashable {
 extension Movie {
     static public func examples() -> [Movie] {
         return [
-            Movie(name: "流星花园1", thumbnail: "movie_1", releaseYear: "2023", currentDuration: 30),
+            Movie(name: "流星花园1", thumbnail: "movie_1", releaseYear: "2023", currentTime: 30, progress: 0.75),
             Movie(name: "流星花园2", thumbnail: "movie_1", releaseYear: "2023"),
-            Movie(name: "流星花园3", thumbnail: "movie_1", releaseYear: "2023", currentDuration: 30),
+            Movie(name: "流星花园3", thumbnail: "movie_1", releaseYear: "2023", currentTime: 30, progress: 0.75),
             Movie(name: "流星花园4", thumbnail: "movie_1", releaseYear: "2023"),
             Movie(name: "速度与激情1", thumbnail: "movie_2", releaseYear: "2023"),
             Movie(name: "速度与激情2", thumbnail: "movie_2", releaseYear: "2023"),

@@ -1,6 +1,6 @@
 //
 //  MovieView.swift
-//  shelf
+//  Arthub
 //
 //  Created by 张鸿燊 on 31/1/2024.
 //
@@ -23,6 +23,7 @@ struct MovieView: View {
     @Binding var columnVisibility: NavigationSplitViewVisibility
     
     @State private var movies: [Movie] = Movie.examples()
+    @EnvironmentObject private var arthubPlayer: ArthubPlayer
     // toolbar
     @State private var selectedOrder: MovieOrder = .createdAt
     @State private var selectedGroup: MovieGroup = .none
@@ -30,26 +31,30 @@ struct MovieView: View {
     
     @State private var inspectorSize: CGSize = .zero
     @State private var idealCardWidth: CGFloat = 180
-    @State private var cardSpacing: CGFloat = 20
     
-    @State private var selectedIndex: Int? = nil;
+    @State private var selectedMovieID: UUID? = nil;
+    private var selectedMovie: Binding<Movie>?  {
+        return $movies.first(where: { $0.id == selectedMovieID }) ?? nil
+    }
     @State private var playerPresented: Bool = false
     @State private var dropTrageted: Bool = false
     
     var body: some View {
-        ZStack {
+        VStack(alignment: .leading) {
+            Text("Watching")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+//            WatchingView()
             MainView()
-            
-            .opacity(playerPresented ? 0 : 1)
-            .frame(minWidth: idealCardWidth + inspectorSize.width)
-            
-            if let i = selectedIndex, i >= 0, i < movies.count, playerPresented {
-                MoviePlayerView(presented: $playerPresented, movie: $movies[i])
-                    .opacity(playerPresented ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.5), value: playerPresented)
-            }
         }
         .navigationTitle("sidebar.movie")
+        .onDropMovie(targeted: $dropTrageted)
+        .inspector(isPresented: $inspectorPresented) {
+            InspectorView()
+        }
+        .inspectorColumnWidth(inspectorSize.width)
+        .opacity(playerPresented ? 0 : 1)
+        .frame(minWidth: idealCardWidth + inspectorSize.width)
         .toolbar(playerPresented ? .hidden : .visible, for: .windowToolbar)
         .toolbar {
             ToolbarItemGroup {
@@ -70,7 +75,7 @@ extension MovieView {
     func ToolbarView() -> some View {
         Menu {
             Picker("toolbar.group", selection: $selectedGroup) {
-                Text("none").tag(MovieGroup.none)
+                Text("common.none").tag(MovieGroup.none)
                 Text("movie.releaseYear").tag(MovieGroup.releaseYear)
             }
             Picker("toolbar.order", selection: $selectedOrder) {
@@ -91,53 +96,81 @@ extension MovieView {
 extension MovieView {
     
     @ViewBuilder
+    func WatchingView() -> some View {
+        HStack {
+            ForEach($movies) { movie in
+                let selected = selectedMovieID == movie.id
+                MovieCardView(movie: movie, frameWidth: 200).tag(movie.id)
+                    .background {
+                        RoundedRectangle(cornerRadius: .defaultCornerRadius)
+                            .fill(selected ? Color.highlightColor.opacity(0.4) : Color.clear)
+                    }
+                    .tint(selected ? Color.selectedTextColor : Color.textColor)
+                    .onTapGesture(count: 1) {
+                        selectedMovieID = movie.id
+                    }
+                    .simultaneousGesture(
+                        TapGesture(count: 2)
+                            .onEnded {
+                                selectedMovieID = movie.id
+                                playerPresented = true
+                            }
+                    )
+                
+            }
+        }
+    }
+    
+    
+    @ViewBuilder
     func MainView() -> some View {
-        
         GeometryReader { proxy in
-            
             let usableWidth = proxy.size.width - inspectorSize.width
+            let cardSpacing = idealCardWidth * 0.1
             let column = Int(usableWidth / (idealCardWidth + cardSpacing))
             let cardWidth: CGFloat = usableWidth / CGFloat(column) - cardSpacing
             let columns: [GridItem] = Array(repeating: .init(.fixed(cardWidth), alignment: .top), count: column)
             
-            List(selection: $selectedIndex) {
-                LazyVGrid(columns: columns, spacing: cardSpacing) {
-                    ForEach(movies.indices) { i in
-                        let selected = selectedIndex == i
-                        MovieCardView(movie: $movies[i], frameWidth: cardWidth).tag(i)
-                            .background {
-                                RoundedRectangle(cornerRadius: .defaultCornerRadius)
-                                    .fill(selected ? Color.highlightColor.opacity(0.4) : Color.clear)
-                            }
-                            .tint(selected ? Color.selectedTextColor : Color.textColor)
-                            .onTapGesture(count: 1) {
-                                selectedIndex = i
-                            }
-                            .simultaneousGesture(
-                                TapGesture(count: 2)
-                                    .onEnded {
-                                        selectedIndex = i
-                                        playerPresented = true
-                                    }
-                            )
-                        
+            NavigationStack {
+                ScrollView{
+                    LazyVGrid(columns: columns, spacing: cardSpacing) {
+                        ForEach($movies) { movie in
+                            let selected = selectedMovieID == movie.id
+                            MovieCardView(movie: movie, frameWidth: cardWidth).tag( movie.id)
+                                .background {
+                                    RoundedRectangle(cornerRadius: .defaultCornerRadius)
+                                        .fill(selected ? Color.highlightColor.opacity(0.4) : Color.clear)
+                                }
+                                .tint(selected ? Color.selectedTextColor : Color.textColor)
+                                .onTapGesture(count: 1) {
+                                    selectedMovieID =  movie.id
+                                }
+                                .simultaneousGesture(
+                                    TapGesture(count: 2)
+                                        .onEnded {
+                                            selectedMovieID =  movie.id
+                                            playerPresented = true
+                                        }
+                                )
+                        }
+                    }
+                }
+                .navigationDestination(isPresented: $playerPresented) {
+                    if let movie = selectedMovie {
+                        MoviePlayerView(presented: $playerPresented, movie: movie)
+                            .animation(.easeInOut(duration: 0.5), value: playerPresented)
+                            .environmentObject(arthubPlayer)
                     }
                 }
             }
-            .onDropMovie(targeted: $dropTrageted)
-            .inspector(isPresented: $inspectorPresented) {
-                InspectorView()
-            }
-            .inspectorColumnWidth(inspectorSize.width)
-            
         }
     }
     
     @ViewBuilder
     func InspectorView() -> some View {
         Group {
-            if let i = selectedIndex, i >= 0, i < movies.count {
-                MovieInspectorView(movie: $movies[i])
+            if let movie = selectedMovie {
+                MovieInspectorView(movie: movie)
             } else {
                 Text("inspector.empty").font(.title)
             }
@@ -151,13 +184,12 @@ extension MovieView {
             }
         }
     }
-    
 }
 
 struct DropAction: ViewModifier {
     
     @Binding var trageted: Bool
-    @Environment(\.modelContext) private var context
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
     
@@ -168,7 +200,6 @@ struct DropAction: ViewModifier {
             if !trageted || items.isEmpty {
                 return false
             }
-            debugPrint("123")
             let fileManager = FileManager.default
             guard let appsupportDir = try? fileManager.url(
                 for: .applicationSupportDirectory,
@@ -181,7 +212,7 @@ struct DropAction: ViewModifier {
                 do {
                     try fileManager.createDirectory(atPath: folderPath, withIntermediateDirectories: true)
                 } catch {
-                    debugPrint(" err \(error)")
+                    debugPrint("create directory error, \(error)")
                 }
             }
             openWindow(id: "window.progress", value: progressFinished)
@@ -201,7 +232,7 @@ struct DropAction: ViewModifier {
                     do {
                         try fileManager.copyItem(atPath: url.absoluteString, toPath: fileDestPath)
                         let ent = Movie(name: originalFileName, filepath: fileDestPath)
-                        context.insert(ent)
+                        modelContext.insert(ent)
                     } catch  {
                         debugPrint(" err \(error)")
                     }

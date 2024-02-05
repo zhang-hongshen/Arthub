@@ -1,6 +1,6 @@
 //
 //  MusicView.swift
-//  shelf
+//  Arthub
 //
 //  Created by 张鸿燊 on 31/1/2024.
 //
@@ -26,7 +26,7 @@ enum MusicGroup: String, CaseIterable, Identifiable {
 struct MusicView: View {
     @Binding var columnVisibility: NavigationSplitViewVisibility
     
-    @Query private var musicList: [Music] = Music.examples()
+    @State private var musicList: [Music] = Music.examples()
     
     // toolbar
     @State private var selectedLayout: ViewLayout = .grid
@@ -38,7 +38,10 @@ struct MusicView: View {
     @State private var idealCardWidth: CGFloat = 180
     @State private var cardSpacing: CGFloat = 40
     
-    @State private var selectedIndex: Int? = nil;
+    @State private var selectedMusicID: UUID? = nil;
+    private var selectedMusic: Music?  {
+        return musicList.first(where: { $0.id == selectedMusicID }) ?? nil
+    }
     @State private var playerPresented: Bool = false
     @State private var dropTrageted: Bool = false
     
@@ -48,11 +51,9 @@ struct MusicView: View {
             .opacity(playerPresented ? 0 : 1)
             .frame(minWidth: idealCardWidth + inspectorSize.width)
             .overlay {
-                if let i = selectedIndex, i >= 0, i < musicList.count, playerPresented {
-                    MusicPlayerView(presented: $playerPresented, music: musicList[i])
+                if let music = selectedMusic, playerPresented {
+                    MusicPlayerView(presented: $playerPresented, music: music)
                         .animation(.easeInOut(duration: 0.5), value: playerPresented)
-                } else {
-                    EmptyView()
                 }
             }
         }
@@ -90,9 +91,10 @@ extension MusicView {
         }
         .pickerStyle(.segmented)
         
+        
         Menu {
             Picker("toolbar.group", selection: $selectedGroup) {
-                Text("none").tag(MusicGroup.none)
+                Text("common.none").tag(MusicGroup.none)
                 Text("music.releaseYear").tag(MusicGroup.releaseYear)
             }
             Picker("toolbar.order", selection: $selectedOrder) {
@@ -127,31 +129,30 @@ extension MusicView {
             let cardWidth: CGFloat = usableWidth / CGFloat(column) - cardSpacing
             let columns: [GridItem] = Array(repeating: .init(.fixed(cardWidth), alignment: .top), count: column)
 
-            List(selection: $selectedIndex) {
+            List(selection: $selectedMusicID) {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: cardSpacing) {
-                    ForEach(musicList.indices) { i in
-                        let selected = selectedIndex == i
+                    ForEach(musicList) { music in
+                        let selected = selectedMusicID == music.id
                         Group {
                             switch selectedLayout {
                             case.grid:
-                                MusicCardView(music: musicList[i], frameWidth: cardWidth)
+                                MusicCardView(music: music, frameWidth: cardWidth)
                             case.list:
-                                MusicListView(music: musicList[i])
+                                MusicListView(music: music)
                             }
-                        }
-                        .tag(i)
+                        }.tag(music.id)
                         .background {
                             RoundedRectangle(cornerRadius: .defaultCornerRadius)
                                 .fill(selected ? Color.highlightColor.opacity(0.4) : Color.clear)
                         }
                         .tint(selected ? Color.selectedTextColor : Color.textColor)
                         .onTapGesture(count: 1) {
-                            selectedIndex = i
+                            selectedMusicID = music.id
                         }
                         .simultaneousGesture(
                             TapGesture(count: 2)
                                 .onEnded {
-                                    selectedIndex = i
+                                    selectedMusicID = music.id
                                     playerPresented = true
                                 }
                         )
@@ -176,8 +177,8 @@ extension MusicView {
     @ViewBuilder
     func InspectorView() -> some View {
         Group {
-            if let i = selectedIndex, i >= 0, i < musicList.count {
-                MusicInspectorView(music: musicList[i])
+            if let music = selectedMusic {
+                MusicInspectorView(music: music)
             } else {
                 Text("inspector.empty").font(.title)
             }

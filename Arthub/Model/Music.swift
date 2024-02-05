@@ -19,8 +19,8 @@ enum Metadata: String {
 
 @Model
 class Music {
-    var id = UUID()
-    var createdAt: Date = Date.now
+    @Attribute(.unique) let id = UUID()
+    let createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     
     var name: String
@@ -30,7 +30,9 @@ class Music {
     var artist: String
     
     var releaseYear: String
-    var lyrics: String
+    
+    @Relationship(deleteRule:.cascade, inverse: \LyricSegment.music)
+    var lyrics = [LyricSegment]()
     
     // User Metrics
     var count: Int64
@@ -39,7 +41,7 @@ class Music {
     
     init(name: String = "" , filepath: String = "", thumbnail: String = "",
          artist: String = "", releaseYear: String = "",
-         lyrics: String = "", count: Int64 = 0) {
+         lyrics: [LyricSegment] = [], count: Int64 = 0) {
         self.name = name
         self.filepath = filepath
         self.thumbnail = thumbnail

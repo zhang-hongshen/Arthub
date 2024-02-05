@@ -20,7 +20,7 @@ struct MusicCardView: View {
                 .frame(width: imageWidth, height: imageWidth)
                 .scaledToFit()
                 .aspectRatio(contentMode: .fill)
-                .rounded(cornerRadius: imageWidth / 2)
+                .rounded()
             Text(music.name)
                 .font(.title2)
         }

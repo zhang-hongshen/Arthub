@@ -44,7 +44,7 @@ struct ArthubApp: App {
                     .padding(10)
                     .frame(width: 300, height: 60)
                     .fixedSize()
-                    Button("cancel") {
+                    Button("common.cancel") {
                         
                     }
                 }

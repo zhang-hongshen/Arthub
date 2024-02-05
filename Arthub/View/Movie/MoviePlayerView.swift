@@ -1,6 +1,6 @@
 //
 //  MoviePlayerView.swift
-//  shelf
+//  Arthub
 //
 //  Created by 张鸿燊 on 1/2/2024.
 //
@@ -16,8 +16,9 @@ struct MoviePlayerView: View {
     @EnvironmentObject private var arthubPlayer: ArthubPlayer
     @State private var helpPresented: Bool = false
     @State private var controlPresented: Bool = false
-    
+    @State private var helpSize: CGSize = .init(width: 350, height: .zero)
     // playback control
+    @State private var playbackControlSize: CGSize = .init(width: 350, height: .zero)
     @State private var currentVolume: Float = 0.5
     
     @State private var paused: Bool = false
@@ -33,13 +34,17 @@ struct MoviePlayerView: View {
                     .overlay {
                         PlayOverlayView(player: player)
                     }
+                    .frame(minWidth: max(playbackControlSize.width, helpSize.width),
+                           minHeight: playbackControlSize.height + helpSize.height)
             }
         }
         .task {
             do {
-                try await arthubPlayer.setVideoPlayer(url: Bundle.main.url(forResource: movie.filepath, withExtension:"mp4")!)
+                debugPrint("Begin setVideoPlayer")
+                try await arthubPlayer.setVideoPlayer(url: Bundle.main.url(forResource: movie.filepath, withExtension:"mp4")!,
+                                                      startTime: movie.currentTime)
             } catch {
-                print("Movie setPlayer error, \(error)")
+                print("setVideoPlayer error, \(error)")
             }
             
         }
@@ -59,17 +64,15 @@ struct MoviePlayerView: View {
 }
 
 extension MoviePlayerView {
+    
     @ViewBuilder
     func PlayerView(player: AVPlayer) -> some View {
         VideoPlayer(player: player)
-            .onAppear {
-                player.seek(to: .init(seconds: movie.currentDuration, preferredTimescale: 1))
-            }
-            .onChange(of: arthubPlayer.currentDuration, initial: true) { _, newValue in
+            .onChange(of: arthubPlayer.currentTime, initial: true) { _, newValue in
                 if !sliderEditing {
-                    movie.currentDuration  = newValue
-                    if arthubPlayer.totalDurationValid() {
-                        movie.progress = newValue / arthubPlayer.totalDuration
+                    movie.currentTime  = newValue
+                    if arthubPlayer.durationValid() {
+                        movie.progress = newValue / arthubPlayer.duration
                         if movie.progress > 1 {
                             movie.progress = 1
                         }
@@ -95,6 +98,7 @@ extension MoviePlayerView {
     func PlayOverlayView(player: AVPlayer) -> some View {
         VStack {
             HStack {
+                Spacer()
                 HelpView()
                     .padding(5)
                     .background {
@@ -104,19 +108,32 @@ extension MoviePlayerView {
                     .opacity(controlPresented ? 1 : 0)
                     .keyboardShortcut(.init("?"))
                     .keyboardShortcut(.init("/"))
-                Spacer()
+                    .overlay {
+                        GeometryReader {proxy in
+                            Color.clear.onAppear {
+                                helpSize = proxy.size
+                            }
+                        }
+                    }
             }
             .safeAreaPadding(5)
             Spacer()
             PlayBackControlView(player: player)
                 .padding(5)
                 .opacity(controlPresented ? 1 : 0)
-                .frame(width: 350)
+                .frame(width: playbackControlSize.width)
                 .fixedSize()
+                .overlay {
+                    GeometryReader {proxy in
+                        Color.clear.onAppear {
+                            playbackControlSize = proxy.size
+                        }
+                    }
+                }
         }
-        PlayerSettingsView(player: player)
-            
-            .opacity(settingsPresented ? 1 : 0)
+        .inspector(isPresented: $settingsPresented) {
+            PlayerSettingsView(player: player)
+        }
     }
     
     @ViewBuilder
@@ -140,13 +157,13 @@ extension MoviePlayerView {
     func PlayBackControl(player: AVPlayer) -> some View {
         VStack {
             HStack {
-                VolumeControlView(volume: $currentVolume)
+                VolumeBar(volume: $currentVolume)
                 .onChange(of: currentVolume, initial: true) { _, newValue in
                     player.volume = newValue
                 }
                 
                 Button {
-                    player.seek(to: .init(seconds: arthubPlayer.currentDuration - 15, preferredTimescale: 1))
+                    player.seek(to: .init(seconds: arthubPlayer.currentTime - 15, preferredTimescale: 1))
                 } label: {
                     Image(systemName: "gobackward.15")
                 }
@@ -160,7 +177,7 @@ extension MoviePlayerView {
                 .keyboardShortcut(.space, modifiers: [])
                 
                 Button {
-                    player.seek(to: .init(seconds: arthubPlayer.currentDuration + 15, preferredTimescale: 1))
+                    player.seek(to: .init(seconds: arthubPlayer.currentTime + 15, preferredTimescale: 1))
                 } label: {
                     Image(systemName: "goforward.15")
                 }
@@ -186,28 +203,22 @@ extension MoviePlayerView {
             }
             .font(.title2)
             
-            HStack(spacing: 5) {
-                Text(movie.currentDuration.formatted([.hour, .minute, .second]))
-                Slider(value: $movie.currentDuration, in: 0...arthubPlayer.totalDuration) {
-                    newValue in
-                        sliderEditing = newValue
-                        if sliderEditing {
-                            // pause for seeking smothly
-                            paused = true
-                        } else {
-                            // resume to the original state
-                            paused = false
-                        }
+            ProgressBar(value: $movie.currentTime, total: $arthubPlayer.duration, format: [.hour, .minute, .second]) { newValue in
+                sliderEditing = newValue
+                if sliderEditing {
+                    // pause for seeking smothly
+                    paused = true
+                } else {
+                    // resume to the original state
+                    paused = false
                 }
-                .onChange(of: movie.currentDuration) { _, newValue in
-                    if sliderEditing {
-                        DispatchQueue.main.async {
-                            arthubPlayer.videoPlayer?.seek(to: .init(seconds: newValue, preferredTimescale: 1))
-                        }
+            }
+            .onChange(of: movie.currentTime) { _, newValue in
+                if sliderEditing {
+                    DispatchQueue.main.async {
+                        arthubPlayer.videoPlayer?.seek(to: .init(seconds: newValue, preferredTimescale: 1))
                     }
                 }
-                Text(arthubPlayer.totalDuration.formatted([.hour, .minute, .second]))
-                
             }
         }
         .buttonStyle(.borderless)
@@ -218,53 +229,45 @@ extension MoviePlayerView {
 extension MoviePlayerView {
     @ViewBuilder
     func HelpView() -> some View {
-            
-        Grid(alignment: .leadingFirstTextBaseline) {
-            Text("help")
-                .font(.title2)
-            Group {
-                GridRow {
-                    Image(systemName: "space").gridColumnAlignment(.trailing)
-                    Text("keyboardShortCut.playOrPause")
+        VStack(alignment: .center) {
+            Text("common.help")
+                .font(.title)
+                .fontWeight(.bold)
+            Grid(alignment: .leadingFirstTextBaseline) {
+                
+                Group {
+                    GridRow {
+                        Image(systemName: "space").gridColumnAlignment(.trailing)
+                        Text("keyboardShortCut.playOrPause")
+                    }
+                    GridRow {
+                        Image(systemName: "arrowshape.left.arrowshape.right").gridColumnAlignment(.trailing)
+                        Text("keyboardShortCut.forwardOrBackward15seconds")
+                    }
+                    GridRow {
+                        HStack {
+                            Image(systemName: "arrowshape.up").gridColumnAlignment(.trailing)
+                            Image(systemName: "arrowshape.down").gridColumnAlignment(.trailing)
+                        }.gridColumnAlignment(.trailing)
+                        Text("keyboardShortCut.increaseOrDecreaseVolume")
+                    }
                 }
-                GridRow {
-                    Image(systemName: "arrowshape.left.arrowshape.right").gridColumnAlignment(.trailing)
-                    Text("keyboardShortCut.forwardOrBackward15seconds")
-                }
-                GridRow {
-                    HStack {
-                        Image(systemName: "arrowshape.up").gridColumnAlignment(.trailing)
-                        Image(systemName: "arrowshape.down").gridColumnAlignment(.trailing)
-                    }.gridColumnAlignment(.trailing)
-                    Text("keyboardShortCut.increaseOrDecreaseVolume")
-                }
+                .font(.title3)
             }
-            .font(.title3)
-            
         }
     }
     
     
     @ViewBuilder
     func PlayerSettingsView(player: AVPlayer) -> some View {
-        HStack {
-            Spacer()
-                .onTapGesture {
-                    settingsPresented = false
-                }
-            Rectangle()
-                .fill()
-                .overlay {
-                    PlayerSettings()
-                }
-                .frame(width: 300)
-        }
-    }
-    
-    @ViewBuilder
-    func PlayerSettings() -> some View {
         VStack {
             Text("To be continue")
         }
     }
+}
+
+#Preview {
+    MoviePlayerView(presented: .constant(true), movie: .constant(Movie.examples()[0]))
+        .frame(width: 600, height: 500)
+        .environmentObject(ArthubPlayer())
 }

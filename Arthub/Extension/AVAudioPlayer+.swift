@@ -9,7 +9,7 @@ import Foundation
 import AVKit
 
 extension AVAudioPlayer {
-    func seek(time: TimeInterval) {
+    func seek(to time: TimeInterval) {
         self.currentTime = time
     }
 }
