@@ -6,102 +6,185 @@
 //
 
 import SwiftUI
-import SwiftData
+import Logging
+import UniformTypeIdentifiers
 
 enum ViewLayout: String, CaseIterable, Identifiable {
     case grid, list
     var id: Self { self }
 }
 
-enum MusicOrder: String, CaseIterable, Identifiable {
-    case name, releaseYear, createdAt
-    var id: Self { self }
-}
-
-enum MusicGroup: String, CaseIterable, Identifiable {
-    case none, releaseYear
-    var id: Self { self }
-}
-
 struct MusicView: View {
-    @Binding var columnVisibility: NavigationSplitViewVisibility
     
-    @State private var musicList: [Music] = Music.examples()
+    @EnvironmentObject private var player : ArthubAudioPlayer
+    @Environment(WindowState.self) private var windowState
     
-    // toolbar
+    @State private var musicList: [Music] = []
     @State private var selectedLayout: ViewLayout = .grid
-    @State private var selectedOrder: MusicOrder = .createdAt
+    @State private var selectedOrderProperty: MusicOrderProperty = .createdAt
     @State private var selectedGroup: MusicGroup = .none
+    @State private var selectedOrder: SortOrder = .forward
     @State private var inspectorPresented: Bool = false
-    
-    @State private var inspectorSize: CGSize = .zero
     @State private var idealCardWidth: CGFloat = 180
-    @State private var cardSpacing: CGFloat = 40
-    
     @State private var selectedMusicID: UUID? = nil;
-    private var selectedMusic: Music?  {
-        return musicList.first(where: { $0.id == selectedMusicID }) ?? nil
-    }
     @State private var playerPresented: Bool = false
     @State private var dropTrageted: Bool = false
     
+    @AppStorage(UserDefaults.localMusicData)
+    private var musicData: [String] = [Storage.defaultLocalMusicData]
+    
+    private var selectedMusic: Music?  {
+        return musicList.first(where: { $0.id == selectedMusicID }) ?? nil
+    }
+    
+    private var sortOrder: KeyPathComparator<Music> {
+        switch selectedOrderProperty {
+        case .createdAt: KeyPathComparator(\Music.createdAt, order: selectedOrder)
+        case .title: KeyPathComparator(\Music.title, order: selectedOrder)
+        case .releaseDate: KeyPathComparator(\Music.releaseDate, order: selectedOrder)
+        }
+    }
+    
     var body: some View {
-        ZStack {
-            MainView()
-            .opacity(playerPresented ? 0 : 1)
-            .frame(minWidth: idealCardWidth + inspectorSize.width)
-            .overlay {
-                if let music = selectedMusic, playerPresented {
-                    MusicPlayerView(presented: $playerPresented, music: music)
-                        .animation(.easeInOut(duration: 0.5), value: playerPresented)
+        MainView()
+            .frame(minWidth: idealCardWidth)
+            .safeAreaPadding(10)
+            .dropDestination(for: URL.self) { urls, location in
+                if urls.isEmpty || !dropTrageted {
+                    return false
+                }
+                // TODO
+                return true
+            } isTargeted: { targetd in
+                dropTrageted = targetd
+            }
+            .inspector(isPresented: $inspectorPresented) {
+                InspectorView()
+                    .safeAreaPadding(10)
+            }
+            .toolbar {
+                
+                #if !os(iOS)
+                ToolbarItemGroup(placement: .primaryAction) {
+                    ToolbarMusicPlayerView()
+                }
+                #endif
+                
+                ToolbarItemGroup {
+                    ToolbarItemView()
                 }
             }
-        }
-        .navigationTitle("sidebar.music")
-        .toolbar {
-            if playerPresented{
-                ToolbarItem(placement: .navigation) {
-                    Button {
-                        playerPresented = false;
-                    } label: {
-                        Label("toolbar.back", systemImage: "chevron.backward")
+            .navigationDestination(isPresented: $playerPresented){
+                if let music = selectedMusic,
+                    let i = musicList.firstIndex(where: { $0.id == music.id })  {
+                    
+                    let firstPart = Array(musicList[i..<musicList.count])
+                    let secondPart = Array(musicList[0..<i])
+                    
+                    MusicPlayerView(music: firstPart + secondPart)
+                        .environment(windowState)
+                }
+                
+            }
+            .task(priority: .userInitiated) {
+                var urls: [URL] = []
+                musicData.forEach { data in
+                    if let url = URL(string: data) {
+                        urls.append(url)
                     }
                 }
-            } else {
-                ToolbarItemGroup {
-                    ToolbarView()
+                do {
+                    try await self.fetchMusic(urls: urls)
+                } catch {
+                    Logger.shared.error("fetchMusic error, \(error)")
                 }
             }
-        }
-        .onChange(of: playerPresented, initial: false) {
-            if playerPresented {
-                columnVisibility = .detailOnly
-            }
-        }
     }
 }
 
 extension MusicView {
     
     @ViewBuilder
-    func ToolbarView() -> some View {
+    func ToolbarMusicPlayerView() -> some View {
+        Button {
+
+        } label: {
+            Image(systemName: "backward.fill")
+        }
+        
+        Button {
+            if player.isPlaying {
+                player.pause()
+            } else {
+                do { try player.play() }
+                catch { Logger.shared.error("start error, \(error)") }
+            }
+        } label: {
+            Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+        }
+        .keyboardShortcut(.space, modifiers: [])
+        
+        Button {
+            
+        } label: {
+            Image(systemName: "forward.fill")
+        }
+        
+        AsyncImage(url: player.currentPlaylistItem?.cover,
+                   transaction: .init(animation: .smooth)
+        ) { phase in
+            switch phase {
+            case .empty:
+                DefaultImageView()
+            case .success(let image):
+                image.resizable().scaledToFit()
+            case .failure(let error):
+                ErrorImageView(error: error)
+            @unknown default:
+                fatalError()
+            }
+        }
+        .onTapGesture {
+            playerPresented = true
+        }
+        
+        VStack(alignment: .leading) {
+            Text(player.currentPlaylistItem?.title ?? "")
+            Text(player.currentPlaylistItem?.artists ?? "")
+        }
+    }
+}
+extension MusicView {
+    
+    @ViewBuilder
+    func ToolbarItemView() -> some View {
+        
         Picker("toolbar.layout", selection: $selectedLayout) {
             Label("toolbar.layout.grid", systemImage: "square.grid.2x2").tag(ViewLayout.grid)
             Label("toolbar.layout.list", systemImage: "list.bullet").tag(ViewLayout.list)
         }
         .pickerStyle(.segmented)
         
-        
         Menu {
-            Picker("toolbar.group", selection: $selectedGroup) {
-                Text("common.none").tag(MusicGroup.none)
-                Text("music.releaseYear").tag(MusicGroup.releaseYear)
+            Group {
+                Picker("", selection: $selectedGroup) {
+                    Text("common.none").tag(MusicGroup.none)
+                    Text("music.releaseYear").tag(MusicGroup.releaseYear)
+                }
+                
+                Picker("", selection: $selectedOrderProperty) {
+                    Text("music.title").tag(MusicOrderProperty.title)
+                    Text("music.createdAt").tag(MusicOrderProperty.createdAt)
+                    Text("music.releaseDate").tag(MusicOrderProperty.releaseDate)
+                }
+                
+                Picker("", selection: $selectedOrder) {
+                    Text("sortOrder.ascending").tag(SortOrder.forward)
+                    Text("sortOrder.descending").tag(SortOrder.reverse)
+                }
             }
-            Picker("toolbar.order", selection: $selectedOrder) {
-                Text("music.name").tag(MusicOrder.name)
-                Text("music.releaseYear").tag(MusicOrder.releaseYear)
-                Text("music.createdAt").tag(MusicOrder.createdAt)
-            }
+            .pickerStyle(.inline)
+            .labelsHidden()
         } label: {
             Image(systemName: "square.grid.3x1.below.line.grid.1x2")
         }
@@ -117,35 +200,35 @@ extension MusicView {
     @ViewBuilder
     func MainView() -> some View {
         GeometryReader { proxy in
-            let usableWidth = proxy.size.width - inspectorSize.width
-            var column: Int {
+            
+            var columns: [GridItem] {
                 switch selectedLayout {
                 case .grid:
-                    Int(usableWidth / (idealCardWidth + cardSpacing))
+                    Array(repeating: .init(.fixed(idealCardWidth), alignment: .top), count: Int(proxy.size.width / idealCardWidth))
                 case .list:
-                    1
+                    Array(repeating: .init(.fixed(proxy.size.width), alignment: .leading), count: 1)
                 }
             }
-            let cardWidth: CGFloat = usableWidth / CGFloat(column) - cardSpacing
-            let columns: [GridItem] = Array(repeating: .init(.fixed(cardWidth), alignment: .top), count: column)
-
-            List(selection: $selectedMusicID) {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: cardSpacing) {
-                    ForEach(musicList) { music in
+            
+            ScrollView {
+                LazyVGrid(columns: columns, alignment: .leading) {
+                    ForEach($musicList) { music in
                         let selected = selectedMusicID == music.id
                         Group {
                             switch selectedLayout {
                             case.grid:
-                                MusicCardView(music: music, frameWidth: cardWidth)
+                                MusicCardView(music: music, frameWidth: idealCardWidth)
+                                    .scaleEffect(selected)
                             case.list:
-                                MusicListView(music: music)
+                                MusicListItemView(music: music)
+                                    .safeAreaPadding(5)
+                                    .background {
+                                        RoundedRectangle(cornerRadius: .defaultCornerRadius)
+                                            .fill(selected ? Color.selectedTextColor.opacity(0.4) : Color.clear)
+                                    }
+                                    .tint(selected ? Color.selectedTextColor : Color.textColor)
                             }
                         }.tag(music.id)
-                        .background {
-                            RoundedRectangle(cornerRadius: .defaultCornerRadius)
-                                .fill(selected ? Color.highlightColor.opacity(0.4) : Color.clear)
-                        }
-                        .tint(selected ? Color.selectedTextColor : Color.textColor)
                         .onTapGesture(count: 1) {
                             selectedMusicID = music.id
                         }
@@ -159,42 +242,74 @@ extension MusicView {
                     }
                 }
             }
-            .inspector(isPresented: $inspectorPresented) {
-                InspectorView()
-            }
-            .inspectorColumnWidth(inspectorSize.width)
-            .onDrop(of: [.movie, .audio], isTargeted: $dropTrageted) { items, position in
-                debugPrint("location \(position)")
-                for item in items {
-                    debugPrint(item)
-                }
-                return true
-            }
+            .scrollIndicators(.never)
         }
         
     }
     
     @ViewBuilder
     func InspectorView() -> some View {
-        Group {
-            if let music = selectedMusic {
-                MusicInspectorView(music: music)
-            } else {
-                Text("inspector.empty").font(.title)
-            }
-        }
-        .overlay {
-            GeometryReader { proxy in
-                Color.clear
-                    .onChange(of: inspectorPresented, initial: false) {
-                        inspectorSize = inspectorPresented ? proxy.size : .zero
-                    }
-            }
+        if let music = selectedMusic {
+            MusicInspectorView(music: Binding<Music>(
+                get: { music},
+                set: { _ in }
+            ))
+        } else {
+            Text("inspector.empty").font(.title)
         }
     }
 
 }
 
+extension MusicView {
+    
+    func fetchMusic(urls: [URL]) async throws {
+        for musicDataURL in urls {
+            let artistURLs = try FileManager.default
+                .contentsOfDirectory(at: musicDataURL,
+                                     includingPropertiesForKeys: [.isDirectoryKey],
+                                     options: [.skipsHiddenFiles])
+            for artistURL in artistURLs {
+                var artists: [Artist] = []
+                for artistName in artistURL.fileName.split(separator: "&") {
+                    artists.append(Artist(name: artistName.trimmingCharacters(in: .whitespaces)))
+                }
+                let albumURLs = try FileManager.default
+                    .contentsOfDirectory(at: artistURL,
+                                         includingPropertiesForKeys: [.isRegularFileKey],
+                                         options: [.skipsHiddenFiles])
+                for albumURL in albumURLs {
+                    let album = Album(title: albumURL.fileName, artists: artists)
+                    let urls = try FileManager.default
+                        .contentsOfDirectory(at: albumURL,
+                                             includingPropertiesForKeys: [.isRegularFileKey],
+                                             options: [.skipsHiddenFiles])
+                    for url in urls {
+                        if url.isImage && url.fileName.lowercased() == "cover"{
+                            album.cover = url
+                        } else if url.isAudio {
+                            if let matches = url.fileName.wholeMatch(of: RegexPattern.musicName) {
+                                let order = Int(matches.output.order ?? "")
+                                let title = String(matches.output.title)
+                                let music = Music(title: title, url: url, album: album, order: order)
+                                
+                                let ttmlURL = url.deletingPathExtension().appendingPathExtension(UTType.ttml.preferredFilenameExtension!)
+                                if FileManager.default.fileExists(at: ttmlURL) {
+                                    music.lyrics = ttmlURL
+                                }
+                                try await music.loadMetadata()
+                                musicList.append(music)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 #Preview {
-    MusicView(columnVisibility: .constant(.all))
+    MusicView()
+        .environment(ArthubAudioPlayer())
+        .environment(WindowState())
 }

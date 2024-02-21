@@ -6,59 +6,96 @@
 //
 
 import SwiftUI
-import AVKit
+import AVFoundation
+import Logging
 
 struct MoviePlayerView: View {
     
-    @Binding var presented: Bool
-    @Binding var movie: Movie
+    @State var title: String
+    @Binding var urls: [URL]
+    @Binding var metrics: MovieMetrics
     
-    @EnvironmentObject private var arthubPlayer: ArthubPlayer
-    @State private var helpPresented: Bool = false
-    @State private var controlPresented: Bool = false
-    @State private var helpSize: CGSize = .init(width: 350, height: .zero)
+    @EnvironmentObject private var player: ArthubVideoPlayer
+    @Environment(\.presentationMode) private var presentationMode
+    @Environment(WindowState.self) private var windowState
+    
+    @State var groupedURL: [DisplayResolution: URL] = [:]
+    @State var selectedURL: URL? = nil
+    var playbackSpeed: [Float] = [0.5, 1.0, 1.5, 2.0, 4.0]
     // playback control
-    @State private var playbackControlSize: CGSize = .init(width: 350, height: .zero)
-    @State private var currentVolume: Float = 0.5
-    
-    @State private var paused: Bool = false
-    @State private var fullScreen: Bool = false
-    @State private var settingsPresented: Bool = false
+    @State var playbackControlPresented: Bool = false
+    @State var playbackControlMinSize: CGSize = .init(width: 350, height: .zero)
+    @State var currentVolume: Float = 0.5
+    @State var previewTime: TimeInterval? = nil
+    @State var previewImage: CGImage? = nil
+    @State var previewImageOffsetX: CGFloat = .zero
+    @State var playbackCoordinate: CGRect = .zero
+    @State var previewImageSize: CGSize = .init(width: .zero, height: 100)
+    @State var settingsPresented: Bool = false
     // detect user's seek
-    @State private var sliderEditing: Bool = false
+    @State var seeking: Bool = false
     
     var body: some View {
-        ZStack {
-            if let player = arthubPlayer.videoPlayer {
-                PlayerView(player: player)
-                    .overlay {
-                        PlayOverlayView(player: player)
+        PlayerView()
+            .overlay {
+                PlayerOverlayView()
+                    .safeAreaPadding(.horizontal, 20)
+                    .safeAreaPadding(.vertical, 10)
+                    .contentShape(.rect)
+                    .onTapGesture {
+                        player.isPlaying ? player.pause() : player.play()
                     }
-                    .frame(minWidth: max(playbackControlSize.width, helpSize.width),
-                           minHeight: playbackControlSize.height + helpSize.height)
             }
-        }
-        .task {
-            do {
-                debugPrint("Begin setVideoPlayer")
-                try await arthubPlayer.setVideoPlayer(url: Bundle.main.url(forResource: movie.filepath, withExtension:"mp4")!,
-                                                      startTime: movie.currentTime)
-            } catch {
-                print("setVideoPlayer error, \(error)")
+            .frame(minWidth: playbackControlMinSize.width,
+                   minHeight: playbackControlMinSize.height)
+            .navigationTitle(title)
+            .navigationBarBackButtonHidden(true)
+            .toolbar(.hidden, for: .windowToolbar)
+            .inspector(isPresented: $settingsPresented) {
+                PlayerSettingsView()
+                    .animation(.easeInOut, value: settingsPresented)
             }
-            
-        }
-        .onChange(of: fullScreen, initial: false) { oldValue, newValue in
-            DispatchQueue.main.async {
-                if !oldValue && newValue {
-                    NSApplication.shared.mainWindow?.toggleFullScreen(nil)
-                } else if oldValue && !newValue {
-                    NSApplication.shared.mainWindow?.toggleFullScreen(NSWindow.StyleMask.fullScreen)
+            .onHover { hovering in
+                playbackControlPresented = hovering
+            }
+            .onAppear {
+                windowState.setColumnVisibility(.detailOnly)
+            }
+            .task(priority: .userInitiated) {
+                do {
+                    try await initPlayer()
+                } catch {
+                    Logger.shared.error("initPlayer error, \(error.localizedDescription)")
                 }
             }
+    }
+    
+    func initPlayer() async throws {
+        for url in urls {
+            let tracks = try await AVURLAsset(url: url).loadTracks(withMediaType: .video)
+            guard let track = tracks.first else{
+                continue
+            }
+            groupedURL[try await track.load(.naturalSize).toDisplayResolution()] = url
         }
-        .onHover { hovering in
-            controlPresented = hovering
+        selectedURL = groupedURL.first?.value
+        guard let url = selectedURL else {
+            return
+        }
+        try await player.start(url: url, startTime: metrics.currentTime)
+    }
+    
+    func audible(url: URL) async throws {
+        let asset = AVURLAsset(url: url)
+        for characteristic in try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions) {
+            debugPrint("\(characteristic)")
+            // Retrieve the AVMediaSelectionGroup for the specified characteristic.
+            if let group = try await asset.loadMediaSelectionGroup(for: characteristic) {
+                // Print its options.
+                for option in group.options {
+                    debugPrint("Option: \(option.displayName)")
+                }
+            }
         }
     }
 }
@@ -66,208 +103,225 @@ struct MoviePlayerView: View {
 extension MoviePlayerView {
     
     @ViewBuilder
-    func PlayerView(player: AVPlayer) -> some View {
-        VideoPlayer(player: player)
-            .onChange(of: arthubPlayer.currentTime, initial: true) { _, newValue in
-                if !sliderEditing {
-                    movie.currentTime  = newValue
-                    if arthubPlayer.durationValid() {
-                        movie.progress = newValue / arthubPlayer.duration
-                        if movie.progress > 1 {
-                            movie.progress = 1
-                        }
-                    }
+    func PlayerView() -> some View {
+        VideoPlayer(player: player.player)
+            .animation(.smooth, value: selectedURL)
+            .onChange(of: player.currentTime, initial: true) { _, newValue in
+                if !seeking {
+                    metrics.currentTime  = newValue
                 }
             }
-            .onChange(of: presented) {
-                arthubPlayer.reset()
+            .onChange(of: selectedURL, initial: false) { _, newValue in
+                guard let url = newValue else {
+                    return
+                }
+                Task(priority: .userInitiated) {
+                    try await player.replace(url: url, startTime: metrics.currentTime)
+                }
             }
-            .onChange(of: player.volume) {
-                currentVolume = player.volume
-            }
-            .onChange(of: paused, initial: true) {
-                paused ? player.pause() : player.play()
-            }
-            .onKeyPress(.init("?")) {
-                helpPresented.toggle()
-                return .handled
+            .onChange(of: previewTime, initial: true) { oldValue, newValue in
+                guard let newPreviewTime = newValue else {
+                    return
+                }
+                if let oldPreviewTime = oldValue,
+                    abs(oldPreviewTime - newPreviewTime) < 1 {
+                    return
+                }
+                
+                previewImageSize.width = previewImageSize.height * player.ratio
+                let previewProgress = newPreviewTime / player.duration
+                previewImageOffsetX = playbackCoordinate.minX +
+                playbackCoordinate.width * previewProgress - previewImageSize.width / 2
+                let  previewImageOffsetMaxX = playbackCoordinate.width - previewImageSize.width / 2
+                previewImageOffsetX =  previewImageOffsetX.clamp(to: 0...previewImageOffsetMaxX)
+                
+                player.generateImage(for: newPreviewTime) { image in
+                    DispatchQueue.main.async {
+                        previewImage = image
+                    }
+                }
             }
     }
     
     @ViewBuilder
-    func PlayOverlayView(player: AVPlayer) -> some View {
-        VStack {
-            HStack {
+    func PlayerOverlayView() -> some View {
+        VStack(alignment: .leading) {
+            
+            HStack(alignment: .top) {
+                Button {
+                    exit()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.largeTitle)
+                }
+                .opacity(playbackControlPresented ? 1 : 0)
+                .cursor()
+                .keyboardShortcut(.escape, modifiers: [])
+                
                 Spacer()
-                HelpView()
-                    .padding(5)
-                    .background {
-                        RoundedRectangle(cornerRadius: .defaultCornerRadius)
-                            .fill(Color.highlightColor.opacity(0.8))
-                    }
-                    .opacity(controlPresented ? 1 : 0)
-                    .keyboardShortcut(.init("?"))
-                    .keyboardShortcut(.init("/"))
-                    .overlay {
-                        GeometryReader {proxy in
-                            Color.clear.onAppear {
-                                helpSize = proxy.size
-                            }
-                        }
-                    }
             }
-            .safeAreaPadding(5)
+            
             Spacer()
-            PlayBackControlView(player: player)
-                .padding(5)
-                .opacity(controlPresented ? 1 : 0)
-                .frame(width: playbackControlSize.width)
-                .fixedSize()
+            
+            PreviewImageView()
+                .offset(x: previewImageOffsetX)
+            
+            PlaybackControlView()
+                .opacity(playbackControlPresented ? 1 : 0)
+                .frame(minWidth: playbackControlMinSize.width)
                 .overlay {
                     GeometryReader {proxy in
                         Color.clear.onAppear {
-                            playbackControlSize = proxy.size
+                            playbackControlMinSize.height = proxy.size.height
                         }
                     }
                 }
         }
-        .inspector(isPresented: $settingsPresented) {
-            PlayerSettingsView(player: player)
+        .buttonStyle(.borderless)
+    }
+    
+    @ViewBuilder
+    func PreviewImageView() -> some View {
+        if let previewImage = previewImage,
+           let previewTime = previewTime{
+            VStack(alignment: .center) {
+                Image(previewImage, scale: 1, label: Text(previewTime.formatted()))
+                    .resizable()
+                    .frame(width: previewImageSize.width,
+                           height: previewImageSize.height)
+                    .scaledToFit()
+                    .cornerRadius()
+                Text(previewTime.formatted())
+            }
         }
     }
     
     @ViewBuilder
-    func PlayBackControlView(player: AVPlayer) -> some View {
-        PlayBackControl(player: player)
-            .overlay{
-                Color.clear
-                    .onKeyPress(.escape) {
-                        presented = false
-                        return .handled
+    func PlaybackControlView() -> some View {
+        VStack(alignment: .leading) {
+            
+            HStack(alignment: .center) {
+                Text(metrics.currentTime.formatted())
+                ArthubSlider(value: $metrics.currentTime,
+                             in: 0...player.duration) { newValue in
+                    if seeking && !newValue {
+                        player.seek(to: metrics.currentTime)
                     }
+                    seeking = newValue
+                } onHoveringValueChanged: { newValue in
+                    previewTime = newValue
+                } onHoverEnded: {
+                    previewTime = nil
+                    previewImage = nil
+                }
+                .overlay {
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(
+                                key: PlaybackCoordinatePreference.self,
+                                value: proxy.frame(in: .global)
+                              )
+                    }
+                }
+                
+                Text(player.duration.formatted())
             }
-            .padding(10)
-            .background {
-                RoundedRectangle(cornerRadius: .defaultCornerRadius)
-                    .fill(Color.highlightColor.opacity(0.4))
+            .onPreferenceChange(PlaybackCoordinatePreference.self) { value in
+                playbackCoordinate = value
             }
-    }
-    
-    @ViewBuilder
-    func PlayBackControl(player: AVPlayer) -> some View {
-        VStack {
+            
             HStack {
                 VolumeBar(volume: $currentVolume)
-                .onChange(of: currentVolume, initial: true) { _, newValue in
-                    player.volume = newValue
+                    .onChange(of: currentVolume, initial: true) { _, newValue in
+                    player.setVolume(newValue)
                 }
+                .frame(width: 150)
+                .alignmentGuide(HorizontalAlignment.trailing) { _ in 0 }
                 
-                Button {
-                    player.seek(to: .init(seconds: arthubPlayer.currentTime - 15, preferredTimescale: 1))
-                } label: {
-                    Image(systemName: "gobackward.15")
-                }
-                .keyboardShortcut(.leftArrow, modifiers: [])
+                Spacer()
                 
-                Button {
-                    paused.toggle()
-                } label: {
-                    Image(systemName: paused ? "play.fill" : "pause.fill")
-                }
-                .keyboardShortcut(.space, modifiers: [])
-                
-                Button {
-                    player.seek(to: .init(seconds: arthubPlayer.currentTime + 15, preferredTimescale: 1))
-                } label: {
-                    Image(systemName: "goforward.15")
-                }
-                .keyboardShortcut(.rightArrow, modifiers: [])
-                
-                Button {
-                    fullScreen.toggle()
-                } label: {
-                    Image(systemName: fullScreen ? "arrow.down.right.and.arrow.up.left" :
-                            "arrow.up.left.and.arrow.down.right")
-                }
-                
-                Button {
-                    withAnimation {
-                        settingsPresented.toggle()
+                HStack(alignment: .center) {
+                    Button {
+                        player.seek(to: player.currentTime - 15)
+                    } label: {
+                        Image(systemName: "gobackward.15")
                     }
-                    controlPresented = settingsPresented ? false : controlPresented
+                    .keyboardShortcut(.leftArrow, modifiers: [])
+                    
+                    Button {
+                        player.isPlaying ? player.pause() : player.pause()
+                    } label: {
+                        Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                    } 
+                    .keyboardShortcut(.space, modifiers: [])
+                    
+                    Button {
+                        player.seek(to: player.currentTime + 15)
+                    } label: {
+                        Image(systemName: "goforward.15")
+                    }
+                    .keyboardShortcut(.rightArrow, modifiers: [])
+                }
+                .alignmentGuide(HorizontalAlignment.trailing) { -$0.width / 2 }
+                
+                Spacer()
+                
+                Picker("", selection: $player.rate) {
+                    ForEach(playbackSpeed, id: \.self) { speed in
+                        Text("\(speed.formatted())x").tag(speed)
+                    }
+                }
+                
+                Picker("", selection: $selectedURL) {
+                    ForEach(groupedURL.keys.sorted{ $0.rawValue < $1.rawValue }) { k in
+                        Text(k.rawValue).tag(groupedURL[k])
+                    }
+                }
+                
+                Button {
+                    settingsPresented.toggle()
                 } label: {
                     Image(systemName: "ellipsis")
-                        .rotationEffect(.degrees(90))
                 }
-                
+                .alignmentGuide(HorizontalAlignment.trailing) { $0[.trailing] - $0.width }
             }
             .font(.title2)
-            
-            ProgressBar(value: $movie.currentTime, total: $arthubPlayer.duration, format: [.hour, .minute, .second]) { newValue in
-                sliderEditing = newValue
-                if sliderEditing {
-                    // pause for seeking smothly
-                    paused = true
-                } else {
-                    // resume to the original state
-                    paused = false
-                }
-            }
-            .onChange(of: movie.currentTime) { _, newValue in
-                if sliderEditing {
-                    DispatchQueue.main.async {
-                        arthubPlayer.videoPlayer?.seek(to: .init(seconds: newValue, preferredTimescale: 1))
-                    }
-                }
-            }
         }
-        .buttonStyle(.borderless)
+    }
+}
+
+extension MoviePlayerView {
+    
+    @ViewBuilder
+    func PlayerSettingsView() -> some View {
         
     }
 }
 
 extension MoviePlayerView {
-    @ViewBuilder
-    func HelpView() -> some View {
-        VStack(alignment: .center) {
-            Text("common.help")
-                .font(.title)
-                .fontWeight(.bold)
-            Grid(alignment: .leadingFirstTextBaseline) {
-                
-                Group {
-                    GridRow {
-                        Image(systemName: "space").gridColumnAlignment(.trailing)
-                        Text("keyboardShortCut.playOrPause")
-                    }
-                    GridRow {
-                        Image(systemName: "arrowshape.left.arrowshape.right").gridColumnAlignment(.trailing)
-                        Text("keyboardShortCut.forwardOrBackward15seconds")
-                    }
-                    GridRow {
-                        HStack {
-                            Image(systemName: "arrowshape.up").gridColumnAlignment(.trailing)
-                            Image(systemName: "arrowshape.down").gridColumnAlignment(.trailing)
-                        }.gridColumnAlignment(.trailing)
-                        Text("keyboardShortCut.increaseOrDecreaseVolume")
-                    }
-                }
-                .font(.title3)
-            }
+    
+    func exit() {
+        if !player.isDurationValid() {
+            metrics.setProgress(metrics.currentTime / player.duration)
         }
+        player.stop()
+        self.presentationMode.wrappedValue.dismiss()
+        windowState.pop()
     }
     
-    
-    @ViewBuilder
-    func PlayerSettingsView(player: AVPlayer) -> some View {
-        VStack {
-            Text("To be continue")
-        }
+}
+
+private struct PlaybackCoordinatePreference: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 
 #Preview {
-    MoviePlayerView(presented: .constant(true), movie: .constant(Movie.examples()[0]))
+    MoviePlayerView(title: "1231",
+                    urls: .constant([]),
+                    metrics: .constant(MovieDetail.examples()[0].metrics))
         .frame(width: 600, height: 500)
-        .environmentObject(ArthubPlayer())
 }

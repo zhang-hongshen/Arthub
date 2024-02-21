@@ -7,6 +7,7 @@
 
 import XCTest
 @testable import Arthub
+import AVFoundation
 
 final class ArthubTests: XCTestCase {
 
@@ -18,30 +19,37 @@ final class ArthubTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testParseLyrics() throws {
-        let lyrics = Lyrics("""
-            00:00:10.00 00:20.00 第一句歌词
-            00:10.50 00:11.50 第二句歌词
-            第三句歌词
-            """)
-            
-        let lyricSegments = lyrics.parse()
-            
-        XCTAssertEqual(lyricSegments.count, 3, "Expected 3 lyric segments")
-        
-        XCTAssertEqual(lyricSegments[0].startedAt, 10.0)
-        XCTAssertEqual(lyricSegments[0].endedAt, 20.0)
-        XCTAssertEqual(lyricSegments[0].text, "第一句歌词")
-        
-        XCTAssertEqual(lyricSegments[1].startedAt, 10.5)
-        XCTAssertEqual(lyricSegments[1].endedAt, 11.5)
-        XCTAssertEqual(lyricSegments[1].text, "第二句歌词")
-        
-        XCTAssertNil(lyricSegments[2].startedAt)
-        XCTAssertNil(lyricSegments[2].endedAt)
-        XCTAssertEqual(lyricSegments[2].text, "第三句歌词")
+    func testParseTTML() throws {
+        let url = Bundle.main.url(forResource: "ttml", withExtension: "ttml")!
+        let parser = TTMLParser.shared
+        let lyrics = parser.parse(url: url)
+        XCTAssert(lyrics[0].content == "City of stars")
+        XCTAssert(lyrics[1].content == "Are you shining just for me?")
     }
 
+    func testURL() {
+
+        print(FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!.relativePath)
+        print(FileManager.default.urls(for: .musicDirectory, in: .userDomainMask).first!.relativePath)
+    }
+    
+    
+    func testLoadMediaSelectionOptions() async throws {
+        let url = URL(string:  "file:///Users/zhanghongshen/Movies/Arthub/Aquaman%20and%20the%20Lost%20Kingdom%20(2023)/Aquaman%20and%20the%20Lost%20Kingdom%20(2023).mp4")
+        
+        let asset = AVURLAsset(url: url!)
+        for characteristic in try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions) {
+            debugPrint("\(characteristic)")
+            // Retrieve the AVMediaSelectionGroup for the specified characteristic.
+            if let group = try await asset.loadMediaSelectionGroup(for: characteristic) {
+                // Print its options.
+                for option in group.options {
+                    debugPrint("  Option: \(option.displayName)")
+                }
+            }
+        }
+    }
+    
     func testPerformanceExample() throws {
         // This is an example of a performance test case.
         self.measure {

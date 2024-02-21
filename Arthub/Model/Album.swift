@@ -6,31 +6,30 @@
 //
 
 import Foundation
-import SwiftData
 
-
-@Model
-class Album {
-    @Attribute(.unique) let id = UUID()
+class Album: Identifiable {
+    let id = UUID()
     let createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     
-    var name: String
-    var artist: String
-    var releaseYear: String
+    var title: String
+    var artists: [Artist]
+    var releaseDate: Date?
+    var cover: URL?
     
-    @Relationship(deleteRule:.noAction, inverse: \Music.album)
-    var music: [Music] = []
     
-    init(name: String = "", artist: String = "", releaseYear: String = "") {
-        self.name = name
-        self.artist = artist
-        self.releaseYear = releaseYear
+    init(title: String = "", artists: [Artist] = [],
+         releaseDate: Date? = nil, cover: URL? = nil) {
+        self.title = title
+        self.artists = artists
+        self.releaseDate = releaseDate
+        self.cover = cover
     }
 }
 
-extension Album: Hashable {
+extension Album: Equatable {
     static func == (lhs: Album, rhs: Album) -> Bool {
         return lhs.id == rhs.id
     }
 }
+

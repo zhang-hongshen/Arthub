@@ -9,25 +9,33 @@ import SwiftUI
 
 struct MusicCardView: View {
     
-    @Bindable var music: Music
-    @State var frameWidth: CGFloat = 200
+    @Binding var music: Music
+    @State var frameWidth: CGFloat
     
     var body: some View {
         VStack(alignment: .center) {
-            let imageWidth = frameWidth * 0.8
-            Image(music.thumbnail)
-                .resizable()
-                .frame(width: imageWidth, height: imageWidth)
-                .scaledToFit()
-                .aspectRatio(contentMode: .fill)
-                .rounded()
-            Text(music.name)
+            
+            AsyncImage(url: music.album?.cover,
+                       transaction: .init(animation: .smooth)
+            ) { phase in
+                switch phase {
+                case .empty:
+                    DefaultImageView()
+                case .success(let image):
+                    image.resizable().scaledToFit()
+                case .failure(let error):
+                    ErrorImageView(error: error)
+                @unknown default:
+                    fatalError()
+                }
+            }
+            .frame(width: frameWidth, height: frameWidth)
+            .cornerRadius()
+            
+            Text(music.title)
                 .font(.title2)
+            
+            Text(music.artists.map{ $0.name }.joined(separator: " & "))
         }
-        .padding(10)
     }
-}
-
-#Preview {
-    MusicCardView(music: Music.examples()[0])
 }

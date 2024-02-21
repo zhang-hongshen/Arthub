@@ -6,42 +6,55 @@
 //
 
 import SwiftUI
+import TMDb
 
 struct MovieCardView: View {
     
-    @Binding var movie: Movie
+    @State var movie: MovieDetail
     @State var frameWidth: CGFloat = 200
 
     var body: some View {
         VStack(alignment: .leading) {
-            Image(movie.thumbnail)
-                .resizable()
-                .frame(width: frameWidth, height: frameWidth * 1.4)
-                .scaledToFill()
-                .aspectRatio(contentMode: .fill)
-                .rounded()
-            HStack(alignment: .center) {
-                VStack(alignment: .leading) {
-                    Text(movie.name)
-                        .font(.title2)
-                    Text(movie.releaseYear)
-                }
-                Spacer()
-                if (movie.progress > 0) {
-                    HStack(spacing: 5) {
-                        ProgressView(value: movie.progress, total: 1)
-                            .progressViewStyle(.circular)
-                        Text("\(movie.progress.formatted(.percent))")
-                    }
-                    .font(.footnote)
+            
+            AsyncImage(url: movie.metadata.posterPath,
+                       transaction: .init(animation: .smooth)
+            ) { phase in
+                switch phase {
+                case .empty:
+                    DefaultImageView()
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                case .failure(let error):
+                    ErrorImageView(error: error)
+                @unknown default:
+                    fatalError()
                 }
             }
+            .frame(width: frameWidth, height: frameWidth * 1.4)
+            .clipped()
+            .overlay(alignment: .bottomLeading) {
+                Color.selectedContentBackgroundColor
+                    .frame(width: frameWidth * movie.metrics.progress,
+                           height: .defaultCornerRadius)
+            }
+            .cornerRadius()
+            .cursor()
+            
+
+            Text(movie.metadata.title)
+                .font(.title)
+                .fontWeight(.bold)
+
+            if let releaseDate = movie.metadata.releaseDate {
+                Text(releaseDate.formatted(date: .abbreviated, time: .omitted))
+                    .font(.title3)
+            }
         }
-        .padding(10)
+        .frame(width: frameWidth)
     }
     
 }
 
 #Preview {
-    MovieCardView(movie: .constant(Movie.examples()[0]))
+    MovieCardView(movie: MovieDetail.examples()[0])
 }

@@ -8,34 +8,35 @@
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, keybindings, locations
+    case general, storage
     var id: Self { self }
 }
 
 struct SettingsView: View {
+    
     @State private var selectedTab: SettingsTab = .general
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        AutoWidthTabView(selection: $selectedTab) {
+
             GeneralView().tag(SettingsTab.general)
                 .tabItem {
                     Image(systemName: "gearshape")
-                    Text("settings.tab.general")
+                    Text("settings.general")
                 }
-            KeybindingView().tag(SettingsTab.keybindings)
-                .tabItem {
-                    Image(systemName: "keyboard")
-                    Text("settings.tab.keybindings")
-                }
-            LocationView().tag(SettingsTab.locations)
+            
+            StorageView().tag(SettingsTab.storage)
                 .tabItem {
                     Image(systemName: "externaldrive")
-                    Text("settings.tab.locations")
+                    Text("settings.storage")
                 }
+            
         }
-        .frame(width: 500, height: 500)
+        
+        .safeAreaPadding(10)
     }
 }
+
 
 #Preview {
     SettingsView()

@@ -7,51 +7,49 @@
 
 import SwiftUI
 import SwiftData
+import TMDb
 
 @main
 struct ArthubApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Movie.self,
-            Music.self
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    var sharedModelContainer: ModelContainer
+    
+    init() {
+        self.sharedModelContainer = {
+            let schema = Schema([
+                MovieMetrics.self,
+            ])
+            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
 
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
+            do {
+                return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
+        }()
+        TMDbConfiguration.configure(TMDbConfiguration.shared)
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .applyUserSettings()
+                    
         }
-        .windowResizability(.contentSize)
+        .windowResizability(.contentMinSize)
         .defaultPosition(.center)
         .modelContainer(sharedModelContainer)
         
         Settings {
             SettingsView()
+                .applyUserSettings()
         }
-        WindowGroup("", id: "window.progress", for: Double.self) { current in
-            if let value = current.wrappedValue {
-                VStack {
-                    ProgressView(value: value) {
-                        Text(value.rounded().formatted())
-                    }
-                    .padding(10)
-                    .frame(width: 300, height: 60)
-                    .fixedSize()
-                    Button("common.cancel") {
-                        
-                    }
-                }
-                .padding(10)
-            }
-        }
-        .defaultPosition(.center)
-        .windowResizability(.contentSize)
+        
+        ProgressWindow()
+            .defaultPosition(.center)
+            .windowResizability(.contentSize)
+        
+        ErrorWindow()
+            .defaultPosition(.center)
+            .windowResizability(.contentSize)
     }
 }

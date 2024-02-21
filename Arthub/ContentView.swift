@@ -16,25 +16,32 @@ enum MediaType {
 struct ContentView: View {
     
     @State private var selectedMediaType: MediaType? = nil
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @StateObject private var arthubPlayer: ArthubPlayer = ArthubPlayer()
+    @State private var state =  WindowState()
+    @StateObject private var videoPlayer = ArthubVideoPlayer()
+    @StateObject private var audioPlayer = ArthubAudioPlayer()
     
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
+        NavigationSplitView(columnVisibility: Binding(
+            get: { state.columnVisibility },
+            set: { state.setColumnVisibility($0) })) {
             SidebarView()
         } detail: {
             if let mediaType = selectedMediaType {
-                Group {
+                NavigationStack {
                     switch mediaType {
                     case .movie:
-                        MovieView(columnVisibility: $columnVisibility)
+                        MovieView()
                     case .music:
-                        MusicView(columnVisibility: $columnVisibility)
+                        MusicView()
                     }
                 }
-                .environmentObject(arthubPlayer)
+                
             }
         }
+        .environment(state)
+        .environmentObject(videoPlayer)
+        .environmentObject(audioPlayer)
+        .animation(.easeInOut, value: state.columnVisibility)
     }
 }
 
@@ -42,14 +49,16 @@ extension ContentView {
     @ViewBuilder
     func SidebarView() -> some View {
         List(selection: $selectedMediaType) {
-            Text("Arthub")
+            Text(verbatim: "Arthub")
                 .font(.largeTitle)
-                .fontWeight(.bold)
+                .fontWeight(.semibold)
+            
             Group {
                 Label("sidebar.movie", systemImage: "film").tag(MediaType.movie)
                 Label("sidebar.music", systemImage: "music.note").tag(MediaType.music)
+                    .disabled(true)
             }
-            .font(.title2)
+            .font(.title3)
         }
     }
 }

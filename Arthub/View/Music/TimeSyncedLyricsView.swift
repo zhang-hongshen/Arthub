@@ -6,25 +6,43 @@
 //
 
 import SwiftUI
-import AVKit
+import AVFoundation
+
 struct TimeSyncedLyricsView: View {
     
-    @State var lyrics: [LyricSegment] = LyricSegment.examples()
+    @State var lyrics: [Lyric]
     @Binding var currentTime: TimeInterval
-    @State var onLyricClicked : (LyricSegment) -> Void = { _ in }
-
+    @State var onLyricClicked: (Lyric) -> Void = {_ in}
     
     @State private var currentLyricID : UUID? = nil
     @State private var hoveringLyricID : UUID? = nil
-    
+
     var body: some View {
+        if lyrics.isEmpty {
+            NoLyricsView()
+        } else {
+            MainView()
+        }
+    }
+}
+
+extension TimeSyncedLyricsView {
+    
+    @ViewBuilder
+    func NoLyricsView() -> some View {
+        Text("No Lyrics Available")
+            .font(.largeTitle)
+            .fontWeight(.bold)
+    }
+    
+    @ViewBuilder
+    func MainView() -> some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading) {
-                    ForEach(lyrics) { lyric in
+                    ForEach(lyrics.sorted(using: KeyPathComparator(\Lyric.startedAt, order: .forward))) { lyric in
                         let shown = lyric.startedAt <= currentTime
-                            && lyric.endedAt >= currentTime
-                        
+                        && lyric.endedAt >= currentTime
                         Button {
                             onLyricClicked(lyric)
                         } label: {
@@ -63,6 +81,7 @@ struct TimeSyncedLyricsView: View {
 }
 
 #Preview {
-    TimeSyncedLyricsView(lyrics: LyricSegment.examples(), currentTime: .constant(10))
+    TimeSyncedLyricsView(lyrics: Lyric.examples(), currentTime: .constant(19))
         .frame(width: 500, height: 500)
+        .environment(ArthubAudioPlayer())
 }
