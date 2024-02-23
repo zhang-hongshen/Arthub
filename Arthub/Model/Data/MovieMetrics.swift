@@ -12,6 +12,7 @@ import SwiftData
 @Model
 class MovieMetrics: Identifiable {
     @Attribute(.unique) let id = UUID()
+    
     var createdAt: Date = Date.now
     var watchedAt: Date? = nil
     
@@ -26,6 +27,9 @@ class MovieMetrics: Identifiable {
         self.imdbID = imdbID
     }
     
+}
+
+extension MovieMetrics {
     func setProgress(_ progress: Double) {
         self.progress = progress.clamp(to: 0...1)
         watchedAt = Date.now

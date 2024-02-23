@@ -10,12 +10,15 @@ import AVFoundation
 
 struct TimeSyncedLyricsView: View {
     
-    @State var lyrics: [Lyric]
-    @Binding var currentTime: TimeInterval
+    @Binding var lyrics: [Lyric]
+    @Binding var syncedTime: TimeInterval
     @State var onLyricClicked: (Lyric) -> Void = {_ in}
     
-    @State private var currentLyricID : UUID? = nil
-    @State private var hoveringLyricID : UUID? = nil
+    @State private var hoveringLyricID : Lyric.ID? = nil
+    
+    private var currentLyricID: Lyric.ID? {
+        lyrics.first { $0.start <= syncedTime && $0.end > syncedTime }?.id
+    }
 
     var body: some View {
         if lyrics.isEmpty {
@@ -37,51 +40,36 @@ extension TimeSyncedLyricsView {
     
     @ViewBuilder
     func MainView() -> some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading) {
-                    ForEach(lyrics.sorted(using: KeyPathComparator(\Lyric.startedAt, order: .forward))) { lyric in
-                        let shown = lyric.startedAt <= currentTime
-                        && lyric.endedAt >= currentTime
-                        Button {
-                            onLyricClicked(lyric)
-                        } label: {
-                            Text(lyric.content)
-                                .multilineTextAlignment(.leading)
-                                .padding(15)
-                                .blur(radius: shown ? 0.0 : 1.5)
-                        }
-                        .buttonStyle(.borderless)
-                        .id(lyric.id)
-                        .background{
+        ScrollView {
+            LazyVStack(alignment: .leading) {
+                ForEach(lyrics.sorted(using: KeyPathComparator(\Lyric.start, order: .forward))) { lyric in
+                    DynamicLyricView(lyric: lyric, syncedTime: $syncedTime).id(lyric.id)
+                        .padding(10)
+                        .background {
                             RoundedRectangle(cornerRadius: .defaultCornerRadius)
-                                .fill(hoveringLyricID == lyric.id ? .highlightColor.opacity(0.4) : Color.clear)
+                                .opacity(hoveringLyricID == lyric.id ? 0.2 : 0)
                         }
+                        .blur(radius: currentLyricID == lyric.id ? 0 : 2)
+                        .onTapGesture { onLyricClicked(lyric) }
                         .onHover { hovering in
                             hoveringLyricID = hovering ? lyric.id : nil
                         }
-                        .onChange(of: shown, initial: true) {
-                            if shown {
-                                currentLyricID = lyric.id
-                            }
-                        }
-                    }
-                }
-                .font(.largeTitle)
-                .fontWeight(.bold)
-            }
-            .scrollIndicators(.never)
-            .onChange(of: currentLyricID, initial: true) {
-                withAnimation(Animation.smooth()) {
-                    proxy.scrollTo(currentLyricID, anchor: .center)
                 }
             }
+            .font(.largeTitle)
+            .fontWeight(.bold)
+            .scrollTargetLayout()
         }
+        .scrollIndicators(.never)
+        .scrollPosition(id: Binding(get: { currentLyricID }, set: { _ in}),
+                        anchor: UnitPoint(x: 0.5, y: 0.25))
+        .animation(.bouncy(duration: 1), value: currentLyricID)
     }
 }
 
+
 #Preview {
-    TimeSyncedLyricsView(lyrics: Lyric.examples(), currentTime: .constant(19))
+    TimeSyncedLyricsView(lyrics: .constant(Lyric.examples()), syncedTime: .constant(19))
         .frame(width: 500, height: 500)
-        .environment(ArthubAudioPlayer())
+        .environment(ArthubAudioPlayer(AudioNowPlayableBehavior()))
 }

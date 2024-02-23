@@ -9,6 +9,16 @@ import Foundation
 import SwiftUI
 import AVFoundation
 
+enum MusicOrderProperty: String, CaseIterable, Identifiable {
+    case title, createdAt, releaseDate
+    var id: Self { self }
+}
+
+enum MusicGroup: String, CaseIterable, Identifiable {
+    case none, releaseYear
+    var id: Self { self }
+}
+
 class Music: Identifiable {
     let id = UUID()
     let createdAt: Date = Date.now
@@ -23,12 +33,13 @@ class Music: Identifiable {
     
     var lyrics: URL?
     var album: Album?
-    var order: Int?
+    var discNum: Int?
+    var trackNum: Int?
     
-    init(title: String = "" , url: URL,
-         artists: [Artist] = [], composers: [String] = [],
-         lyricists: [String] = [], releaseDate: Date? = nil,
-         lyrics: URL? = nil, album: Album? = nil, order: Int? = nil) {
+    init(title: String = "" , url: URL, artists: [Artist] = [],
+         composers: [String] = [], lyricists: [String] = [],
+         releaseDate: Date? = nil, lyrics: URL? = nil, album: Album? = nil,
+         trackNum: Int? = nil, discNum: Int? = nil) {
         self.title = title
         self.url = url
         self.artists = artists
@@ -37,14 +48,8 @@ class Music: Identifiable {
         self.releaseDate = releaseDate
         self.lyrics =  lyrics
         self.album = album
-        self.order = 0
-    }
-    
-    func getArtists() -> [Artist] {
-        if !artists.isEmpty {
-            return artists
-        }
-        return album?.artists ?? []
+        self.trackNum = trackNum
+        self.discNum = discNum
     }
 }
 
@@ -52,16 +57,6 @@ extension Music: Equatable {
     static func == (lhs: Music, rhs: Music) -> Bool {
         return lhs.id == rhs.id
     }
-}
-
-enum MusicOrderProperty: String, CaseIterable, Identifiable {
-    case title, createdAt, releaseDate
-    var id: Self { self }
-}
-
-enum MusicGroup: String, CaseIterable, Identifiable {
-    case none, releaseYear
-    var id: Self { self }
 }
 
 extension Music {
@@ -84,13 +79,19 @@ extension Music {
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask {
                 let commonMetadata = try await asset.load(.commonMetadata)
-                try await self.loadCommonMetadata(commonMetadata)
+                try await self.commonMetadata(commonMetadata)
             }
             
             group.addTask {
                 let id3Metadata = try await asset.loadMetadata(for: .id3Metadata)
-                try await self.loadID3Metadata(id3Metadata)
+                try await self.id3Metadata(id3Metadata)
             }
+            
+            group.addTask {
+                let iTunesMetadata = try await asset.loadMetadata(for: .iTunesMetadata)
+                try await self.iTunesMetadata(iTunesMetadata)
+            }
+            try await group.waitForAll()
         }
     }
     
@@ -101,14 +102,7 @@ extension Music {
 
 extension Music {
     
-    private func loadCommonMetadata(_ metadata: [AVMetadataItem]) async throws {
-        if title.isEmpty {
-            if let artworkItem = AVMetadataItem.metadataItems(
-                from: metadata, filteredByIdentifier: .commonIdentifierTitle).first,
-                let title = try await artworkItem.load(.stringValue) {
-                self.title = title
-            }
-        }
+    private func commonMetadata(_ metadata: [AVMetadataItem]) async throws {
         if artists.isEmpty {
             if let artworkItem = AVMetadataItem.metadataItems(
                 from: metadata, filteredByIdentifier: .commonIdentifierArtist).first,
@@ -118,13 +112,7 @@ extension Music {
         }
     }
     
-    private func loadID3Metadata(_ metadata: [AVMetadataItem]) async throws {
-        if title.isEmpty {
-            if let artworkItem = AVMetadataItem.metadataItems(from: metadata, filteredByIdentifier: .id3MetadataTitleDescription).first,
-                let title = try await artworkItem.load(.stringValue) {
-                self.title = title
-            }
-        }
+    private func id3Metadata(_ metadata: [AVMetadataItem]) async throws {
         if artists.isEmpty {
             if let artworkItem = AVMetadataItem.metadataItems(
                 from: metadata, filteredByIdentifier: .id3MetadataOriginalArtist).first,
@@ -150,11 +138,36 @@ extension Music {
                 }
             }
         }
-        if self.releaseDate == nil {
+        if releaseDate == nil {
             if let artworkItem = AVMetadataItem.metadataItems(from: metadata,
                                                               filteredByIdentifier: .id3MetadataReleaseTime).first,
                let releaseDate = try await artworkItem.load(.dateValue) {
                 self.releaseDate = releaseDate
+            }
+        }
+    }
+    
+    private func iTunesMetadata(_ metadata: [AVMetadataItem]) async throws {
+        
+        if artists.isEmpty{
+            if let artworkItem = AVMetadataItem.metadataItems(
+                from: metadata, filteredByIdentifier: .iTunesMetadataArtist).first,
+                let artist = try await artworkItem.load(.stringValue) {
+                self.artists.append(Artist(name: artist))
+            }
+        }
+        if trackNum == nil {
+            if let artworkItem = AVMetadataItem.metadataItems(
+                from: metadata, filteredByIdentifier: .iTunesMetadataTrackNumber).first,
+                let trackNum = try await artworkItem.load(.numberValue) {
+                self.trackNum = trackNum.intValue
+            }
+        }
+        if discNum == nil {
+            if let artworkItem = AVMetadataItem.metadataItems(
+                from: metadata, filteredByIdentifier: .iTunesMetadataDiscNumber).first,
+               let discNum = try await artworkItem.load(.numberValue) {
+                self.discNum = discNum.intValue
             }
         }
     }

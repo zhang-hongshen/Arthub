@@ -18,3 +18,9 @@ class Artist: Identifiable {
         self.profiles = profiles
     }
 }
+
+extension Artist: Equatable {
+    static func==(lhs: Artist, rhs: Artist) -> Bool {
+        return lhs.name == rhs.name
+    }
+}

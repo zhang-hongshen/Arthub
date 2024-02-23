@@ -11,5 +11,5 @@ struct RegexPattern {
     // title (Year)
     static let movieName = /(?<title>.*?)\s*(\()?(?<year>\d{4})(\))?\s*/
     // order {-} title
-    static let musicName = /(?<order>\d*)?\s*(\-)?(?<title>.*)\s*/
+    static let musicName = /((?<discNum>\d*\s*[-])?\s*(?<trackNum>\d*))?\s*(\-)?(?<title>.*)\s*/
 }

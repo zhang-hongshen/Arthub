@@ -29,10 +29,12 @@ extension PersonDetail: Equatable {
 extension PersonDetail {
     
     func fetchRelatedData() async throws {
-        async let fetchCastMovies = fetchCastMovies()
-        async let fetchKnownFor = fetchKnownFor()
-        async let fetchProfiles = fetchProfiles()
-        try await (fetchCastMovies, fetchKnownFor, fetchProfiles)
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { try await self.fetchCastMovies() }
+            group.addTask { try await self.fetchKnownFor() }
+            group.addTask { try await self.fetchProfiles() }
+            try await group.waitForAll()
+        }
     }
     
     

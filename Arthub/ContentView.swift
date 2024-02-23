@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
-
 
 enum MediaType {
     case movie, music
@@ -18,7 +16,7 @@ struct ContentView: View {
     @State private var selectedMediaType: MediaType? = nil
     @State private var state =  WindowState()
     @StateObject private var videoPlayer = ArthubVideoPlayer()
-    @StateObject private var audioPlayer = ArthubAudioPlayer()
+    @StateObject private var audioPlayer = ArthubAudioPlayer(AudioNowPlayableBehavior())
     
     var body: some View {
         NavigationSplitView(columnVisibility: Binding(
@@ -35,7 +33,6 @@ struct ContentView: View {
                         MusicView()
                     }
                 }
-                
             }
         }
         .environment(state)
@@ -46,6 +43,7 @@ struct ContentView: View {
 }
 
 extension ContentView {
+    
     @ViewBuilder
     func SidebarView() -> some View {
         List(selection: $selectedMediaType) {
@@ -54,8 +52,8 @@ extension ContentView {
                 .fontWeight(.semibold)
             
             Group {
-                Label("sidebar.movie", systemImage: "film").tag(MediaType.movie)
-                Label("sidebar.music", systemImage: "music.note").tag(MediaType.music)
+                Label("movie", systemImage: "film").tag(MediaType.movie)
+                Label("music", systemImage: "music.note").tag(MediaType.music)
                     .disabled(true)
             }
             .font(.title3)

@@ -17,26 +17,26 @@ struct MusicInspectorView: View {
     
     @Binding var music: Music
     
-    @State private var selectedTab: MusicInspectorTab = .info
     @Environment(\.modelContext) private var modelContext
+    @State private var selectedTab: MusicInspectorTab = .info
+    @State private var lyrics: [Lyric] = []
     
     var body: some View {
         AutoWidthTabView(selection: $selectedTab) {
             InfoView().tag(MusicInspectorTab.info)
                 .tabItem {
-                    Text("inspector.tab.info")
+                    Text("music.detail")
                 }
-            LyricsEditView(lyricsURL: music.lyrics).tag(MusicInspectorTab.lyrics)
+            LyricsEditView(lyrics: $lyrics).tag(MusicInspectorTab.lyrics)
                 .tabItem {
-                    Text("inspector.tab.lyrics")
+                    Text("music.lyrics")
                 }
         }
         .task {
-            do {
-                try await music.loadMetadata()
-            } catch  {
-                debugPrint("Music load metadata error, \(error)")
+            guard let url = music.lyrics else {
+                return
             }
+            self.lyrics = Lyric.loadLyrics(url: url)
         }
     }
 }

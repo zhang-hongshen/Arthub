@@ -16,7 +16,8 @@ struct VolumeBar: View {
             Button {
                 volume = (volume - volumeAdjustStep).clamp(to: 0...1)
             } label: {
-                Image(systemName: volume == 0 ? "speaker.slash.fill" : "speaker.fill")
+                Image(systemName: "speaker")
+                    .symbolVariant(volume == 0 ? .slash : .none)
             }
             .keyboardShortcut(.downArrow, modifiers: [])
             .buttonStyle(.borderless)
@@ -27,11 +28,12 @@ struct VolumeBar: View {
             Button {
                 volume = (volume + volumeAdjustStep).clamp(to: 0...1)
             } label: {
-                Image(systemName: "speaker.wave.3.fill", variableValue: Double(volume))
+                Image(systemName: "speaker.wave.3", variableValue: Double(volume))
             }
             .keyboardShortcut(.upArrow, modifiers: [])
             .buttonStyle(.borderless)
         }
+        .symbolVariant(.fill)
     }
 }
 

@@ -148,7 +148,7 @@ struct MovieView: View {
                 ToolbarView()
             }
         }
-        .navigationTitle("sidebar.movie")
+        .navigationTitle("movie")
         .navigationDestination(isPresented: $detailPresented){
             if let movie = selectedMovie {
                 MovieDetailView(movie: movie)

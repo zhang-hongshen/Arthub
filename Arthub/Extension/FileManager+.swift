@@ -11,6 +11,6 @@ import Foundation
 extension FileManager {
     
     func fileExists(at: URL) -> Bool {
-        return FileManager.default.fileExists(atPath: at.absoluteString)
+        return FileManager.default.fileExists(atPath: at.relativePath)
     }
 }

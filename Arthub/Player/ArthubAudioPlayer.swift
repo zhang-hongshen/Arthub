@@ -2,226 +2,554 @@
 //  ArthubAudioPlayer.swift
 //  Arthub
 //
-//  Created by 张鸿燊 on 7/2/2024.
+//  Created by 张鸿燊 on 22/2/2024.
 //
 
 import AVFoundation
-
-struct Playlist {
-    
-    var items: [PlaylistItem] = []
-    var currentIndex: Int?
-    
-    var currentItem: PlaylistItem? {
-        guard let index = currentIndex, (0 ..< items.count).contains(index) else {
-            return nil
-        }
-        return items[index]
-    }
-}
-
-struct PlaylistItem {
-    
-    var url: URL
-    var title: String
-    var cover: URL?
-    var artists: String
-    var duration: TimeInterval
-    
-    init(url: URL, title: String = "", cover: URL? = nil,
-         artists: String = "", duration: TimeInterval = 0) {
-        self.url = url
-        self.title = title
-        self.cover = cover
-        self.artists = artists
-        self.duration = duration
-    }
-}
+import MediaPlayer
+#if os(macOS)
+import AppKit
+#endif
 
 @Observable
 class ArthubAudioPlayer: ObservableObject {
     
-    public var isPlaying: Bool {
-        return playerNode.isPlaying
-    }
-    public var currentTime: TimeInterval = 0
+    private(set) var playerState: PlayerState = .stopped
     
-    public var currentIndex: Int? {
-        return playlist.currentIndex
-    }
-    
-    public var currentPlaylistItem: PlaylistItem? {
-        return playlist.currentItem
+    var currentIndex: Int? {
+        guard let currentItem = player.currentItem else { return nil }
+        guard let currentIndex = playerItems.firstIndex(where: { $0 == currentItem }) else { return nil }
+        return currentIndex
     }
     
-     private var currentAudioFile: AVAudioFile? = nil
-    
-    private let audioEngine = AVAudioEngine()
-    private let playerNode = AVAudioPlayerNode()
-    private var playlist = Playlist()
-    private var lastSeekTime: TimeInterval = 0
-    private var lastPauseTime: TimeInterval = 0
-    private var semaphore: DispatchSemaphore =  DispatchSemaphore(value: 1)
-    private var timer: Timer? = nil
-    
-    init() {
-        audioEngine.attach(playerNode)
+    var currentItem: AVPlayerItem? {
+        guard let currentItem = player.currentItem else { return nil }
+        return currentItem
     }
     
-    func reset() {
-        resetTimer()
-        resetAudioProperty()
-        resetPlayerNodeAndAudioEngine()
+    private(set) var currentTime: TimeInterval = 0
+    
+    var duration: TimeInterval  {
+        guard currentItem?.status == .readyToPlay else {
+            return 0
+        }
+        return currentItem?.duration.seconds ?? 0
     }
     
-    func resetTimer() {
-        if let timer = timer {
-            timer.invalidate()
-            self.timer = nil
+    var volume: Float = 0.5 {
+        didSet {
+            self.player.volume = volume.clamp(to: 0...1)
         }
     }
     
-    func resetAudioProperty() {
-        self.currentTime = 0
-        self.lastSeekTime = 0
-        self.lastPauseTime = 0
-    }
-    
-    func resetPlayerNodeAndAudioEngine() {
-        self.playerNode.stop()
-        self.audioEngine.stop()
-        self.audioEngine.reset()
-    }
-    
-    func start(musicList: [Music], fromIndex: Int = 0) async throws {
-        self.resetTimer()
-        self.resetAudioProperty()
-        var playlistItems : [PlaylistItem] = []
-        for music in musicList {
-            playlistItems.append(.init(
-                url: music.url,
-                title: music.title,
-                cover: music.album?.cover,
-                artists: music.getArtists().map{ $0.name }.joined(separator: " & "),
-                duration: try await AVAsset(url: music.url).load(.duration).seconds
-            ))
+    var rate: Float = 1 {
+        didSet {
+            self.player.rate = rate
         }
-        playlist.currentIndex = fromIndex
-        playlist.items = playlistItems
-        guard let currentPlaylistItem = currentPlaylistItem else {
+    }
+    
+    // Possible values of the `playerState` property.
+    
+    enum PlayerState {
+        case stopped
+        case playing
+        case paused
+    }
+    
+    // The app-supplied object that provides `NowPlayable`-conformant behavior.
+    
+    private let nowPlayableBehavior: NowPlayable
+    
+    // The player actually being used for playback. An app may use any system-provided
+    // player, or may play content in any way that is wishes, provided that it uses
+    // the NowPlayable behavior correctly.
+    
+    private var player: AVQueuePlayer = AVQueuePlayer(playerItem: nil)
+    
+    // A playlist of items to play.
+    
+    private var playerItems: [AVPlayerItem] = []
+    
+    // Metadata for each item.
+    
+    private var staticMetadatas: [NowPlayableStaticMetadata] = []
+    
+    // The internal state of this AssetPlayer separate from the state
+    // of its AVQueuePlayer.
+    
+    // `true` if the current session has been interrupted by another app.
+    
+    private var isInterrupted: Bool = false
+    
+    // Private observers of notifications and property changes.
+    
+    private var itemObserver: NSKeyValueObservation!
+    private var rateObserver: NSKeyValueObservation!
+    private var statusObserver: NSObjectProtocol!
+    
+    
+    private static let mediaSelectionKey = "availableMediaCharacteristicsWithMediaSelectionOptions"
+
+    init(_ nowPlayable: NowPlayable) {
+        self.nowPlayableBehavior = nowPlayable
+        player.allowsExternalPlayback = true
+        
+        // Construct lists of commands to be registered or disabled.
+    }
+    
+    func setupItems(musics: [Music]) {
+        var playableAssets: [NowPlayableStaticMetadata] = []
+        musics.forEach { music in
+            var artwork: MPMediaItemArtwork? = nil
+            if let cover = music.album?.cover, let image = NSImage(contentsOf: cover) {
+                artwork = MPMediaItemArtwork(boundsSize: image.size, requestHandler: { size in
+                    return image
+                })
+            }
+            let metadata = NowPlayableStaticMetadata(
+                assetURL: music.url, mediaType: .audio, isLiveStream: false,
+                title: music.title, artist: music.artists.formatted(),
+                artwork: artwork, albumArtist: music.album?.artists.formatted(),
+                albumTitle: music.album?.title)
+            playableAssets.append(metadata)
+        }
+        
+        self.staticMetadatas = playableAssets
+        self.playerItems = playableAssets.map {
+            AVPlayerItem(asset: AVAsset(url: $0.assetURL),
+                         automaticallyLoadedAssetKeys: [ArthubAudioPlayer.mediaSelectionKey])
+        }
+        
+        self.player.removeAllItems()
+        playerItems.forEach { item in
+            if player.canInsert(item, after: nil) {
+                player.insert(item, after: nil)
+            }
+        }
+    }
+    
+    func start() throws{
+        // Start playing, if there is something to play.
+        
+        var registeredCommands : [NowPlayableCommand] = []
+        var enabledCommands : [NowPlayableCommand] = []
+        
+        for group in nowPlayableBehavior.defaultCommandCollections {
+            registeredCommands.append(contentsOf: group.commands.compactMap { $0.shouldRegister ? $0.command : nil })
+            enabledCommands.append(contentsOf: group.commands.compactMap { $0.shouldDisable ? $0.command : nil })
+        }
+        // Configure the app for Now Playing Info and Remote Command Center behaviors.
+        
+        try nowPlayableBehavior.handleNowPlayableConfiguration(commands: registeredCommands,
+                                                               disabledCommands: enabledCommands,
+                                                               commandHandler: handleCommand(command:event:),
+                                                               interruptionHandler: handleInterrupt(with:))
+        
+        if playerItems.isEmpty {
             return
         }
-        do {
-            currentAudioFile = try AVAudioFile(forReading: currentPlaylistItem.url)
-        } catch {
-            self.continuePlay(fromIndex: playlist.currentIndex! + 1)
+            
+        // Start a playback session.
+        
+        try nowPlayableBehavior.handleNowPlayableSessionStart()
+        
+        // Observe changes to the current item and playback rate.
+        
+        if player.currentItem != nil {
+            itemObserver = player.observe(\.currentItem, options: .initial) {
+                [unowned self] _, _ in
+                self.handlePlayerItemChange()
+            }
+            
+            rateObserver = player.observe(\.rate, options: .initial) {
+                [unowned self] _, _ in
+                self.handlePlaybackChange()
+            }
+            statusObserver = player.observe(\.currentItem?.status, options: .initial) {
+                [unowned self] _, _ in
+                self.handlePlaybackChange()
+            }
+            player.addPeriodicTimeObserver(forInterval:
+                    .init(seconds: 1, preferredTimescale: 1),
+                                           queue: .main) { time in
+                self.currentTime = time.seconds
+            }
         }
+        
+        play()
+    }
+    
+    // Stop the playback session.
+    
+    func optOut() {
+        
+        itemObserver = nil
+        rateObserver = nil
+        statusObserver = nil
+        
+        player.pause()
+        player.removeAllItems()
+        playerState = .stopped
+        
+        nowPlayableBehavior.handleNowPlayableSessionEnd()
+    }
+    
+    // MARK: Now Playing Info
+    
+    // Helper method: update Now Playing Info when the current item changes.
+    
+    private func handlePlayerItemChange() {
+        
+        guard playerState != .stopped else { return }
+        guard let currentItem = player.currentItem else { optOut(); return }
+        guard let currentIndex = playerItems.firstIndex(where: { $0 == currentItem }) else { return }
+        
+        // Set the Now Playing Info from static item metadata.
+        
+        let metadata = staticMetadatas[currentIndex]
+        
+        nowPlayableBehavior.handleNowPlayableItemChange(metadata: metadata)
+    }
+    
+    // Helper method: update Now Playing Info when playback rate or position changes.
+    
+    private func handlePlaybackChange() {
+        
+        guard playerState != .stopped else { return }
+        guard let currentItem = player.currentItem else { optOut(); return }
+        guard currentItem.status == .readyToPlay else { return }
+        
+        // Create language option groups for the asset's media selection,
+        // and determine the current language option in each group, if any.
+        
+        // Note that this is a simple example of how to create language options.
+        // More sophisticated behavior (including default values, and carrying
+        // current values between player tracks) can be implemented by building
+        // on the techniques shown here.
+        
+        let asset = currentItem.asset
+        
+        var languageOptionGroups: [MPNowPlayingInfoLanguageOptionGroup] = []
+        var currentLanguageOptions: [MPNowPlayingInfoLanguageOption] = []
+        switch asset.status(of: .availableMediaCharacteristicsWithMediaSelectionOptions) {
+        case.loaded(let characteristics):
+            for mediaCharacteristic in characteristics {
+                guard mediaCharacteristic == .audible || mediaCharacteristic == .legible else {
+                    continue
+                }
+                asset.loadMediaSelectionGroup(for: mediaCharacteristic) { mediaSelectionGroup, error in
+                    guard let mediaSelectionGroup = mediaSelectionGroup else { return }
+                    let languageOptionGroup = mediaSelectionGroup.makeNowPlayingInfoLanguageOptionGroup()
+                    languageOptionGroups.append(languageOptionGroup)
+                    
+                    // If the media selection group has a current selection,
+                    // create a corresponding language option.
+                    
+                    if let selectedMediaOption = currentItem.currentMediaSelection.selectedMediaOption(in: mediaSelectionGroup),
+                        let currentLanguageOption = selectedMediaOption.makeNowPlayingInfoLanguageOption() {
+                        currentLanguageOptions.append(currentLanguageOption)
+                    }
+                }
+            }
+        case .failed(let error):
+            break
+        case .loading:
+            break
+        case .notYetLoaded:
+            break
+        }
+        
+        // Construct the dynamic metadata, including language options for audio,
+        // subtitle and closed caption tracks that can be enabled for the
+        // current asset.
+        
+        let isPlaying = playerState == .playing
+        let metadata = NowPlayableDynamicMetadata(rate: player.rate,
+                                                  position: Float(currentItem.currentTime().seconds),
+                                                  duration: Float(currentItem.duration.seconds),
+                                                  currentLanguageOptions: currentLanguageOptions,
+                                                  availableLanguageOptionGroups: languageOptionGroups)
+        
+        nowPlayableBehavior.handleNowPlayablePlaybackChange(playing: isPlaying, metadata: metadata)
+    }
+    
+    // MARK: Playback Control
+    
+    // The following methods handle various playback conditions triggered by remote commands.
+    
+    private func play() {
+        
+        switch playerState {
+            
+        case .stopped:
+            playerState = .playing
+            player.play()
+            
+            handlePlayerItemChange()
+
+        case .playing:
+            break
+            
+        case .paused where isInterrupted:
+            playerState = .playing
+            
+        case .paused:
+            playerState = .playing
+            player.play()
+        }
+    }
+    
+    private func pause() {
+        
+        switch playerState {
+            
+        case .stopped:
+            break
+            
+        case .playing where isInterrupted:
+            playerState = .paused
+            
+        case .playing:
+            playerState = .paused
+            player.pause()
+            
+        case .paused:
+            break
+        }
+    }
+    
+    func togglePlayPause() {
+
+        switch playerState {
+            
+        case .stopped:
+            play()
+            
+        case .playing:
+            pause()
+            
+        case .paused:
+            play()
+        }
+    }
+    
+    func nextTrack() {
+        
+        if case .stopped = playerState { return }
+        
+        player.advanceToNextItem()
+    }
+    
+    func previousTrack() {
+        
+        if case .stopped = playerState { return }
+        
+        let currentTime = player.currentTime().seconds
+        let currentItems = player.items()
+        let previousIndex = playerItems.count - currentItems.count - 1
+        
+        guard currentTime < 3, previousIndex > 0, previousIndex < playerItems.count else { seek(to: .zero); return }
+        
+        player.removeAllItems()
+        
+        for playerItem in playerItems[(previousIndex - 1)...] {
+            
+            if player.canInsert(playerItem, after: nil) {
+                player.insert(playerItem, after: nil)
+            }
+        }
+        
+        if case .playing = playerState {
+            player.play()
+        }
+    }
+    
+    func seek(to time: CMTime) {
+        
+        if case .stopped = playerState { return }
+        
+        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) {
+            isFinished in
+            if isFinished {
+                self.handlePlaybackChange()
+            }
+        }
+    }
+    
+    func seek(to position: TimeInterval) {
+        seek(to: CMTime(seconds: position, preferredTimescale: 1))
+    }
+    
+    private func skipForward(by interval: TimeInterval) {
+        seek(to: player.currentTime() + CMTime(seconds: interval, preferredTimescale: 1))
+    }
+    
+    private func skipBackward(by interval: TimeInterval) {
+        seek(to: player.currentTime() - CMTime(seconds: interval, preferredTimescale: 1))
+    }
+    
+    private func setPlaybackRate(_ rate: Float) {
+        
+        if case .stopped = playerState { return }
+        
+        player.rate = rate
+    }
+    
+    private func didEnableLanguageOption(_ languageOption: MPNowPlayingInfoLanguageOption) -> Bool {
+        
+        guard let currentItem = player.currentItem else { return false }
+        guard let (mediaSelectionOption, mediaSelectionGroup) = enabledMediaSelection(for: languageOption) else { return false }
+        
+        currentItem.select(mediaSelectionOption, in: mediaSelectionGroup)
+        handlePlaybackChange()
+        
+        return true
+    }
+    
+    private func didDisableLanguageOption(_ languageOption: MPNowPlayingInfoLanguageOption) -> Bool {
+        
+        guard let currentItem = player.currentItem else { return false }
+        guard let mediaSelectionGroup = disabledMediaSelection(for: languageOption) else { return false }
+
+        guard mediaSelectionGroup.allowsEmptySelection else { return false }
+        currentItem.select(nil, in: mediaSelectionGroup)
+        handlePlaybackChange()
+        
+        return true
+    }
+    
+    // Helper method to get the media selection group and media selection for enabling a language option.
+    
+    private func enabledMediaSelection(for languageOption: MPNowPlayingInfoLanguageOption) -> (AVMediaSelectionOption, AVMediaSelectionGroup)? {
+        
+        // In your code, you would implement your logic for choosing a media selection option
+        // from a suitable media selection group.
+        
+        // Note that, when the current track is being played remotely via AirPlay, the language option
+        // may not exactly match an option in your local asset's media selection. You may need to consider
+        // an approximate comparison algorithm to determine the nearest match.
+        
+        // If you cannot find an exact or approximate match, you should return `nil` to ignore the
+        // enable command.
+        
+        return nil
+    }
+    
+    // Helper method to get the media selection group for disabling a language option`.
+    
+    private func disabledMediaSelection(for languageOption: MPNowPlayingInfoLanguageOption) -> AVMediaSelectionGroup? {
+        
+        // In your code, you would implement your logic for finding the media selection group
+        // being disabled.
+        
+        // Note that, when the current track is being played remotely via AirPlay, the language option
+        // may not exactly determine a media selection group in your local asset. You may need to consider
+        // an approximate comparison algorithm to determine the nearest match.
+        
+        // If you cannot find an exact or approximate match, you should return `nil` to ignore the
+        // disable command.
+        
+        return nil
+    }
+    
+    // MARK: Remote Commands
+    
+    // Handle a command registered with the Remote Command Center.
+    
+    private func handleCommand(command: NowPlayableCommand, event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        
+        switch command {
+            
+        case .pause:
+            pause()
+            
+        case .play:
+            play()
+            
+        case .stop:
+            optOut()
+            
+        case .togglePausePlay:
+            togglePlayPause()
+            
+        case .nextTrack:
+            nextTrack()
+            
+        case .previousTrack:
+            previousTrack()
+            
+        case .changePlaybackRate:
+            guard let event = event as? MPChangePlaybackRateCommandEvent else { return .commandFailed }
+            setPlaybackRate(event.playbackRate)
+            
+        case .seekBackward:
+            guard let event = event as? MPSeekCommandEvent else { return .commandFailed }
+            setPlaybackRate(event.type == .beginSeeking ? -3.0 : 1.0)
+            
+        case .seekForward:
+            guard let event = event as? MPSeekCommandEvent else { return .commandFailed }
+            setPlaybackRate(event.type == .beginSeeking ? 3.0 : 1.0)
+            
+        case .skipBackward:
+            guard let event = event as? MPSkipIntervalCommandEvent else { return .commandFailed }
+            skipBackward(by: event.interval)
+            
+        case .skipForward:
+            guard let event = event as? MPSkipIntervalCommandEvent else { return .commandFailed }
+            skipForward(by: event.interval)
+            
+        case .changePlaybackPosition:
+            guard let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
+            seek(to: event.positionTime)
+            
+        case .enableLanguageOption:
+            guard let event = event as? MPChangeLanguageOptionCommandEvent else { return .commandFailed }
+            guard didEnableLanguageOption(event.languageOption) else { return .noActionableNowPlayingItem }
+
+        case .disableLanguageOption:
+            guard let event = event as? MPChangeLanguageOptionCommandEvent else { return .commandFailed }
+            guard didDisableLanguageOption(event.languageOption) else { return .noActionableNowPlayingItem }
+
+        default:
+            break
+        }
+        
+        return .success
+    }
+    
+    // MARK: Interruptions
+    
+    // Handle a session interruption.
+    
+    private func handleInterrupt(with interruption: NowPlayableInterruption) {
+        
+        switch interruption {
+            
+        case .began:
+            isInterrupted = true
+            
+        case .ended(let shouldPlay):
+            isInterrupted = false
+            
+            switch playerState {
                 
-        audioEngine.connect(playerNode,
-                            to: audioEngine.outputNode,
-                            format: currentAudioFile!.processingFormat)
-        playerNode.scheduleFile(currentAudioFile!,
-                                at: nil,
-                                completionCallbackType: .dataPlayedBack) { _ in
-            if 0 == self.lastSeekTime {
-                self.continuePlay(fromIndex: self.playlist.currentIndex! + 1)
+            case .stopped:
+                break
+                
+            case .playing where shouldPlay:
+                player.play()
+                
+            case .playing:
+                playerState = .paused
+                
+            case .paused:
+                break
             }
+            
+        case .failed(let error):
+            print(error.localizedDescription)
+            optOut()
         }
-        try self.play()
-        self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            self.currentTime = self.lastSeekTime +
-            (self.playerNode.isPlaying ? self.playerNode.currentTime : self.lastPauseTime)
-        }
-    }
-        
-    func continuePlay(fromIndex proposedIndex: Int, offset: TimeInterval = 0) {
-        
-        semaphore.wait()
-        defer { semaphore.signal() }
-        
-        self.resetTimer()
-        self.resetAudioProperty()
-        self.playlist.currentIndex = proposedIndex % playlist.items.count
-        guard let currentPlaylistItem = self.currentPlaylistItem else {
-            return
-        }
-        do {
-            currentAudioFile = try AVAudioFile(forReading: currentPlaylistItem.url)
-        } catch {
-            self.continuePlay(fromIndex: proposedIndex + 1)
-        }
-        audioEngine.connect(playerNode,
-                            to: audioEngine.outputNode,
-                            format: currentAudioFile!.processingFormat)
-        playerNode.scheduleFile(currentAudioFile!,
-                                at: nil,
-                                completionCallbackType: .dataPlayedBack) { _ in
-            if 0 == self.lastSeekTime {
-                self.continuePlay(fromIndex: self.playlist.currentIndex! + 1)
-            }
-        }
-        self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            self.currentTime = self.lastSeekTime +
-            (self.playerNode.isPlaying ? self.playerNode.currentTime : self.lastPauseTime)
-        }
-    }
-    
-    func seek(to time: TimeInterval) {
-        semaphore.wait()
-        defer { semaphore.signal() }
-        
-        guard let currentPlaylistItem = self.currentPlaylistItem,
-              let playerTime = playerNode.playerTime else  {
-            return
-        }
-        do {
-            currentAudioFile = try AVAudioFile(forReading: currentPlaylistItem.url)
-        } catch {
-            self.continuePlay(fromIndex: playlist.currentIndex! + 1)
-        }
-        
-        let startingFrame =
-        AVAudioFramePosition(playerTime.sampleRate * time)
-        let frameToPlay = AVAudioFrameCount(playerTime.sampleRate * (currentPlaylistItem.duration - time))
-        if frameToPlay < 100 {
-            return
-        }
-         
-        self.lastSeekTime = time
-        let lastSeekTime = self.lastSeekTime
-        
-        playerNode.stop()
-        playerNode.prepare(withFrameCount: frameToPlay)
-        playerNode.scheduleSegment(currentAudioFile!, startingFrame: startingFrame,
-                                   frameCount: frameToPlay,
-                                   at: nil, completionCallbackType: .dataPlayedBack) { _ in
-            if lastSeekTime == self.lastSeekTime {
-                self.continuePlay(fromIndex: self.playlist.currentIndex! + 1)
-            }
-        }
-        playerNode.play()
-    }
-    
-    func play() throws {
-        if !audioEngine.isRunning {
-            audioEngine.prepare()
-            try audioEngine.start()
-        }
-        playerNode.play()
-    }
-    
-    func pause() {
-        self.lastPauseTime = self.playerNode.currentTime
-        playerNode.pause()
-    }
-    
-    func stop() {
-        self.playerNode.stop()
-        self.audioEngine.stop()
-    }
-    
-    func setVolume(_ volume: Float) {
-        playerNode.volume = volume.clamp(to: 0...1)
     }
     
 }

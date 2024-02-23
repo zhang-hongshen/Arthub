@@ -67,9 +67,11 @@ extension MovieDetail {
     }
     
     func fetchRelatedData() async throws {
-        async let fetchCredits: () = self.fetchCredits()
-        async let fetchImages: () = self.fetchImages()
-        try await (fetchCredits, fetchImages)
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { try await self.fetchCredits() }
+            group.addTask { try await self.fetchImages() }
+            try await group.waitForAll()
+        }
     }
     
     func fetchCredits() async throws  {
@@ -95,6 +97,7 @@ extension MovieDetail {
                         profilePath: imagesConfiguration.profileURL(for: crewMember.profilePath)))
                 }
             }
+            await group.waitForAll()
         }
     }
     
@@ -126,6 +129,8 @@ extension MovieDetail {
                     self.logos.append(logo.copy(filePath: imagesConfiguration.posterURL(for: logo.filePath)))
                 }
             }
+            
+            try group.waitForAll()
         }
     }
     

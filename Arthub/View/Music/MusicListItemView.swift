@@ -30,8 +30,12 @@ struct MusicListItemView: View {
             .frame(width: height, height: height)
             .cornerRadius()
             
-            Text(music.title)
-                .font(.title2)
+            VStack(alignment: .leading) {
+                Text(music.title).fontWeight(.semibold)
+                Text(music.album?.title ?? "")
+            }
+            
+            Text(music.artists.formatted())
         }
     }
 }

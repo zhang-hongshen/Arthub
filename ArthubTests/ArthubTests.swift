@@ -19,37 +19,29 @@ final class ArthubTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testParseTTML() throws {
-        let url = Bundle.main.url(forResource: "ttml", withExtension: "ttml")!
+    func testParseLineTTML() throws {
+        let url = Bundle.main.url(forResource: "ttml-line", withExtension: "ttml")!
         let parser = TTMLParser.shared
         let lyrics = parser.parse(url: url)
         XCTAssert(lyrics[0].content == "City of stars")
         XCTAssert(lyrics[1].content == "Are you shining just for me?")
-    }
-
-    func testURL() {
-
-        print(FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!.relativePath)
-        print(FileManager.default.urls(for: .musicDirectory, in: .userDomainMask).first!.relativePath)
-    }
-    
-    
-    func testLoadMediaSelectionOptions() async throws {
-        let url = URL(string:  "file:///Users/zhanghongshen/Movies/Arthub/Aquaman%20and%20the%20Lost%20Kingdom%20(2023)/Aquaman%20and%20the%20Lost%20Kingdom%20(2023).mp4")
         
-        let asset = AVURLAsset(url: url!)
-        for characteristic in try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions) {
-            debugPrint("\(characteristic)")
-            // Retrieve the AVMediaSelectionGroup for the specified characteristic.
-            if let group = try await asset.loadMediaSelectionGroup(for: characteristic) {
-                // Print its options.
-                for option in group.options {
-                    debugPrint("  Option: \(option.displayName)")
-                }
-            }
-        }
+        
     }
     
+    func testParseWordTTML() throws {
+        let url = Bundle.main.url(forResource: "ttml-word", withExtension: "ttml")!
+        let parser = TTMLParser.shared
+        let lyrics = parser.parse(url: url)
+        XCTAssert(lyrics[0].phrases[0].content == "I")
+        XCTAssert(lyrics[0].phrases[1].content == "don't")
+        XCTAssert(lyrics[0].phrases[2].content == "wanna")
+        XCTAssert(lyrics[0].phrases[3].content == "be")
+        XCTAssert(lyrics[0].phrases[4].content == "alone")
+        XCTAssert(lyrics[0].phrases[5].content == "tonight")
+    }
+    
+
     func testPerformanceExample() throws {
         // This is an example of a performance test case.
         self.measure {

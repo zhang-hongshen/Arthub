@@ -8,35 +8,47 @@
 import SwiftUI
 
 struct LyricsEditView: View {
-    @State var lyricsURL: URL?
+    @Binding var lyrics: [Lyric]
     @State private var sortOrders = [
-        KeyPathComparator(\Lyric.startedAt, order: .forward),
-        KeyPathComparator(\Lyric.endedAt, order: .forward)
+        KeyPathComparator(\Lyric.start, order: .forward),
+        KeyPathComparator(\Lyric.end, order: .forward)
     ]
     
     @State private var selectedLyrics: Set<Lyric.ID> =  Set()
     @State private var previewing: Bool = false
     @State private var fileExporterPresented: Bool = false
     @State private var fileImporterPresented: Bool = false
-    @State private var currentTime: TimeInterval = 0
+    @State private var previewTime: TimeInterval = 0
     @State private var timer: Timer?
-    @State private var lyrics: [Lyric] = []
     
     var body: some View {
         VStack(alignment: .leading) {
+            
             ControlView()
             
             Table(of: Lyric.self, selection: $selectedLyrics, sortOrder: $sortOrders) {
-                TableColumn("lyric.startedAt", value: \.startedAt) { row in
-                    Text(row.startedAt.description)
+                TableColumn("lyric.start", value: \.start) { row in
+                    Text(row.start.formatted())
                 }
-                TableColumn("lyric.endedAt", value: \.endedAt) { row in
-                    Text(row.endedAt.description)
+                TableColumn("lyric.end", value: \.end) { row in
+                    Text(row.end.formatted())
                 }
-                TableColumn("lyric.content", value: \.content)
+                TableColumn("lyric.content", value: \.content) { row in
+                    Text(row.content)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             } rows: {
                 ForEach(lyrics) { lyric in
-                    TableRow(lyric)
+                    if lyric.phrases.isEmpty {
+                        TableRow(lyric)
+                    } else {
+                        DisclosureTableRow(lyric) {
+                            ForEach(lyric.phrases) { phrase in
+                                TableRow(phrase)
+                            }
+                        }
+                    }
                 }
                 .contextMenu {
                     Button("common.delete", role: .destructive) {
@@ -44,27 +56,36 @@ struct LyricsEditView: View {
                     }
                 }
             }
+            .tableStyle(.inset)
+            .alternatingRowBackgrounds()
             .opacity(previewing ? 0 : 1)
             .overlay {
                 previewView()
                     .opacity(previewing ? 1 : 0)
             }
-            .onChange(of: sortOrders, initial: true) { _,  newValue in
-                self.lyrics.sort(using: newValue)
+
+            HStack {
+                Button {
+                    fileImporterPresented = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                Button {
+                    deleteLyrics()
+                } label: {
+                    Image(systemName: "minus")
+                }
             }
-            .onDeleteCommand {
-                deleteLyrics()
-            }
+            .buttonStyle(.borderless)
         }
-        .task {
-            guard let url = lyricsURL else {
-                return
-            }
-            self.lyrics = Lyric.loadLyrics(url: url)
+        .onDeleteCommand {
+            deleteLyrics()
         }
-        #if os(macOS)
+        .onChange(of: sortOrders, initial: true) { _,  newValue in
+            self.lyrics.sort(using: newValue)
+        }
         .fileImporter(isPresented: $fileImporterPresented, 
-                      allowedContentTypes: [.xml]) { result in
+                      allowedContentTypes: [.ttml]) { result in
             switch result {
             case .success(let url):
                 lyrics = TTMLParser.shared.parse(url: url)
@@ -73,7 +94,6 @@ struct LyricsEditView: View {
                 print("Failed to import document: \(error)")
             }
         }
-        #endif
     }
 }
 
@@ -99,20 +119,25 @@ extension LyricsEditView {
     
     @ViewBuilder
     func previewView() -> some View {
-        TimeSyncedLyricsView(lyrics: lyrics, currentTime: $currentTime) { lyric in
+        TimeSyncedLyricsView(lyrics: $lyrics, syncedTime: $previewTime) { lyric in
             selectedLyrics = Set(arrayLiteral: lyric.id)
         }
         .onChange(of: previewing, initial: false) { oldValue, newValue in
-            currentTime = 0
+            previewTime = 0
             if newValue {
                 timer = Timer(timeInterval: 1, repeats: true) { timer in
-                    currentTime += 1
+                    previewTime += 1
                 }
             } else {
                 if let timer = self.timer {
                     timer.invalidate()
                     self.timer = nil
                 }
+            }
+        }
+        .onChange(of: previewTime, initial: false) { oldValue, newValue in
+            if self.previewTime > (lyrics.last?.end ?? 0) {
+                self.previewTime = 0
             }
         }
     }

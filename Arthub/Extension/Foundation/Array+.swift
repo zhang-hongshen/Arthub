@@ -43,3 +43,10 @@ extension Array where Element: Identifiable {
     }
     
 }
+
+extension Array where Element: Artist {
+    
+    func formatted() -> String {
+        return self.map{ $0.name }.joined(separator: " & ")
+    }
+}

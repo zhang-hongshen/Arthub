@@ -84,20 +84,6 @@ struct MoviePlayerView: View {
         }
         try await player.start(url: url, startTime: metrics.currentTime)
     }
-    
-    func audible(url: URL) async throws {
-        let asset = AVURLAsset(url: url)
-        for characteristic in try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions) {
-            debugPrint("\(characteristic)")
-            // Retrieve the AVMediaSelectionGroup for the specified characteristic.
-            if let group = try await asset.loadMediaSelectionGroup(for: characteristic) {
-                // Print its options.
-                for option in group.options {
-                    debugPrint("Option: \(option.displayName)")
-                }
-            }
-        }
-    }
 }
 
 extension MoviePlayerView {
@@ -251,8 +237,9 @@ extension MoviePlayerView {
                     Button {
                         player.isPlaying ? player.pause() : player.pause()
                     } label: {
-                        Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                    } 
+                        Image(systemName: player.isPlaying ? "pause" : "play")
+                            .symbolVariant(.fill)
+                    }
                     .keyboardShortcut(.space, modifiers: [])
                     
                     Button {
@@ -268,7 +255,7 @@ extension MoviePlayerView {
                 
                 Picker("", selection: $player.rate) {
                     ForEach(playbackSpeed, id: \.self) { speed in
-                        Text("\(speed.formatted())x").tag(speed)
+                        Text("\(speed.formatted())").tag(speed)
                     }
                 }
                 

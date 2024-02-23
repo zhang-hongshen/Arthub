@@ -8,35 +8,34 @@
 import SwiftUI
 import AVFoundation
 import Logging
+import MediaPlayer
 
 struct MusicPlayerView: View {
     
-    @State var music: [Music]
+    @State var musics: [Music]
     @EnvironmentObject private var player: ArthubAudioPlayer
     @Environment(WindowState.self) private var windowState
     @Environment(\.presentationMode) private var presentationMode
     @State private var playbackControlSize: CGSize = .init(width: 400, height: .zero)
-    @State private var lyricsSize: CGSize = .zero
+    @State private var lyricsSize: CGSize = .init(width: 200, height: .zero)
+    private var frameMinSize: CGSize {
+        return .init(width: playbackControlSize.width + (lyricsPresented ? lyricsSize.width : 0),
+                     height: playbackControlSize.height)
+    }
     // playback control
     @State private var shuffled: Bool = false
     @State private var currentTime: TimeInterval = 0
     @State private var lyricsPresented: Bool = false
-    @State private var currentVolume: Float = 0.5
     // detect user's seek
     @State private var seeking: Bool = false
-    @State private var volumeEditing: Bool = false
     
-    private var lyrics: [Lyric] {
-        guard let index = player.currentIndex,
-              let url = music[index].lyrics else {
-            return []
-        }
-        return Lyric.loadLyrics(url: url)
-    }
+    @State private var currentLyrics: [Lyric] = []
+    @State private var currentMusic: Music? = nil
+
     
     var body: some View {
         
-        AsyncImage(url: player.currentPlaylistItem?.cover,
+        AsyncImage(url: currentMusic?.album?.cover,
                    transaction: .init(animation: .smooth)
         ) { phase in
             switch phase {
@@ -50,31 +49,44 @@ struct MusicPlayerView: View {
                 fatalError()
             }
         }
-        .frame(minWidth: playbackControlSize.width,
-               minHeight: playbackControlSize.height)
-        .blur(radius: 50)
+        .frame(minWidth: frameMinSize.width,
+               minHeight: frameMinSize.height)
+        .blur(radius: 60)
         .overlay {
             PlayerOverlayView()
+                .animation(.snappy, value: lyricsPresented)
         }
+        .safeAreaPadding(15)
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .windowToolbar)
         .onAppear{
             windowState.push(.detailOnly)
-        }
-        .task(priority: .userInitiated) {
-            do {
-                try await player.start(musicList: music)
-            } catch {
-                Logger.shared.error("start error, \(error)")
-            }
         }
         .onChange(of: player.currentTime, initial: true) { _, newValue in
             if !seeking {
                 currentTime = newValue
             }
         }
-        .onChange(of: currentVolume, initial: true) { _, newValue in
-            player.setVolume(newValue)
+        .onChange(of: player.currentIndex, initial: true) { oldValue, newValue in
+            guard let index = newValue else {
+                self.currentMusic = nil
+                self.currentLyrics = []
+                return
+            }
+            self.currentMusic = musics[index]
+            guard let url = musics[index].lyrics else {
+                self.currentLyrics = []
+                return
+            }
+            self.currentLyrics =  Lyric.loadLyrics(url: url)
+        }
+        .task(priority: .userInitiated) {
+            player.setupItems(musics: musics)
+            do {
+                try player.start()
+            } catch {
+                
+            }
         }
     }
 }
@@ -83,10 +95,9 @@ extension MusicPlayerView {
     
     @ViewBuilder
     func PlayerOverlayView() -> some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .top, spacing: 20) {
             
             VStack(alignment: .center) {
-                
                 HStack {
                     Button {
                         exit()
@@ -101,8 +112,9 @@ extension MusicPlayerView {
                     Spacer()
                 }
                 
+                Spacer()
                 
-                AsyncImage(url: player.currentPlaylistItem?.cover,
+                AsyncImage(url: currentMusic?.album?.cover,
                            transaction: .init(animation: .smooth)
                 ) { phase in
                     switch phase {
@@ -110,24 +122,25 @@ extension MusicPlayerView {
                         DefaultImageView()
                     case .success(let image):
                         image.resizable().scaledToFit()
+                            
                     case .failure(let error):
                         ErrorImageView(error: error)
                     @unknown default:
                         fatalError()
                     }
                 }
+                .cornerRadius()
                 .frame(width: playbackControlSize.width,
                        height: playbackControlSize.width)
-                .scaleEffect(player.isPlaying)
-                .cornerRadius()
-                .animation(.smooth, value: player.isPlaying)
+                .scaleEffect(player.playerState == .playing)
                 
+  
                 HStack {
                     VStack(alignment: .leading, spacing: 5){
-                        Text(player.currentPlaylistItem?.title ?? "")
+                        Text(currentMusic?.title ?? "-")
                             .font(.title)
                             .fontWeight(.bold)
-                        Text(player.currentPlaylistItem?.artists ?? "")
+                        Text(currentMusic?.artists.formatted() ?? "-")
                     }
                     Spacer()
                 }
@@ -142,26 +155,21 @@ extension MusicPlayerView {
                     Color.clear
                         .onAppear {
                             playbackControlSize = proxy.size
+                            lyricsSize.height = proxy.size.height
                         }
                 }
             }
+            
             if lyricsPresented {
-                @Bindable var player = player
-                TimeSyncedLyricsView(lyrics: lyrics,
-                                     currentTime: $player.currentTime) { lyric in
-                    player.seek(to: lyric.startedAt)
-                }
-                .overlay {
-                    GeometryReader { proxy in
-                        Color.clear
-                            .onAppear {
-                                lyricsSize = proxy.size
-                            }
-                    }
+                TimeSyncedLyricsView(
+                    lyrics: $currentLyrics,
+                    syncedTime: Binding(
+                        get: { player.currentTime},
+                        set: { _ in })) { lyric in
+                    player.seek(to: lyric.start)
                 }
             }
         }
-        .animation(.easeInOut, value: lyricsPresented)
     }
     
     @ViewBuilder
@@ -170,7 +178,7 @@ extension MusicPlayerView {
         VStack(spacing: 20) {
 
             ArthubSlider(value: $currentTime,
-                         in: 0...(player.currentPlaylistItem?.duration ?? 0),
+                         in: 0...player.duration,
                         onEditingChanged: { newValue in
                 if seeking && !newValue {
                     player.seek(to: currentTime)
@@ -181,16 +189,16 @@ extension MusicPlayerView {
             HStack {
                 Text(currentTime.formatted())
                 Spacer()
-                Text(player.currentPlaylistItem?.duration.formatted() ?? "-:-")
+                Text(player.duration.formatted())
             }
             
             HStack {
                 
                 Button {
-                    
+                    shuffled.toggle()
                 } label: {
-                    Image(systemName: "shuffle")
-                        .symbolVariant(.rectangle.fill)
+                    Image(systemName: "shuffle.circle")
+                        .symbolVariant(shuffled ? .fill : .none)
                 }
                 
                 Spacer()
@@ -199,27 +207,23 @@ extension MusicPlayerView {
                     Button {
                         
                     } label: {
-                        Image(systemName: "backward.fill")
+                        Image(systemName: "backward")
                     }
                     
                     Button {
-                        if player.isPlaying {
-                            player.pause()
-                        } else {
-                            do { try player.play() }
-                            catch { Logger.shared.error("start error, \(error)") }
-                        }
+                        player.togglePlayPause()
                     } label: {
-                        Image(systemName: player.isPlaying ? "pause.fill": "play.fill")
+                        Image(systemName: player.playerState == .playing ? "pause": "play")
                     }
                     .keyboardShortcut(.space, modifiers: [])
                     
                     Button {
                         
                     } label: {
-                        Image(systemName: "forward.fill")
+                        Image(systemName: "forward")
                     }
                 }
+                .symbolVariant(.fill)
                 
                 Spacer()
                 
@@ -227,13 +231,13 @@ extension MusicPlayerView {
                     lyricsPresented.toggle()
                 } label: {
                     Image(systemName: "quote.bubble")
-                        .symbolVariant(lyricsPresented ? .square.fill : .none)
+                        .symbolVariant(lyricsPresented ? .fill : .none)
                 }
             }
             .buttonStyle(.borderless)
             .font(.title2)
             
-            VolumeBar(volume: $currentVolume)
+            VolumeBar(volume: $player.volume)
                 .font(.title2)
         }
     }

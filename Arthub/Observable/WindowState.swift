@@ -12,7 +12,6 @@ import DequeModule
 @Observable
 class WindowState {
     
-    
     var columnVisibility: NavigationSplitViewVisibility {
         return columnVisibilitys.last ?? .all
     }
@@ -20,7 +19,10 @@ class WindowState {
     private var columnVisibilitys: Deque<NavigationSplitViewVisibility> = [.all]
     
     private let semaphore = DispatchSemaphore(value: 1)
-    
+
+}
+
+extension WindowState {
     func setColumnVisibility( _ visibility: NavigationSplitViewVisibility) {
         semaphore.wait()
         defer { semaphore.signal() }

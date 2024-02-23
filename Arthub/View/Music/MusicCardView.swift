@@ -22,20 +22,21 @@ struct MusicCardView: View {
                 case .empty:
                     DefaultImageView()
                 case .success(let image):
-                    image.resizable().scaledToFit()
+                    image.resizable()
                 case .failure(let error):
                     ErrorImageView(error: error)
                 @unknown default:
                     fatalError()
                 }
             }
+            .scaledToFill()
             .frame(width: frameWidth, height: frameWidth)
             .cornerRadius()
             
             Text(music.title)
                 .font(.title2)
             
-            Text(music.artists.map{ $0.name }.joined(separator: " & "))
+            Text(music.artists.formatted())
         }
     }
 }

@@ -16,35 +16,33 @@ class TTMLParser: NSObject, XMLParserDelegate {
     private var parsingSpan: Bool = false
     private var currentLyric: Lyric? = nil
         
-    enum Tag {
-        case body, div, p, span
-    }
-    
     func parse(url: URL) -> [Lyric] {
         if let parser = XMLParser(contentsOf: url) {
             parser.delegate = self
             parser.parse()
         }
+        print("parse TTML ended")
         return lyrics
     }
     
-    func parser(_ parser: XMLParser, didStartElement elementName: String, titlespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI titlespaceURI: String?, 
+                qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
         if elementName == "p" {
             parsingP = true
             currentLyric = Lyric()
             if  let lyric = currentLyric,
-                let startedAt = attributeDict["begin"],
-                let endedAt = attributeDict["end"] {
-                lyric.startedAt = timeInterval(startedAt)
-                lyric.endedAt = timeInterval(endedAt)
+                let start = attributeDict["begin"],
+                let end = attributeDict["end"] {
+                lyric.start = timeInterval(start)
+                lyric.end = timeInterval(end)
             }
         } else if elementName == "span" {
-            parsingP = true
+            parsingSpan = true
             if  let lyric = currentLyric,
-                let startedAt = attributeDict["begin"],
-                let endedAt = attributeDict["end"] {
-                lyric.phrases.append(Lyric(startedAt: timeInterval(startedAt),
-                                           endedAt: timeInterval(endedAt),
+                let start = attributeDict["begin"],
+                let end = attributeDict["end"] {
+                lyric.phrases.append(Lyric(start: timeInterval(start),
+                                           end: timeInterval(end),
                                            content: ""))
             }
         }
@@ -58,7 +56,7 @@ class TTMLParser: NSObject, XMLParserDelegate {
         }
     }
         
-    func parser(_ parser: XMLParser, didEndElement elementName: String, titlespaceURI: String?, qualifiedName qName: String?) {
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI titlespaceURI: String?, qualifiedName qName: String?) {
         if elementName == "p" {
             parsingP = false
             if let lyric = currentLyric {
@@ -77,7 +75,7 @@ class TTMLParser: NSObject, XMLParserDelegate {
         guard lastIndex >= 0 else {
             return res
         }
-        res += (Double(timeComponents[lastIndex]) ?? 0) * 60
+        res += Double(timeComponents[lastIndex]) ?? 0
         guard lastIndex >= 1 else {
             return res
         }

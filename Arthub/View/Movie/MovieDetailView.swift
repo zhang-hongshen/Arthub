@@ -35,7 +35,7 @@ struct MovieDetailView: View {
                 case .empty:
                     DefaultImageView()
                 case .success(let image):
-                    image.resizable().scaledToFill()
+                    image.resizable()
                 case .failure(let error):
                     ErrorImageView(error: error)
                 @unknown default:
@@ -43,7 +43,6 @@ struct MovieDetailView: View {
                 }
             }
             .frame(height: 500, alignment: .top)
-            .clipped()
             .overlay {
                 GeometryReader { proxy in
                     VStack {

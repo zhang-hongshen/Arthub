@@ -6,6 +6,10 @@
 //
 
 import AVFoundation
+import MediaPlayer
+#if os(macOS)
+import AppKit
+#endif
 
 @Observable
 class ArthubVideoPlayer: ObservableObject {
