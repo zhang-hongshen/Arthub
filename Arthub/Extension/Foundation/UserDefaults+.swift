@@ -10,13 +10,20 @@ extension UserDefaults {
     // General
     static let appearance = "appearance"
     
-    static let movieMetadata = "movieMetadata"
-    static let musicMetadata = "musicMetadata"
-    
     // Storage
-    static let localMovieData = "localMovieData"
-    static let localTVShowData = "localTVShowData"
+    static let localMoviesData = "localMoviesData"
+    static let localTVShowsData = "localTVShowsData"
     static let localMusicData = "localMusicData"
+    
+    func value<T>(forKey key: String, default defaultValue: T) -> T {
+        return self.value(forKey: key) as? T ?? defaultValue
+    }
+    
+    func append<T>(forKey key: String, newElement: T) {
+        var array: [T] = value(forKey: key, default: [])
+        array.append(newElement)
+        setValue(array, forKey: key)
+    }
 }
 
 
@@ -28,54 +35,3 @@ enum Appearance: String {
     var id: Self { self }
 }
 
-enum MovieMetadata: String {
-    case local = "local"
-    case tmdb = "tmdb"
-}
-
-enum MusicMetadata: String {
-    case local = "local"
-    case musicbrainz = "musicbrainz"
-}
-
-
-struct Storage {
-    
-    static var defaultLocalMovieData: String {
-        do {
-            return try FileManager.default.url(for: .moviesDirectory, 
-                                               in: .userDomainMask,
-                                               appropriateFor: nil,
-                                               create: true).appending(component: "Arthub").relativeString
-        } catch {
-            
-        }
-        return ""
-    }
-    
-    static var defaultLocalMusicData: String {
-        do {
-            return try FileManager.default.url(for: .musicDirectory,
-                                               in: .userDomainMask,
-                                               appropriateFor: nil,
-                                               create: true).appending(component: "Arthub").relativeString
-        }
-        catch {
-        }
-        return ""
-    }
-    
-    static var defaultLocalTVShowData: String {
-        do {
-            return try FileManager.default.url(for: .userDirectory,
-                                               in: .userDomainMask,
-                                               appropriateFor: nil,
-                                               create: true)
-            .appending(component: "TVShows")
-            .appending(component: "Arthub").relativeString
-        }
-        catch {
-        }
-        return ""
-    }
-}

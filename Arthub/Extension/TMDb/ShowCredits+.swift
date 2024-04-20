@@ -10,12 +10,11 @@ import TMDb
 
 extension ShowCredits {
     func copy(
-            id: Int? = nil,
             cast: [CastMember]? = nil,
             crew: [CrewMember]? = nil
         ) -> ShowCredits {
             return ShowCredits(
-                id: id ?? self.id,
+                id: self.id,
                 cast: cast ?? self.cast,
                 crew: crew ?? self.crew
             )

@@ -7,40 +7,42 @@
 
 import Foundation
 import SwiftUI
-import DequeModule
 
-@Observable
-class WindowState {
+@Observable class WindowState {
     
     var columnVisibility: NavigationSplitViewVisibility {
         return columnVisibilitys.last ?? .all
     }
     
-    private var columnVisibilitys: Deque<NavigationSplitViewVisibility> = [.all]
+    var toolbarRemove: ToolbarDefaultItemKind? = .none
     
+    private var columnVisibilitys: [NavigationSplitViewVisibility] = [.all]
     private let semaphore = DispatchSemaphore(value: 1)
-
+    
 }
 
 extension WindowState {
-    func setColumnVisibility( _ visibility: NavigationSplitViewVisibility) {
+    
+    func enterFullScreen() {
         semaphore.wait()
         defer { semaphore.signal() }
-        columnVisibilitys[columnVisibilitys.endIndex - 1] = visibility
-    }
-
-    func push( _ visibility: NavigationSplitViewVisibility) {
-        semaphore.wait()
-        defer { semaphore.signal() }
-        columnVisibilitys.append(visibility)
+        columnVisibilitys.append(.detailOnly)
+        toolbarRemove = .sidebarToggle
     }
     
-    func pop() {
+    func exitFullScreen() {
         semaphore.wait()
         defer { semaphore.signal() }
         if columnVisibilitys.count > 1 {
             columnVisibilitys.removeLast()
         }
+        toolbarRemove = .none
+    }
+    
+    func setColumnVisibility( _ visibility: NavigationSplitViewVisibility) {
+        semaphore.wait()
+        defer { semaphore.signal() }
+        columnVisibilitys[columnVisibilitys.endIndex - 1] = visibility
     }
 }
 

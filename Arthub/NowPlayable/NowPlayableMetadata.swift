@@ -10,6 +10,7 @@ import MediaPlayer
 
 struct NowPlayableStaticMetadata {
     
+    let id: NSNumber                    // MPMediaItemPropertyPersistentID
     let assetURL: URL                   // MPNowPlayingInfoPropertyAssetURL
     let mediaType: MPNowPlayingInfoMediaType
                                         // MPNowPlayingInfoPropertyMediaType
@@ -21,6 +22,20 @@ struct NowPlayableStaticMetadata {
     
     let albumArtist: String?            // MPMediaItemPropertyAlbumArtist
     let albumTitle: String?             // MPMediaItemPropertyAlbumTitle
+    
+    init(id: NSNumber, assetURL: URL, mediaType: MPNowPlayingInfoMediaType, isLiveStream: Bool,
+         title: String, artist: String? = nil, artwork: MPMediaItemArtwork? = nil,
+         albumArtist: String? = nil, albumTitle: String? = nil) {
+        self.id = id
+        self.assetURL = assetURL
+        self.mediaType = mediaType
+        self.isLiveStream = isLiveStream
+        self.title = title
+        self.artist = artist
+        self.artwork = artwork
+        self.albumArtist = albumArtist
+        self.albumTitle = albumTitle
+    }
     
 }
 

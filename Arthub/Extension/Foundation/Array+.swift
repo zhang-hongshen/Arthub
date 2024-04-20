@@ -28,23 +28,7 @@ extension Array: RawRepresentable where Element: Codable {
     }
 }
 
-extension Array where Element: Identifiable {
-    
-    func nextId(after id: Element.ID) -> Element.ID? {
-        guard let index = self.firstIndex(where: { $0.id == id }) else {
-            return nil // 如果找不到给定id，则返回nil
-        }
-        
-        let nextIndex = index + 1
-        if nextIndex < self.count {
-            return self[nextIndex].id // 返回下一个元素的id
-        }
-        return nil
-    }
-    
-}
-
-extension Array where Element: Artist {
+extension Array where Element: ArtistDetail {
     
     func formatted() -> String {
         return self.map{ $0.name }.joined(separator: " & ")

@@ -6,6 +6,6 @@
 //
 import TMDb
 
-extension SearchService {
-    static let shared = SearchService()
+extension TMDb.SearchService {
+    static let shared = TMDb.SearchService()
 }

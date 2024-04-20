@@ -9,15 +9,58 @@ import SwiftUI
 import SwiftData
 import TMDb
 
+@ModelActor
+actor CachedDataHandler {
+    
+    private(set) static var shared: CachedDataHandler!
+    
+    static func configure(modelContainer: ModelContainer) {
+        shared = CachedDataHandler(modelContainer: modelContainer)
+    }
+    
+    func fetch<T>(_ descriptor: FetchDescriptor<T>) throws -> [T] where T : PersistentModel {
+        return try modelContext.fetch(descriptor)
+    }
+    
+    func fetch<T>(_ descriptor: FetchDescriptor<T>, batchSize: Int) throws -> FetchResultsCollection<T> where T : PersistentModel  {
+        return try modelContext.fetch(descriptor, batchSize: batchSize)
+    }
+    
+    func insert<T>(_ model: T) throws where T : PersistentModel  {
+        modelContext.insert(model)
+        try modelContext.save()
+    }
+    
+    func delete<T>(_ model: T) throws where T : PersistentModel {
+        try delete([model])
+    }
+    
+    func delete<T>(_ models: [T]) throws where T : PersistentModel {
+        for model in models {
+            modelContext.delete(model)
+        }
+        try modelContext.save()
+    }
+    
+    func delete<T>(model: T.Type, where predicate: Predicate<T>? = nil, includeSubclasses: Bool = true) throws where T : PersistentModel {
+        try modelContext.delete(model: model, where: predicate, includeSubclasses: includeSubclasses)
+        try modelContext.save()
+    }
+}
+
 @main
 struct ArthubApp: App {
     var sharedModelContainer: ModelContainer
     
     init() {
+        
         self.sharedModelContainer = {
             let schema = Schema([
-                MovieMetrics.self,
+                UserMetrics.self,
+                LibraryDetail.self,
+                FeedDetail.self
             ])
+            // MARK: change isStoredInMemoryOnly to true when release
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
 
             do {
@@ -26,30 +69,32 @@ struct ArthubApp: App {
                 fatalError("Could not create ModelContainer: \(error)")
             }
         }()
-        TMDbConfiguration.configure(TMDbConfiguration.shared)
+        CachedDataHandler.configure(modelContainer: sharedModelContainer)
+        TMDbConfiguration.configure(apiKey: ProcessInfo.processInfo.environment["tmdb_api_key"] ?? "")
     }
     
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .applyUserSettings()
+        Group {
+            WindowGroup {
+                ContentView()
+                    .applyUserSettings()
+            }
+#if os(macOS)
+            Settings {
+                SettingsView()
+                    .applyUserSettings()
                     
+            }
+#endif
         }
-        .windowResizability(.contentMinSize)
-        .defaultPosition(.center)
         .modelContainer(sharedModelContainer)
-        
-        Settings {
-            SettingsView()
-                .applyUserSettings()
+        #if !os(tvOS)
+        .windowResizability(.contentMinSize)
+        .commands {
+            SidebarCommands()
+            ToolbarCommands()
+            InspectorCommands()
         }
-        
-        ProgressWindow()
-            .defaultPosition(.center)
-            .windowResizability(.contentSize)
-        
-        ErrorWindow()
-            .defaultPosition(.center)
-            .windowResizability(.contentSize)
+        #endif
     }
 }

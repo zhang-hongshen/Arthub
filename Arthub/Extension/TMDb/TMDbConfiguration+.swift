@@ -9,6 +9,8 @@ import Foundation
 import TMDb
 
 extension TMDbConfiguration {
-    static let shared = TMDbConfiguration(apiKey: "0ae9c415ebc8eb780c066802dbbbe82d")
+    static func configure(apiKey: String) {
+        configure(TMDbConfiguration(apiKey: apiKey))
+    }
 }
  
