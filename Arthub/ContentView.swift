@@ -14,8 +14,7 @@ import UIKit
 struct ContentView: View {
     
     fileprivate enum AppTab: Identifiable, Hashable {
-        case movies, tvshows, songs
-        case feed(FeedDetail)
+        case movies, tvshows, music
         case settings
         
         var id: Self { self }
@@ -24,12 +23,10 @@ struct ContentView: View {
             switch self {
             case .movies:
                 LocalizedStringKey("Movies")
-            case .feed(let feed):
-                LocalizedStringKey(feed.title)
             case .tvshows:
                 LocalizedStringKey("TV Shows")
-            case .songs:
-                LocalizedStringKey("Songs")
+            case .music:
+                LocalizedStringKey("Music")
             case .settings:
                 LocalizedStringKey("Settings")
             }
@@ -41,41 +38,27 @@ struct ContentView: View {
                 "film"
             case .tvshows:
                 "tv"
-            case .songs:
+            case .music:
                 "music.note"
             case .settings:
                 "gear"
-            case .feed(_):
-                "link"
             }
         }
     }
     
     @State private var currentTab: AppTab? = .movies
-    @State private var feed: FeedDetail?
-    @State private var library: LibraryDetail?
     @State private var fileImporterPresented: Bool = false
     
-    @State private var state =  WindowState()
-    @State private var videoPlayer = ArthubVideoPlayer()
-    @State private var audioPlayer = ArthubAudioPlayer()
     
-    @Query
-    private var feeds: [FeedDetail] = []
+    @AppStorage(UserDefaults.library)
+    private var libraries: [String] = []
     
-    @AppStorage(UserDefaults.localMoviesData)
-    private var moviesData: [String] = []
-    @AppStorage(UserDefaults.localMusicData)
-    private var musicData: [String] = []
-    @AppStorage(UserDefaults.localTVShowsData)
-    private var tvShowsData: [String] = []
+    @Environment(WindowState.self)
+    private var state
     
     var body: some View {
         MainView()
             .background(.ultraThinMaterial)
-            .environment(state)
-            .environment(videoPlayer)
-            .environment(audioPlayer)
             .animation(.easeInOut, value: state.columnVisibility)
     }
 }
@@ -97,31 +80,21 @@ extension ContentView {
                       systemImage: AppTab.tvshows.systemImage)
                 .tag(AppTab.tvshows)
                 
-                Label(AppTab.songs.localizedName,
-                      systemImage: AppTab.songs.systemImage)
-                .tag(AppTab.songs)
+                Label(AppTab.music.localizedName,
+                      systemImage: AppTab.music.systemImage)
+                .tag(AppTab.music)
             }   header: {
                 Text("Home")
             }
-                
             Section {
-                
-            } header: {
-                Text("Files")
-            }
-                
-            Section {
-                ForEach(feeds) { feed in
-                    Label(AppTab.feed(feed).localizedName,
-                          systemImage: AppTab.feed(feed).systemImage)
-                    .tag(AppTab.feed(feed))
+                ForEach(libraries) {library in
+                    Text(library)
                 }
-            } header: {
-                Text("Feeds")
+            }   header: {
+                Text("Library")
             }
-                
+
         }
-        .listStyle(.sidebar)
         .fileImporter(isPresented: $fileImporterPresented,
                       allowedContentTypes: [.folder],
                       onCompletion: { result in
@@ -132,32 +105,15 @@ extension ContentView {
                 print(error.localizedDescription)
             }
         })
-        .sheet(item: $feed, onDismiss: { feed = nil }){
-            FeedEditionView(feed: $0)
-        }
-        .sheet(item: $library, onDismiss: { library = nil }){
-            LibraryEditionView(library: $0)
-        }
     }
     
     
     @ToolbarContentBuilder
     func ToolbarItems() -> some ToolbarContent {
         ToolbarItem(placement: .automatic) {
-            Menu("Add Library", systemImage: "plus") {
-                Button("Local Folder", systemImage: "folder.badge.plus") {
-                    fileImporterPresented = true
-                }
-                
-                Button("Subscribe Link", systemImage: "link.badge.plus") {
-                    feed = FeedDetail()
-                }
-                
-                Button("Network Share", systemImage: "externaldrive.badge.plus") {
-                    library = LibraryDetail()
-                }
+            Button("", systemImage: "plus") {
+                fileImporterPresented = true
             }
-            .menuIndicator(.hidden)
         }
     }
     
@@ -173,7 +129,6 @@ extension ContentView {
                 .toolbar(content: ToolbarItems)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 200)
         } detail : {
-            
             switch currentTab {
             case .movies:
                 NavigationStack {
@@ -183,7 +138,7 @@ extension ContentView {
                 NavigationStack {
                     TVShowsView().navigationTitle("TV Shows")
                 }
-            case .songs:
+            case .music:
                 NavigationStack {
                     MusicView().navigationTitle("Music")
                 }
@@ -208,10 +163,10 @@ extension ContentView {
                 }
                 
             
-            NavigationStack { MusicView().toolbar { ToolbarItems() } }.tag(AppTab.songs)
+            NavigationStack { MusicView().toolbar { ToolbarItems() } }.tag(AppTab.music)
                 .tabItem {
-                    Text(AppTab.songs.localizedName)
-                    Image(systemName: AppTab.songs.systemImage)
+                    Text(AppTab.music.localizedName)
+                    Image(systemName: AppTab.music.systemImage)
                 }
             
             
@@ -231,12 +186,6 @@ extension ContentView {
                 print(error.localizedDescription)
             }
         })
-        .sheet(item: $feed, onDismiss: { feed = nil }){
-            FeedEditionView(feed: $0)
-        }
-        .sheet(item: $library, onDismiss: { library = nil }){
-            LibraryEditionView(library: $0)
-        }
     }
     
     
@@ -260,12 +209,7 @@ extension ContentView {
 extension ContentView {
     func appendURL(_ url: URL) {
         let userDefaults = UserDefaults.standard
-        switch currentTab {
-        case .movies : userDefaults.append(forKey: UserDefaults.localMoviesData, newElement: url.relativeString)
-        case .songs : userDefaults.append(forKey: UserDefaults.localMusicData, newElement: url.relativeString)
-        case .tvshows: userDefaults.append(forKey: UserDefaults.localTVShowsData, newElement: url.relativeString)
-        default: break
-        }
+        userDefaults.append(forKey: UserDefaults.library, newElement: url.relativeString)
     }
 }
 

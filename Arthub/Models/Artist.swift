@@ -8,18 +8,20 @@
 import Foundation
 
 @Observable
-class ArtistDetail: Identifiable, Hashable {
+class Artist: Identifiable, Hashable {
     let id = UUID()
     
     var name: String
     var profile: URL?
+    var albums: [Album] = []
     
-    init(name: String = "", profile: URL? = nil) {
+    init(name: String = "", profile: URL? = nil, albums: [Album] = []) {
         self.name = name
         self.profile = profile
+        self.albums = albums
     }
     
-    static func == (lhs: ArtistDetail, rhs: ArtistDetail) -> Bool {
+    static func == (lhs: Artist, rhs: Artist) -> Bool {
         return lhs.name == rhs.name
     }
     

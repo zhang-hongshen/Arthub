@@ -13,7 +13,7 @@ struct MusicInspectorView: View {
         case info, lyrics
     }
     
-    @Bindable var music: MusicDetail
+    @Bindable var song: Song
     @State private var fileImporterPresented = false
     @State private var currentTab: Tab? = .info
     @State private var error: ArthubError?
@@ -25,7 +25,7 @@ struct MusicInspectorView: View {
                 InfoView().tag(Tab.info).tabItem {
                     Text("Info")
                 }
-                LyricsEditView(music: music).tag(Tab.lyrics).tabItem {
+                LyricsEditView(song: song).tag(Tab.lyrics).tabItem {
                     Text("Lyrics")
                 }
             }
@@ -42,7 +42,7 @@ extension MusicInspectorView {
     func InfoView() -> some View {
         GeometryReader { proxy in
             ScrollView {
-                ImageLoader(data: music.album.cover) {
+                ImageLoader(data: song.album.cover) {
                     ImageButton(systemImage: "music.note")
                 }
                     .frame(width: proxy.size.width,
@@ -71,48 +71,48 @@ extension MusicInspectorView {
     func InfoView1() -> some View {
         Form {
             LabeledContent("Title") {
-                TextField(text: $music.title,
+                TextField(text: $song.title,
                           prompt: Text(""),
                           label: { EmptyView() })
             }
             
             LabeledContent("Artist") {
-                TextField(text: $music.artist.name,
+                TextField(text: $song.artist.name,
                           prompt: Text(""),
                           label: { EmptyView() })
             }
             
             LabeledContent("Composer") {
-                TextField(text: $music.composer,
+                TextField(text: $song.composer,
                           prompt: Text(""),
                           label: { EmptyView() })
             }
             
             LabeledContent("Lyricist") {
-                TextField(text: $music.lyricist,
+                TextField(text: $song.lyricist,
                           prompt: Text(""),
                           label: { EmptyView() })
             }
             
             LabeledContent("Arranger") {
-                TextField(text: $music.arranger,
+                TextField(text: $song.arranger,
                           prompt: Text(""),
                           label: { EmptyView() })
             }
             
             LabeledContent("Album") {
-                TextField(text: $music.album.title,
+                TextField(text: $song.album.title,
                           prompt: Text(""),
                           label: { EmptyView() })
             }
             
             LabeledContent("Album Artist") {
-                TextField(text: $music.album.artist.name,
+                TextField(text: $song.album.artist.name,
                           prompt: Text(""),
                           label: { EmptyView() })
             }
             LabeledContent("Track") {
-                TextField(value: $music.trackNumber,
+                TextField(value: $song.trackNumber,
                           format: .number,
                           prompt: Text(""),
                           label: { EmptyView() })
@@ -120,7 +120,7 @@ extension MusicInspectorView {
             }
             
             LabeledContent("Disc Number") {
-                TextField(value: $music.discNumber,
+                TextField(value: $song.discNumber,
                           format: .number,
                           prompt: Text(""),
                           label: { EmptyView() })
@@ -136,7 +136,7 @@ extension MusicInspectorView {
     
     func importAlbumCover(_ url: URL) -> Bool {
         do {
-            music.album.cover = try Data(contentsOf: url)
+            song.album.cover = try Data(contentsOf: url)
         } catch {
             self.error = ArthubError.error(error)
             return false

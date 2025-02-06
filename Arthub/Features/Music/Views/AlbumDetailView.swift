@@ -10,13 +10,13 @@ import OrderedCollections
 
 struct AlbumDetailView: View {
     
-    var album: AlbumDetail
+    var album: Album
     
-    private var groupedAlbum: OrderedDictionary<Int, [MusicDetail]> {
-        var res: OrderedDictionary<Int, [MusicDetail]> = [:]
-        album.musics.forEach { music in
-            guard let discNumber = music.discNumber else { return }
-            res.updateValue(forKey: discNumber, default: []) { $0.append(music)}
+    private var groupedAlbum: OrderedDictionary<Int, [Song]> {
+        var res: OrderedDictionary<Int, [Song]> = [:]
+        album.songs.forEach { song in
+            guard let discNumber = song.discNumber else { return }
+            res.updateValue(forKey: discNumber, default: []) { $0.append(song)}
         }
         return res
     }

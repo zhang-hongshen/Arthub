@@ -10,7 +10,7 @@ import SwiftData
 
 @Model
 class UserMetrics: Identifiable {
-    @Attribute(.unique) let id = UUID()
+    @Attribute(.unique) var id = UUID()
     
     var createdAt: Date = Date.now
     var watchedAt: Date? = nil

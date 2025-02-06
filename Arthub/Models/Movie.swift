@@ -9,10 +9,10 @@ import Foundation
 import TMDb
 
 @Observable
-class MovieDetail: MediaItem, Identifiable, Hashable {
-    var id: Movie.ID { metadata.id }
+class Movie: MediaItem, Identifiable, Hashable {
+    var id: TMDb.Movie.ID { metadata.id }
     var addedAt: Date?
-    var metadata: Movie 
+    var metadata: TMDb.Movie
     var metrics: UserMetrics
     var posters: [ImageMetadata] = []
     var logos: [ImageMetadata] = []
@@ -22,14 +22,14 @@ class MovieDetail: MediaItem, Identifiable, Hashable {
     var videos: [VideoMetadata] = []
     
     init(fileURL: URL, duration: TimeInterval, addedAt: Date? = nil,
-         metadata: Movie, metrics: UserMetrics = UserMetrics()) {
+         metadata: TMDb.Movie, metrics: UserMetrics = UserMetrics()) {
         self.addedAt = addedAt
         self.metadata = metadata
         self.metrics = metrics
         super.init(fileURL: fileURL, duration: duration)
     }
     
-    static func ==(lhs: MovieDetail, rhs: MovieDetail) -> Bool {
+    static func ==(lhs: Movie, rhs: Movie) -> Bool {
         return lhs.id == rhs.id
     }
     
@@ -39,24 +39,24 @@ class MovieDetail: MediaItem, Identifiable, Hashable {
     
 }
 
-extension MovieDetail {
+extension Movie {
     var progress: Double {
         return duration != 0 ? Double(metrics.currentTime) / Double(duration) : 0
     }
 }
 
-extension MovieDetail {
-    static func examples() -> [MovieDetail] {
+extension Movie {
+    static func examples() -> [Movie] {
         return [
-            MovieDetail(fileURL: URL(string: "")!,
+            Movie(fileURL: URL(string: "")!,
                         duration: 10,
-                        metadata: Movie(id: 0, title: ""),
+                  metadata: TMDb.Movie(id: 0, title: ""),
                         metrics: UserMetrics())
         ]
     }
 }
 
-extension MovieDetail {
+extension Movie {
     
     func fetchRelatedData() async throws {
         try await withThrowingTaskGroup(of: Void.self) { group in

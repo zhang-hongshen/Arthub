@@ -84,8 +84,7 @@ extension MoviesView {
                     MovieListView(movies: movies, sortable: true)
                         .navigationTitle(Text(genre))
                 } label: {
-                    debugPrint("render")
-                    return ImageLoader(url: movies.randomElement()?.metadata.backdropPath) {
+                    ImageLoader(url: movies.randomElement()?.metadata.backdropPath) {
                         Rectangle().fill(.random.gradient)
                     }
                     .frame(height: Landscape.height(), alignment: .center)
@@ -105,11 +104,11 @@ extension MoviesView {
 extension MoviesView {
     
     @ViewBuilder
-    func MoviesSection(_ movies: [MovieDetail], sectionTitle: LocalizedStringKey, sortable: Bool) -> some View {
+    func MoviesSection(_ movies: [Movie], sectionTitle: LocalizedStringKey, sortable: Bool) -> some View {
         Section {
             ScrollView(.horizontal) {
                 HStack {
-                    ForEach(movies.prefix(viewModel.sectionMaxMovie)) { movie in
+                    ForEach(movies.prefix(viewModel.maxMoviePerSection)) { movie in
                         NavigationLink {
                             MovieDetailView(movie: movie)
                                 .navigationTitle(movie.metadata.title)
@@ -127,7 +126,7 @@ extension MoviesView {
                 
                 Spacer()
                 
-                if movies.count > viewModel.sectionMaxMovie {
+                if movies.count > viewModel.maxMoviePerSection {
                     NavigationLink("View All") {
                         MovieListView(movies: movies, sortable: sortable)
                             .navigationTitle(Text(sectionTitle))

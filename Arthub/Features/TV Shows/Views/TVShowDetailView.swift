@@ -134,7 +134,7 @@ extension TVShowDetailView {
             HStack(alignment: .top) {
                 ForEach(tvShow.cast.sorted(using: KeyPathComparator(\.order))) { castMember in
                     NavigationLink {
-                        PersonDetailView(person: PersonDetail(metadata: Person(
+                        PersonDetailView(person: Person(metadata: TMDb.Person(
                             id: castMember.id,
                             name: castMember.name,
                             gender: Gender.unknown

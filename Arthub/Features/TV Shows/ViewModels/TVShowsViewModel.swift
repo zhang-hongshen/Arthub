@@ -59,40 +59,23 @@ import AVFoundation
     }
     
     func fetchData() {
+        if let fetchDataTask = fetchDataTask {
+            fetchDataTask.cancel()
+        }
         isFetchingData = true
-        fetchDataTask?.cancel()
-        fetchDataTask = Task(priority: .userInitiated) {
-            
-            let tvShows = try await withThrowingTaskGroup(of: Set<TVShowDetail>.self) { group in
-                var tvShows: Set<TVShowDetail> = []
-                
-                group.addTask { 
-                    let res = try await self.fetchLocalData()
-                    return res
-                }
-                for try await result in group {
-                    tvShows.formUnion(result)
-                }
-                return tvShows
-            }
+        fetchDataTask = Task {
+            let tvShows = try await self.fetchLocalData()
             DispatchQueue.main.async {
-
-                self.tvShows.formUnion(tvShows)
-                // delete not exist element
-                self.tvShows.formIntersection(tvShows)
+                self.tvShows = tvShows
                 self.isFetchingData = false
             }
         }
     }
     
     private func fetchLocalData() async throws -> Set<TVShowDetail> {
-        
-        let urls = UserDefaults.standard.value(forKey: UserDefaults.localTVShowsData, default: [])
+        let urls = UserDefaults.standard.value(forKey: UserDefaults.library, default: [])
             .compactMap { URL(string: $0) }
-        return try await fetchMultiDirectoryData(urls)
-    }
-    
-    private func fetchMultiDirectoryData(_ urls: [URL]) async throws -> Set<TVShowDetail> {
+        if urls.isEmpty { return [] }
         var tvShows: Set<TVShowDetail> = []
         for url in urls {
             try await fetchDirectoryData(url, tvShows: &tvShows)

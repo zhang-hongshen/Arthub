@@ -6,9 +6,8 @@
 //
 import Foundation
 import TMDb
-import struct TMDb.Movie
 
-extension Movie {
+extension TMDb.Movie {
     
     func copy(
         title: String? = nil,

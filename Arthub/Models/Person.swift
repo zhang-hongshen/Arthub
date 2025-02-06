@@ -1,5 +1,5 @@
 //
-//  PersonDetail.swift
+//  Person.swift
 //  Arthub
 //
 //  Created by 张鸿燊 on 20/2/2024.
@@ -9,18 +9,18 @@ import Foundation
 import TMDb
 
 @Observable
-class PersonDetail: Identifiable, Hashable {
-    var id: Person.ID { metadata.id }
-    var metadata: Person
-    var castMovies: [Movie] = []
-    var knownForMovies: [Movie] = []
+class Person: Identifiable, Hashable {
+    var id: TMDb.Person.ID { metadata.id }
+    var metadata: TMDb.Person
+    var castMovies: [TMDb.Movie] = []
+    var knownForMovies: [TMDb.Movie] = []
     var profiles: [ImageMetadata] = []
     
-    init(metadata: Person) {
+    init(metadata: TMDb.Person) {
         self.metadata = metadata
     }
     
-    static func==(lhs: PersonDetail, rhs: PersonDetail) -> Bool {
+    static func==(lhs: Person, rhs: Person) -> Bool {
         return lhs.id == rhs.id
     }
     
@@ -29,7 +29,7 @@ class PersonDetail: Identifiable, Hashable {
     }
 }
 
-extension PersonDetail {
+extension Person {
     
     func fetchDetail() async throws {
         async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
@@ -53,7 +53,7 @@ extension PersonDetail {
         async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
         async let fetchMovieCredits = PersonService.shared.movieCredits(forPerson: metadata.id)
         let (imageConfiguration, movieCredits) = try await (getImageConfiguration, fetchMovieCredits)
-        var castMovies: [Movie] = []
+        var castMovies: [TMDb.Movie] = []
         movieCredits.cast.forEach { cast in
             castMovies.append(cast.copy(
                 posterPath:imageConfiguration.posterURL(for: cast.posterPath),
@@ -67,7 +67,7 @@ extension PersonDetail {
         async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
         async let fetchKnownFor = PersonService.shared.knownFor(forPerson: metadata.id)
         let (imageConfiguration, knownFor) = try await (getImageConfiguration, fetchKnownFor)
-        var knownForMovies: [Movie] = []
+        var knownForMovies: [TMDb.Movie] = []
         knownFor.forEach { show in
             switch show {
             case .movie(let movie):

@@ -10,27 +10,27 @@ import AVFoundation
 //import SwiftUI
 
 @Observable
-class MusicDetail: MediaItem,Identifiable, Hashable {
+class Song: MediaItem,Identifiable, Hashable {
     let id = UUID()
     let createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     
     var title: String
-    var artist: ArtistDetail
+    var artist: Artist
     var composer: String
     var lyricist: String
     var arranger: String
     var releaseDate: Date?
     
     var lyrics: LyricsDetail
-    var album: AlbumDetail
+    var album: Album
     var discNumber: Int?
     var trackNumber: Int?
     
     init(title: String = "" , fileURL: URL, duration: TimeInterval,
-         artist: ArtistDetail = ArtistDetail(), composer: String = "", lyricist: String = "",
+         artist: Artist = Artist(), composer: String = "", lyricist: String = "",
          arranger: String = "", releaseDate: Date? = nil, lyrics: LyricsDetail = LyricsDetail(),
-         album: AlbumDetail = AlbumDetail(), trackNumber: Int? = nil, discNumber: Int? = nil) {
+         album: Album = Album(), trackNumber: Int? = nil, discNumber: Int? = nil) {
         self.title = title
         self.artist = artist
         self.composer = composer
@@ -44,7 +44,7 @@ class MusicDetail: MediaItem,Identifiable, Hashable {
         super.init(fileURL: fileURL, duration: duration)
     }
     
-    static func == (lhs: MusicDetail, rhs: MusicDetail) -> Bool {
+    static func == (lhs: Song, rhs: Song) -> Bool {
         return lhs.title == rhs.title
         && lhs.artist == rhs.artist
         && lhs.album == rhs.album
@@ -57,7 +57,7 @@ class MusicDetail: MediaItem,Identifiable, Hashable {
     }
 }
 
-extension MusicDetail {
+extension Song {
     
     func loadMetadata() async throws {
         try await loadLocalMetadata()
@@ -83,7 +83,7 @@ extension MusicDetail {
     
 }
 
-extension MusicDetail {
+extension Song {
     
     private func commonMetadata(_ metadata: [AVMetadataItem]) async throws {
         if artist.name.isEmpty {

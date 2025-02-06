@@ -14,13 +14,13 @@ import FeedKit
 
 @Observable class MoviesViewModel {
     
-    var movies: Set<MovieDetail> = []
+    var movies: Set<Movie> = []
     var fetchDataTask: Task<Void, Error>? = nil
     var isFetchingData: Bool = false
     var searchText: String = ""
-    @ObservationIgnored var sectionMaxMovie = 10
+    @ObservationIgnored var maxMoviePerSection = 10
     
-    var filteredMovies: Set<MovieDetail> {
+    var filteredMovies: Set<Movie> {
         if searchText.isEmpty {
             return movies
         }
@@ -34,25 +34,25 @@ import FeedKit
         }
     }
     
-    var watchingMovies: [MovieDetail] {
+    var watchingMovies: [Movie] {
         filteredMovies.filter{ $0.metrics.watchedAt != nil }
             .sorted(using: KeyPathComparator(\.metrics.watchedAt, order: .reverse))
     }
     
-    var recentlyAddedMovies: [MovieDetail] {
+    var recentlyAddedMovies: [Movie] {
         filteredMovies.sorted(using: KeyPathComparator(\.addedAt, order: .reverse))
     }
     
-    var popularityMovies: [MovieDetail] {
+    var popularityMovies: [Movie] {
         filteredMovies.sorted(using: KeyPathComparator(\.metadata.popularity, order: .reverse))
     }
     
-    var topRatedMovies: [MovieDetail] {
+    var topRatedMovies: [Movie] {
         filteredMovies.sorted(using: KeyPathComparator(\.metadata.voteAverage, order: .reverse))
     }
     
-    var groupedMovies: OrderedDictionary<String, [MovieDetail]> {
-        var res: OrderedDictionary<String, [MovieDetail]> = [:]
+    var groupedMovies: OrderedDictionary<String, [Movie]> {
+        var res: OrderedDictionary<String, [Movie]> = [:]
         filteredMovies.forEach { movie in
             guard let genres = movie.metadata.genres else { return }
             genres.map{ $0.name }.forEach { genre in
@@ -68,37 +68,25 @@ import FeedKit
     }
     
     func fetchData() {
+        if let fetchDataTask = fetchDataTask {
+            fetchDataTask.cancel()
+        }
         isFetchingData = true
-        fetchDataTask?.cancel()
         fetchDataTask = Task {
-            let movies = try await withThrowingTaskGroup(of: Set<MovieDetail>.self) { group in
-                var movies: Set<MovieDetail> = []
-                group.addTask{ try await self.fetchLocalData() }
-                group.addTask{ try await self.fetchFeedData() }
-                for try await result in group {
-                    movies.formUnion(result)
-                }
-                return movies
-            }
+            let movies = try await self.fetchLocalData()
             DispatchQueue.main.async {
-                self.movies.formUnion(movies)
-                // delete not exist element
-                self.movies.formIntersection(movies)
+                self.movies = movies
                 self.isFetchingData = false
             }
         }
     }
     
-    private func fetchLocalData() async throws -> Set<MovieDetail> {
-        let urls = UserDefaults.standard.value(forKey: UserDefaults.localMoviesData, default: [])
+    private func fetchLocalData() async throws -> Set<Movie> {
+        let urls = UserDefaults.standard.value(forKey: UserDefaults.library, default: [])
             .compactMap { URL(string: $0) }
-        return try await fetchMultiDirectoryData(urls)
-    }
-    
-    private func fetchMultiDirectoryData(_ urls: [URL]) async throws  -> Set<MovieDetail> {
         if urls.isEmpty { return [] }
-        return try await withThrowingTaskGroup(of: Set<MovieDetail>.self) { group in
-            var movies: Set<MovieDetail> = []
+        return try await withThrowingTaskGroup(of: Set<Movie>.self) { group in
+            var movies: Set<Movie> = []
             for url in urls {
                 group.addTask{ try await self.fetchDirectoryData(url) }
             }
@@ -109,37 +97,46 @@ import FeedKit
         }
     }
     
-    private func fetchDirectoryData(_ dir: URL) async throws -> Set<MovieDetail> {
+    private func fetchDirectoryData(_ dir: URL) async throws -> Set<Movie> {
         guard dir.hasDirectoryPath else { return [] }
         let urls = try FileManager.default
             .contentsOfDirectory(at: dir,
                                  includingPropertiesForKeys: nil,
                                  options: [.skipsHiddenFiles])
-        var movies: Set<MovieDetail> = []
+        var movies: Set<Movie> = []
         for url in urls {
             if url.hasDirectoryPath {
                 movies.formUnion(try await fetchDirectoryData(url))
                 continue
             }
             if !url.isVideo { continue }
-            guard let matches = url.fileName.wholeMatch(of: RegexPattern.movieName) else { continue }
-            let title = String(matches.output.title)
-            let year = Int(matches.output.year ?? "")
-            
-            let metadata = try await searchMovieMetadata(title: title, year: year)
-            let metrics = try await UserMetrics.getByTMDbID(metadata.id)
-            let duration = try await AVURLAsset(url: url).load(.duration).seconds
-            let movie = MovieDetail(fileURL: url, duration: duration, addedAt: url.addedAt,
-                                    metadata: metadata, metrics: metrics)
-            movies.insert(movie)
+
+            let movie = try await handleSingleMovie(url)
+            if let movie = movie {
+                movies.insert(movie)
+            }
         }
         return movies
     }
+    
+    private func handleSingleMovie(_ url: URL) async throws -> Movie? {
+        guard let matches = url.fileName.wholeMatch(of: RegexPattern.movieName) else { return nil }
+        let title = String(matches.output.title)
+        let year = Int(matches.output.year ?? "")
+        let metadata = try await searchMovieMetadata(title: title, year: year)
+        guard let metadata = metadata else {
+            return nil
+        }
+        let metrics = try await UserMetrics.getByTMDbID(metadata.id)
+        let duration = try await AVURLAsset(url: url).load(.duration).seconds
+        return Movie(fileURL: url, duration: duration, addedAt: url.addedAt,
+                     metadata: metadata, metrics: metrics)
+    }
 
-    private func searchMovieMetadata(title: String, year: Int?) async throws -> Movie {
+    
+    private func searchMovieMetadata(title: String, year: Int?) async throws -> TMDb.Movie? {
         guard var metadata = try await SearchService.shared.searchMovies(query: title, year: year).results.first else {
-            return Movie(id: UUID().hashValue, title: title,
-                         releaseDate: Calendar.current.date(from: DateComponents(year: year)))
+            return nil
         }
         let imagesConfiguration = try await ConfigurationService.shared.getImageConfiguration()
         metadata = try await MovieService.shared.details(forMovie: metadata.id)
@@ -149,71 +146,4 @@ import FeedKit
         )
     }
     
-    private func fetchFeedData() async throws -> Set<MovieDetail> {
-        var movies: Set<MovieDetail> = []
-        for feed in try await FeedDetail.listAll() {
-            guard let url = URL(string: feed.url) else { continue }
-            let res = FeedParser(URL: url).parse()
-            switch res {
-            case .success(let feed):
-                movies.formUnion(try await handleFeed(feed))
-            case .failure(let error):
-                print(error.localizedDescription)
-            }
-        }
-        return movies
-    }
-    
-    private func handleFeed(_ feed: Feed) async throws -> Set<MovieDetail> {
-        var movies: Set<MovieDetail> = []
-        if let json = feed.jsonFeed {
-            movies.formUnion(try await handleJSONFeed(json))
-        }
-        if let rss = feed.rssFeed {
-            movies.formUnion(try await handleRSSFeed(rss))
-        }
-        return movies
-    }
-    
-    private func handleJSONFeed(_ feed: JSONFeed) async throws -> Set<MovieDetail> {
-        guard let items = feed.items else { return []}
-        var movies: Set<MovieDetail> = []
-        for item in items {
-            print("title: \(item.title ?? ""), url: \(item.url ?? ""), externalUrl: \(item.externalUrl ?? "")")
-            guard let urlString = item.url, let url = URL(string: urlString),
-                  let title = item.title else { continue }
-            var year: Int? {
-                guard let date = item.datePublished else { return nil }
-                return Calendar.current.component(.year, from: date)
-            }
-            let metadata = try await searchMovieMetadata(title: title, year: year)
-            let metrics = try await UserMetrics.getByTMDbID(metadata.id)
-            let movie = MovieDetail(fileURL: url, duration: 0,
-                                    metadata: metadata, metrics: metrics)
-            movies.insert(movie)
-            self.movies.insert(movie)
-        }
-        return movies
-    }
-    
-    private func handleRSSFeed(_ feed: RSSFeed) async throws -> Set<MovieDetail> {
-        guard let items = feed.items else { return [] }
-        var movies: Set<MovieDetail> = []
-        for item in items {
-            print("title: \(item.title ?? ""), url: \(item.link ?? "")")
-            guard let urlString = item.link, let url = URL(string: urlString),
-                  let title = item.title else { continue }
-            var year: Int? {
-                guard let date = item.pubDate else { return nil }
-                return Calendar.current.component(.year, from: date)
-            }
-            let metadata = try await searchMovieMetadata(title: title, year: year)
-            let metrics = try await UserMetrics.getByTMDbID(metadata.id)
-            let movie = MovieDetail(fileURL: url, duration: 0,
-                                    metadata: metadata, metrics: metrics)
-            movies.insert(movie)
-            self.movies.insert(movie)
-        }
-        return movies
-    }
 }

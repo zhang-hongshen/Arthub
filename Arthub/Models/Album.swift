@@ -8,18 +8,18 @@
 import Foundation
 
 @Observable
-class AlbumDetail: Identifiable, Hashable {
+class Album: Identifiable, Hashable {
     let id = UUID()
     let createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     
     var title: String
-    var artist: ArtistDetail
+    var artist: Artist
     var releaseDate: Date?
     var cover: Data?
-    var musics: [MusicDetail] = []
+    var songs: [Song] = []
     
-    init(title: String = "", artist: ArtistDetail = ArtistDetail(),
+    init(title: String = "", artist: Artist = Artist(),
          releaseDate: Date? = nil, cover: Data? = nil) {
         self.title = title
         self.artist = artist
@@ -27,7 +27,7 @@ class AlbumDetail: Identifiable, Hashable {
         self.cover = cover
     }
     
-    static func == (lhs: AlbumDetail, rhs: AlbumDetail) -> Bool {
+    static func == (lhs: Album, rhs: Album) -> Bool {
         return lhs.title == rhs.title
         && lhs.artist == rhs.artist
         && lhs.releaseDate == rhs.releaseDate

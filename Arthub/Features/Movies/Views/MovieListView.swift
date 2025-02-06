@@ -9,15 +9,15 @@ import SwiftUI
 
 struct MovieListView: View {
     
-    @State var movies: [MovieDetail] = []
+    @State var movies: [Movie] = []
     @State var sortable = true
     @State private var orderProperty: MovieOrderProperty = .title
     @State private var order: SortOrder = .forward
     @State private var searchText: String = ""
     @State private var columns: [GridItem] = []
 
-    private var filteredMovies: [MovieDetail] {
-        var filtered: [MovieDetail] = movies
+    private var filteredMovies: [Movie] {
+        var filtered: [Movie] = movies
         if !searchText.isEmpty {
             let search = searchText.lowercased()
             filtered = movies.filter {
@@ -28,7 +28,7 @@ struct MovieListView: View {
         return filtered.sorted(using: sortComparator)
     }
     
-    private var sortComparator: KeyPathComparator<MovieDetail> {
+    private var sortComparator: KeyPathComparator<Movie> {
         switch orderProperty {
         case .title: KeyPathComparator(\.metadata.title, order: order)
         case .releaseDate: KeyPathComparator(\.metadata.releaseDate, order: order)

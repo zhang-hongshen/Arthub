@@ -8,7 +8,7 @@
 import Foundation
 import TMDb
 
-extension Person {
+extension TMDb.Person {
     
     func copy(
         name: String? = nil,

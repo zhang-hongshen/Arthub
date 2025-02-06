@@ -10,7 +10,7 @@ import TMDb
 
 struct MovieMetadataSearchView: View {
     
-    @Bindable var movie: MovieDetail
+    @Bindable var movie: Movie
     
     @State private var fetchDataTask: Task<Void, Error>? = nil
     @State private var movieMetadata: [TMDb.Movie] =  []

@@ -1,18 +1,16 @@
-![76](./Arthub/Assets.xcassets/AppIcon.appiconset/76.png)
+<div align="center"><img alt="Arthub" height="200px" src="./logo.png" /></div>
 
-# Arthub
+## 💡What is Arthub?
 
-Arthub is a video/audio collector for macOS. You can add your favourite movie, series, music and whatever you want into it. All the data is storaged locally. Also, you can mark external folders as the library folder.
+Arthub is a native macOS app that aims to help you to manage your local media resources.It can identify movie, tv show and music from the library added automatically.
 
-Arthub is an native macOS app, it's works well on macOS Sonoma 14.0 or higher. 
+## :star: Key Features
+
+🍔 Search metadata for each resource automatically
+🍰 Support time-synced lyrics
 
 ## Install
 
 ```shell
-brew install arthub
+brew install --cask arthub
 ```
-
-## Features
-Classify the media following your preference
-Custom lyrics, also support time-synced lyrics
-

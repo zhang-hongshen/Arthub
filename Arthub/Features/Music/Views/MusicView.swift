@@ -34,7 +34,7 @@ struct MusicView: View {
             .task{ viewModel.fetchData() }
             .refreshable{ viewModel.fetchData() }
             .navigationDestination(isPresented: $viewModel.playerPresented) {
-                MusicPlayer(currentMusic: viewModel.currentMusic)
+                MusicPlayer(currentSong: viewModel.currentSong)
             }
             .onChange(of: player.currentItemID, initial: true, viewModel.handlePlayItemIDChange)
             .onDisappear(perform: player.optOut)
@@ -58,15 +58,15 @@ extension MusicView {
         
         ToolbarItemGroup(placement: placement) {
             HStack {
-                ImageLoader(data: viewModel.currentMusic?.album.cover, aspectRatio: 1, contentMode: .fit) {
+                ImageLoader(data: viewModel.currentSong?.album.cover, aspectRatio: 1, contentMode: .fit) {
                     ImageButton(systemImage: "music.note")
                 }
                 .frame(height: height)
                 .onTapGesture { viewModel.playerPresented = true }
                     
                 VStack(alignment: .center) {
-                    MarqueeText(verbatim: "\(viewModel.currentMusic?.title ?? "")  - \(viewModel.currentMusic?.album.title ?? "")").font(.headline)
-                    MarqueeText(verbatim: "\(viewModel.currentMusic?.artist.name ?? "-")")
+                    MarqueeText(verbatim: "\(viewModel.currentSong?.title ?? "")  - \(viewModel.currentSong?.album.title ?? "")").font(.headline)
+                    MarqueeText(verbatim: "\(viewModel.currentSong?.artist.name ?? "-")")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -107,12 +107,12 @@ extension MusicView {
     @ToolbarContentBuilder
     func ToolbarItems() -> some ToolbarContent {
         #if os(macOS)
-        let toolbarPlacement: ToolbarItemPlacement = .music
+        let placement: ToolbarItemPlacement = .music
         #else
-        let toolbarPlacement: ToolbarItemPlacement = .automatic
+        let placement: ToolbarItemPlacement = .automatic
         #endif
                                                                    
-        ToolbarItemGroup(placement: toolbarPlacement) {
+        ToolbarItemGroup(placement: placement) {
             
             Spacer()
             
@@ -156,7 +156,7 @@ extension MusicView {
         MusicTable()
             .ignoresSafeArea(edges: .bottom)
             .overlay {
-                if viewModel.filteredMusics.isEmpty {
+                if viewModel.filteredSongs.isEmpty {
                     ContentUnavailableView.search
                 }
             }
@@ -164,42 +164,42 @@ extension MusicView {
     
     @ViewBuilder
     func MusicTable() -> some View {
-        Table(of: MusicDetail.self, selection: $viewModel.selectedMusicID) {
-            TableColumn("Title") { music in
+        Table(of: Song.self, selection: $viewModel.selectedSongID) {
+            TableColumn("Title") { song in
                 HStack(alignment: .center) {
-                    MusicCover(music)
+                    MusicCover(song)
                     
                     VStack(alignment: .leading) {
-                        Text(music.title).font(.headline)
-                        Text(music.album.title).font(.subheadline)
+                        Text(song.title).font(.headline)
+                        Text(song.album.title).font(.subheadline)
                     }
                 }
             }
             TableColumn("Artist") { Text($0.artist.name) }
             TableColumn("Duration") { Text($0.duration.formatted()) }
         } rows: {
-            ForEach(viewModel.filteredMusics) { music in
-                TableRow(music)
+            ForEach(viewModel.filteredSongs) { song in
+                TableRow(song)
                     #if os(macOS)
-                    .onHover { viewModel.hoveringMusicID = $0 ? music.id : nil }
+                    .onHover { viewModel.hoveringSongID = $0 ? song.id : nil }
                     #endif
                     .contextMenu {
                         Button("Play", systemImage: "play.fill"){
-                            Task { try await startPlay(from: music.id) }
+                            Task { try await startPlay(from: song.id) }
                         }
                         Button("Edit Metadata", systemImage: "info.circle") {
-                            viewModel.selectedMusicID = music.id
+                            viewModel.selectedSongID = song.id
                             viewModel.inspectorPresented = true
                         }
                         
                         NavigationLink {
-                            AlbumDetailView(album: music.album)
+                            AlbumDetailView(album: song.album)
                         } label: {
                             Label("Album", systemImage: "music.note.list")
                         }
 
-                        ShareLink(item: music.fileURL,
-                                  message: Text(verbatim: music.title)) {
+                        ShareLink(item: song.fileURL,
+                                  message: Text(verbatim: song.title)) {
                             Label("Share", systemImage: "square.and.arrow.up")
                         }
                     }
@@ -208,7 +208,7 @@ extension MusicView {
         .tableStyle(.inset)
         .tableColumnHeaders(.hidden)
         .scrollIndicators(.never, axes: .horizontal)
-        .contextMenu(forSelectionType: MusicDetail.ID.self,
+        .contextMenu(forSelectionType: Song.ID.self,
                      menu: { _ in },
                      primaryAction: { items in
             guard let item = items.first else { return }
@@ -218,7 +218,7 @@ extension MusicView {
     
     
     @ViewBuilder
-    func MusicCover(_ music: MusicDetail) -> some View {
+    func MusicCover(_ music: Song) -> some View {
         ImageLoader(data: music.album.cover, aspectRatio: 1) {
             ImageButton(systemImage: "music.note")
         }
@@ -228,9 +228,9 @@ extension MusicView {
     }
     
     @ViewBuilder
-    func MusicCoverOverlay(_ music: MusicDetail) -> some View {
-        let isPlaying = music.id == viewModel.currentMusic?.id && player.isPlaying
-        let isHovering = music.id == viewModel.hoveringMusicID
+    func MusicCoverOverlay(_ music: Song) -> some View {
+        let isPlaying = music.id == viewModel.currentSong?.id && player.isPlaying
+        let isHovering = music.id == viewModel.hoveringSongID
         ZStack {
             if isPlaying && !isHovering {
                 ImageButton {
@@ -264,9 +264,9 @@ extension MusicView {
         Button {
             if player.isPlaylistEmpty {
                 Task {
-                    let musicID =  viewModel.selectedMusicID ?? viewModel.musics.randomElement()?.id
-                    guard let musicID else { return }
-                    try await startPlay(from: musicID)
+                    let songID =  viewModel.selectedSongID ?? viewModel.songs.randomElement()?.id
+                    guard let songID else { return }
+                    try await startPlay(from: songID)
                 }
             } else {
                 player.togglePlayPause()
@@ -284,8 +284,8 @@ extension MusicView {
     
     @ViewBuilder
     func InspectorView() -> some View {
-        if let music = viewModel.musics.first(where: { $0.id == viewModel.selectedMusicID }) {
-            MusicInspectorView(music: music)
+        if let song = viewModel.songs.first(where: { $0.id == viewModel.selectedSongID }) {
+            MusicInspectorView(song: song)
         } else {
             ContentUnavailableView("No Selection",
                                    systemImage: "music.note",
@@ -302,28 +302,28 @@ extension MusicView {
 
 extension MusicView {
     
-    func startPlay(from: MusicDetail.ID) async throws {
-        viewModel.selectedMusicID = from
+    func startPlay(from: Song.ID) async throws {
+        viewModel.selectedSongID = from
         await setupPlayer()
         try player.start()
     }
     
     func setupPlayer() {
-        guard let index = viewModel.filteredMusics.firstIndex(where: { $0.id == viewModel.selectedMusicID }) else {
+        guard let index = viewModel.filteredSongs.firstIndex(where: { $0.id == viewModel.selectedSongID }) else {
             return
         }
         var playableAssets: [NowPlayableStaticMetadata] = []
-        for music in Array(viewModel.filteredMusics[index...] + viewModel.filteredMusics[0...index]) {
+        for song in Array(viewModel.filteredSongs[index...] + viewModel.filteredSongs[0...index]) {
             var artwork: MPMediaItemArtwork? = nil
-            if let cover = music.album.cover {
+            if let cover = song.album.cover {
                 artwork = MPMediaItemArtwork(data: cover)
             }
             let metadata = NowPlayableStaticMetadata(
-                id: NSNumber(value: music.id.hashValue),
-                assetURL: music.fileURL, mediaType: .audio, isLiveStream: false,
-                title: music.title, artist: music.artist.name,
-                artwork: artwork, albumArtist: music.album.artist.name,
-                albumTitle: music.album.title)
+                id: NSNumber(value: song.id.hashValue),
+                assetURL: song.fileURL, mediaType: .audio, isLiveStream: false,
+                title: song.title, artist: song.artist.name,
+                artwork: artwork, albumArtist: song.album.artist.name,
+                albumTitle: song.album.title)
             playableAssets.append(metadata)
         }
         player.preloadItems(playableAssets: playableAssets)

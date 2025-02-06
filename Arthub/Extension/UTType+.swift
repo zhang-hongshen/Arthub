@@ -9,5 +9,5 @@ import UniformTypeIdentifiers
 
 extension UTType {
     
-    static let ttml = UTType("com.hanson.ttml")!
+    static let ttml = UTType("com.zhanghongshen.ttml")!
 }

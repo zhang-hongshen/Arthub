@@ -29,7 +29,7 @@
 			<key>UTTypeIcons</key>
 			<dict/>
 			<key>UTTypeIdentifier</key>
-			<string>com.hanson.ttml</string>
+			<string>com.zhanghongshen.ttml</string>
 			<key>UTTypeReferenceURL</key>
 			<string>https://www.w3.org/TR/2018/REC-ttml1-20181108</string>
 			<key>UTTypeTagSpecification</key>
@@ -54,7 +54,7 @@
 			<key>UTTypeIcons</key>
 			<dict/>
 			<key>UTTypeIdentifier</key>
-			<string>com.hanson.ttml</string>
+			<string>com.zhanghongshen.ttml</string>
 			<key>UTTypeReferenceURL</key>
 			<string>https://www.w3.org/TR/2018/REC-ttml1-20181108</string>
 			<key>UTTypeTagSpecification</key>

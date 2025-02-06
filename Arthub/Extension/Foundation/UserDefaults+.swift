@@ -11,9 +11,7 @@ extension UserDefaults {
     static let appearance = "appearance"
     
     // Storage
-    static let localMoviesData = "localMoviesData"
-    static let localTVShowsData = "localTVShowsData"
-    static let localMusicData = "localMusicData"
+    static let library = "library"
     
     func value<T>(forKey key: String, default defaultValue: T) -> T {
         return self.value(forKey: key) as? T ?? defaultValue

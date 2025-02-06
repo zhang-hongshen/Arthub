@@ -11,7 +11,7 @@ import TMDb
 
 struct PersonDetailView : View {
     
-    var person: PersonDetail
+    var person: Person
     
     @State private var fetchDataTask: Task<Void, Error>? = nil
     @State private var profileSize = CGSize(width: Portrait.width(),

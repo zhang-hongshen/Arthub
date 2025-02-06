@@ -52,13 +52,15 @@ actor CachedDataHandler {
 struct ArthubApp: App {
     var sharedModelContainer: ModelContainer
     
+    @State private var state =  WindowState()
+    @State private var videoPlayer = ArthubVideoPlayer()
+    @State private var audioPlayer = ArthubAudioPlayer()
+    
     init() {
         
         self.sharedModelContainer = {
             let schema = Schema([
                 UserMetrics.self,
-                LibraryDetail.self,
-                FeedDetail.self
             ])
             // MARK: change isStoredInMemoryOnly to true when release
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -88,6 +90,9 @@ struct ArthubApp: App {
 #endif
         }
         .modelContainer(sharedModelContainer)
+        .environment(state)
+        .environment(videoPlayer)
+        .environment(audioPlayer)
         #if !os(tvOS)
         .windowResizability(.contentMinSize)
         .commands {

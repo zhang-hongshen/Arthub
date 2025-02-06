@@ -21,7 +21,7 @@ fileprivate struct MusicPlayerSizePreferenceKey: PreferenceKey {
 
 struct MusicPlayer: View {
     
-    var currentMusic: MusicDetail?
+    var currentSong: Song?
     // playback control
     @State private var currentTime: TimeInterval = 0
     @State private var lyricsPresented: Bool = false
@@ -95,8 +95,8 @@ extension MusicPlayer {
     func Background() -> some View {
         
         var backgroundColor: Color {
-            if let currentMusic,
-               let cover = currentMusic.album.cover,
+            if let currentSong,
+               let cover = currentSong.album.cover,
                let cgImage = CIImage(data: cover),
                let averageColor = cgImage.averageColor {
                 Color(cgColor: averageColor)
@@ -123,7 +123,7 @@ extension MusicPlayer {
                 
                 if lyricsPresented {
                     TimeSyncedLyricsView(
-                        lyrics: currentMusic?.lyrics.body ?? [],
+                        lyrics: currentSong?.lyrics.body ?? [],
                         syncedTime: Binding(
                             get: { currentTime },
                             set: { _ in })) { lyric in
@@ -152,7 +152,7 @@ extension MusicPlayer {
     
     @ViewBuilder
     func MusicCover() -> some View {
-        ImageLoader(data: currentMusic?.album.cover, aspectRatio: 1, contentMode: .fit) {
+        ImageLoader(data: currentSong?.album.cover, aspectRatio: 1, contentMode: .fit) {
             ImageButton(systemImage: "music.note")
         }
         .shadow()
@@ -165,10 +165,10 @@ extension MusicPlayer {
     func MusicInfoView() -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 5){
-                Text(verbatim: currentMusic?.title ?? "-")
+                Text(verbatim: currentSong?.title ?? "-")
                     .font(.title.bold())
 
-                Text(verbatim: currentMusic?.artist.name ?? "-")
+                Text(verbatim: currentSong?.artist.name ?? "-")
                     .font(.headline)
             }
             Spacer()
@@ -279,11 +279,11 @@ extension MusicPlayer {
 }
 
 #Preview {
-    MusicPlayer(currentMusic:
-                        MusicDetail(fileURL: URL(string: "")!,
-                                    duration: 50, artist: ArtistDetail(),
+    MusicPlayer(currentSong:
+                        Song(fileURL: URL(string: "")!,
+                                    duration: 50, artist: Artist(),
                                     lyrics: LyricsDetail(),
-                                    album: AlbumDetail(artist: ArtistDetail())))
+                                    album: Album(artist: Artist())))
     .environment(ArthubAudioPlayer())
     .environment(WindowState())
 }

@@ -8,7 +8,7 @@
 import Foundation
 import TMDb
 
-extension TVEpisode {
+extension TMDb.TVEpisode {
     
     func copy(
         name: String? = nil,

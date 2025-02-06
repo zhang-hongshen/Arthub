@@ -10,7 +10,7 @@ import MediaPlayer
 
 struct MovieCard: View {
     
-    @State var movie: MovieDetail
+    @State var movie: Movie
     @State var width: CGFloat
     
     @State private var isHovering = false
@@ -111,5 +111,5 @@ extension MovieCard {
 }
 
 #Preview {
-    MovieCard(movie: MovieDetail.examples()[0], width: 200)
+    MovieCard(movie: Movie.examples()[0], width: 200)
 }

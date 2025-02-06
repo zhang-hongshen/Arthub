@@ -13,7 +13,7 @@ import TMDb
 
 struct MovieDetailView: View {
     
-    @State var movie: MovieDetail
+    @State var movie: Movie
     @State private var fetchDataTask: Task<Void, Error>? = nil
     @State private var setupPlayerTask: Task<Void, Error>? = nil
     @State private var playerPresented: Bool = false
@@ -219,7 +219,7 @@ extension MovieDetailView {
             HStack(alignment: .top) {
                 ForEach(movie.cast.sorted(using: KeyPathComparator(\.order))) { castMember in
                     NavigationLink {
-                        PersonDetailView(person: PersonDetail(metadata: Person(
+                        PersonDetailView(person: Person(metadata: TMDb.Person(
                             id: castMember.id,
                             name: castMember.name,
                             gender: Gender.unknown)))
@@ -279,7 +279,7 @@ extension MovieDetailView {
                     HStack(alignment: .top) {
                         ForEach(crew, id:\.creditID) { crewMember in
                             NavigationLink {
-                                PersonDetailView(person: PersonDetail(metadata: Person(
+                                PersonDetailView(person: Person(metadata: TMDb.Person(
                                     id: crewMember.id,
                                     name: crewMember.name,
                                     gender: Gender.unknown)))
