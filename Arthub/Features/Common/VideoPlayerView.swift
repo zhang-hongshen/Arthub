@@ -40,6 +40,10 @@ struct VideoPlayerView<SidebarContent, ControlsContent>: View
     @State private var previewImageSize: CGSize = .init(width: .zero, height: 100)
     @State private var currentResolution: VideoResolution? = nil
     @State private var selectedTab: PlayerSettingsTab = .video
+    // Sidecar subtitles
+    @State private var subtitles: [MediaNaming.Subtitle] = []
+    @State private var selectedSubtitle: MediaNaming.Subtitle? = nil
+    @State private var subtitleCues: [SubtitleCue] = []
     
     @Environment(\.dismiss) private var dismiss
     @Environment(ArthubVideoPlayer.self) private var player
@@ -64,6 +68,7 @@ struct VideoPlayerView<SidebarContent, ControlsContent>: View
     var body: some View {
         VideoPlayer(player: player.player)
             .ignoresSafeArea()
+            .overlay(alignment: .bottom) { SubtitleView() }
             .overlay {
                 PlayerOverlayView()
                     .contentShape(.rect)
@@ -78,8 +83,16 @@ struct VideoPlayerView<SidebarContent, ControlsContent>: View
             .navigationBarBackButtonHidden(true)
             .toolbar(.hidden, for: .automatic)
             .task {
+                // Only bootstrap playback here if nobody (e.g. an episode
+                // picker) hasn't already started a specific item.
+                guard player.currentIndex == nil else { return }
                 do { try await player.start(at: currentTime) }
                 catch {}
+            }
+            .task(id: player.currentAssetURL) { await loadSubtitles() }
+            .task(id: selectedSubtitle) {
+                guard let url = selectedSubtitle?.url else { subtitleCues = []; return }
+                subtitleCues = await Task.detached { SidecarParser.subtitles(url: url) }.value
             }
             .onAppear(perform: onAppear)
             .onHover(perform: { isHovering = $0 })
@@ -174,6 +187,22 @@ extension VideoPlayerView {
                 
                 controlsTrailingContent()
                 
+                if !subtitles.isEmpty {
+                    Menu {
+                        Picker("Subtitles", selection: $selectedSubtitle) {
+                            Text("Off").tag(MediaNaming.Subtitle?.none)
+                            ForEach(subtitles) { subtitle in
+                                Text(subtitle.displayName).tag(Optional(subtitle))
+                            }
+                        }
+                        .pickerStyle(.inline)
+                    } label: {
+                        Image(systemName: selectedSubtitle == nil ? "captions.bubble" : "captions.bubble.fill")
+                    }
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                }
+                
                 Group {
                     if currentResolution != nil {
                         Picker("", selection: $currentResolution) {
@@ -247,6 +276,48 @@ extension VideoPlayerView {
                 Text(previewTime.formatted())
             }
         }
+    }
+}
+
+// MARK: Subtitles
+
+extension VideoPlayerView {
+    
+    @ViewBuilder
+    func SubtitleView() -> some View {
+        if !subtitleCues.isEmpty {
+            TimelineView(.periodic(from: .now, by: 0.1)) { _ in
+                let time = player.player.currentTime().seconds
+                let text = subtitleCues.filter { $0.start <= time && time < $0.end }
+                    .map(\.text).joined(separator: "\n")
+                if !text.isEmpty {
+                    Text(verbatim: text)
+                        .font(.title2.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.white)
+                        .shadow(color: .black, radius: 2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.black.opacity(0.35), in: .rect(cornerRadius: 6))
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, playerOverlayPresented ? playbackControlMinSize.height + 24 : 48)
+            .animation(.default, value: playerOverlayPresented)
+            .allowsHitTesting(false)
+        }
+    }
+    
+    /// Finds `Movie.srt`, `Movie.en.srt`, `Subs/…` next to the current item and picks a default.
+    func loadSubtitles() async {
+        guard let url = player.currentAssetURL else {
+            subtitles = []
+            selectedSubtitle = nil
+            return
+        }
+        let found = await Task.detached { MediaNaming.subtitles(for: url) }.value
+        subtitles = found
+        selectedSubtitle = MediaNaming.preferredSubtitle(in: found)
     }
 }
 
