@@ -152,7 +152,7 @@ extension MusicPlayer {
     
     @ViewBuilder
     func MusicCover() -> some View {
-        ImageLoader(data: currentSong?.album.cover, aspectRatio: 1, contentMode: .fit) {
+        ArtworkImage(data: currentSong?.album.cover, aspectRatio: 1, contentMode: .fit) {
             ImageButton(systemImage: "music.note")
         }
         .shadow()

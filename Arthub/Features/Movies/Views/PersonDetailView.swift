@@ -56,7 +56,7 @@ extension PersonDetailView {
     
     @ViewBuilder
     func ProfileView() -> some View {
-        ImageLoader(url: person.metadata.profilePath)
+        ArtworkImage(url: person.metadata.profilePath)
             .frame(width: profileSize.width,
                    height: profileSize.height)
             .cornerRadius()
@@ -154,7 +154,7 @@ extension PersonDetailView {
                 ForEach(person.knownForMovies
                     .sorted(using: KeyPathComparator(\.releaseDate, order: .reverse))) { movie in
                     VStack(alignment: .leading) {
-                        ImageLoader(url: movie.posterPath, aspectRatio: Portrait.aspectRatio)
+                        ArtworkImage(url: movie.posterPath, aspectRatio: Portrait.aspectRatio)
                             .frame(width: Portrait.width(.small), height: Portrait.height(.small))
                             .clipped()
                             .shadow()
@@ -199,7 +199,7 @@ extension PersonDetailView {
         ScrollView(.horizontal) {
             HStack(alignment: .top) {
                 ForEach(person.profiles) { profile in
-                    ImageLoader(url: profile.filePath, aspectRatio: Portrait.aspectRatio)
+                    ArtworkImage(url: profile.filePath, aspectRatio: Portrait.aspectRatio)
                         .frame(width: Portrait.width(.small),
                                height: Portrait.height(.small))
                         .clipped()

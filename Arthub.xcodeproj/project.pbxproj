@@ -17,7 +17,7 @@
 		701875CD2B751FBA00A560FC /* WindowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701875CC2B751FBA00A560FC /* WindowState.swift */; };
 		701910A52BA209B60012BF9C /* Waveform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701910A42BA209B60012BF9C /* Waveform.swift */; };
 		701A460E2B9183BE008D7578 /* MPMediaItemArtwork+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701A460D2B9183BE008D7578 /* MPMediaItemArtwork+.swift */; };
-		701A46122B91BBBB008D7578 /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701A46112B91BBBB008D7578 /* ImageLoader.swift */; };
+		701A46122B91BBBB008D7578 /* ArtworkImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701A46112B91BBBB008D7578 /* ArtworkImage.swift */; };
 		701A46152B91F615008D7578 /* Landscape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701A46142B91F615008D7578 /* Landscape.swift */; };
 		701A46172B91F623008D7578 /* Portrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701A46162B91F623008D7578 /* Portrait.swift */; };
 		701A46192B91F657008D7578 /* Default.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701A46182B91F657008D7578 /* Default.swift */; };
@@ -103,7 +103,6 @@
 		70A15BB22B8F47B800B8ACE7 /* Rating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A15BB12B8F47B800B8ACE7 /* Rating.swift */; };
 		70A15BB42B8F8A1400B8ACE7 /* TVEpisodeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A15BB32B8F8A1400B8ACE7 /* TVEpisodeCard.swift */; };
 		70A15BBC2B90867300B8ACE7 /* MarqueeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A15BBB2B90867300B8ACE7 /* MarqueeText.swift */; };
-		70B3CF782BA3031A00D9BEEE /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 70B3CF772BA3031A00D9BEEE /* Kingfisher */; };
 		70B3CF7A2BA32C9000D9BEEE /* ToolbarItemPlacement+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B3CF792BA32C9000D9BEEE /* ToolbarItemPlacement+.swift */; };
 		70B3DEFC2BA45FB000AD2AB3 /* NowPlayableBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B3DEFB2BA45FB000AD2AB3 /* NowPlayableBehavior.swift */; };
 		70B3E05B2BA471E400AD2AB3 /* VideoNowPlayableBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B3E05A2BA471E400AD2AB3 /* VideoNowPlayableBehavior.swift */; };
@@ -189,7 +188,7 @@
 		701875CC2B751FBA00A560FC /* WindowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowState.swift; sourceTree = "<group>"; };
 		701910A42BA209B60012BF9C /* Waveform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Waveform.swift; sourceTree = "<group>"; };
 		701A460D2B9183BE008D7578 /* MPMediaItemArtwork+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MPMediaItemArtwork+.swift"; sourceTree = "<group>"; };
-		701A46112B91BBBB008D7578 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
+		701A46112B91BBBB008D7578 /* ArtworkImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImage.swift; sourceTree = "<group>"; };
 		701A46142B91F615008D7578 /* Landscape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landscape.swift; sourceTree = "<group>"; };
 		701A46162B91F623008D7578 /* Portrait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Portrait.swift; sourceTree = "<group>"; };
 		701A46182B91F657008D7578 /* Default.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Default.swift; sourceTree = "<group>"; };
@@ -327,7 +326,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				70DF83242B86262E00352A16 /* DequeModule in Frameworks */,
-				70B3CF782BA3031A00D9BEEE /* Kingfisher in Frameworks */,
 				70C2ED4B2B88B27000989895 /* Collections in Frameworks */,
 				709F08F52B84BFDC00935B72 /* TMDb in Frameworks */,
 			);
@@ -603,7 +601,7 @@
 				707578402B8330C30019A254 /* ArthubSlider.swift */,
 				70A15BB12B8F47B800B8ACE7 /* Rating.swift */,
 				70A15BBB2B90867300B8ACE7 /* MarqueeText.swift */,
-				701A46112B91BBBB008D7578 /* ImageLoader.swift */,
+				701A46112B91BBBB008D7578 /* ArtworkImage.swift */,
 				70564C272B97129100D6159E /* DevicePickerView.swift */,
 				70C0416E2B99F809004A8101 /* ShareView.swift */,
 				709D915D2BA1AA1200232D1C /* ImageButton.swift */,
@@ -781,7 +779,6 @@
 				709F08F42B84BFDC00935B72 /* TMDb */,
 				70DF83232B86262E00352A16 /* DequeModule */,
 				70C2ED4A2B88B27000989895 /* Collections */,
-				70B3CF772BA3031A00D9BEEE /* Kingfisher */,
 			);
 			productName = Arthub;
 			productReference = 705DF6DE2B6C9F76006D9726 /* Arthub.app */;
@@ -859,7 +856,6 @@
 			packageReferences = (
 				709F08F32B84BFDC00935B72 /* XCRemoteSwiftPackageReference "TMDb" */,
 				70DF831B2B86214E00352A16 /* XCRemoteSwiftPackageReference "swift-collections" */,
-				70B3CF762BA3031A00D9BEEE /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			productRefGroup = 705DF6DF2B6C9F76006D9726 /* Products */;
 			projectDirPath = "";
@@ -976,7 +972,7 @@
 				70E2AE7F2B81D27F0085E8EE /* CastMember+.swift in Sources */,
 				709D915E2BA1AA1200232D1C /* ImageButton.swift in Sources */,
 				707578282B8221CA0019A254 /* DefaultAvatarView.swift in Sources */,
-				701A46122B91BBBB008D7578 /* ImageLoader.swift in Sources */,
+				701A46122B91BBBB008D7578 /* ArtworkImage.swift in Sources */,
 				70E2AE6F2B80CF000085E8EE /* UserMetrics.swift in Sources */,
 				7075B5802B8DE1A400757230 /* MusicOrder.swift in Sources */,
 				70A15B982B8F0A1900B8ACE7 /* TVSeasonDetail.swift in Sources */,
@@ -1413,14 +1409,6 @@
 				minimumVersion = 11.1.0;
 			};
 		};
-		70B3CF762BA3031A00D9BEEE /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/onevcat/Kingfisher";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 7.11.0;
-			};
-		};
 		70DF831B2B86214E00352A16 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-collections.git";
@@ -1436,11 +1424,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 709F08F32B84BFDC00935B72 /* XCRemoteSwiftPackageReference "TMDb" */;
 			productName = TMDb;
-		};
-		70B3CF772BA3031A00D9BEEE /* Kingfisher */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 70B3CF762BA3031A00D9BEEE /* XCRemoteSwiftPackageReference "Kingfisher" */;
-			productName = Kingfisher;
 		};
 		70C2ED4A2B88B27000989895 /* Collections */ = {
 			isa = XCSwiftPackageProductDependency;

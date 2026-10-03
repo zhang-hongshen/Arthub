@@ -30,8 +30,8 @@ extension MPMediaItemArtwork {
         }
         #elseif canImport(UIKit)
         var image: UIImage? = nil
-        if url.isLocal {
-            image = UIImage(contentsOf: url)
+        if url.isFileURL {
+            image = UIImage(contentsOfFile: url.path)
         } else {
             do {
                 let (data, _) = try await URLSession.shared.data(from: url)
