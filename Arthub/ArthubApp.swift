@@ -62,8 +62,11 @@ struct ArthubApp: App {
             let schema = Schema([
                 UserMetrics.self,
             ])
-            // MARK: change isStoredInMemoryOnly to true when release
-            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            // Explicit URL keeps the store out of the shared "default.store".
+            let storeURL = URL.applicationSupportDirectory
+                .appending(path: "Arthub", directoryHint: .isDirectory)
+                .appending(path: "Arthub.store", directoryHint: .notDirectory)
+            let modelConfiguration = ModelConfiguration(schema: schema, url: storeURL)
 
             do {
                 return try ModelContainer(for: schema, configurations: [modelConfiguration])

@@ -20,6 +20,8 @@ class UserMetrics: Identifiable {
     
     var currentTime: TimeInterval = 0 {
         didSet {
+            // Only mark as watched once actual playback has moved the playhead.
+            guard currentTime > 0 else { return }
             watchedAt = .now
         }
     }
@@ -34,12 +36,8 @@ class UserMetrics: Identifiable {
 extension UserMetrics {
     
     static private func getByTMDbIDFetchDescriptor(_ tmdbID: Int) -> FetchDescriptor<UserMetrics> {
-        let predicate = #Predicate<UserMetrics> {
-            if let tmdbID = $0.tmdbID {
-                return tmdbID == tmdbID
-            } else {
-                return false
-            }
+        let predicate = #Predicate<UserMetrics> { metrics in
+            metrics.tmdbID == tmdbID
         }
         
         return FetchDescriptor<UserMetrics>(
