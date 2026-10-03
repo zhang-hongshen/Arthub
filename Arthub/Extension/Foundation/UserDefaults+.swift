@@ -9,6 +9,7 @@ import Foundation
 extension UserDefaults {
     // General
     static let appearance = "appearance"
+    static let language = "language"
     
     // Storage
     static let library = "library"
@@ -33,3 +34,28 @@ enum Appearance: String {
     var id: Self { self }
 }
 
+enum Language: String, CaseIterable, Identifiable {
+    case system = "system"
+    case english = "en"
+    case simplifiedChinese = "zh-Hans"
+    case traditionalChinese = "zh-Hant"
+    
+    var id: Self { self }
+    
+    /// Locale injected into the SwiftUI environment so views relocalize immediately.
+    var locale: Locale {
+        switch self {
+        case .system:   Locale(identifier: Locale.preferredLanguages.first ?? Locale.current.identifier)
+        default:        Locale(identifier: rawValue)
+        }
+    }
+    
+    /// Persists the choice as `AppleLanguages` so Foundation lookups
+    /// (`String(localized:)`, system menus) follow it after relaunch.
+    func applyToBundle() {
+        switch self {
+        case .system:   UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        default:        UserDefaults.standard.set([rawValue], forKey: "AppleLanguages")
+        }
+    }
+}

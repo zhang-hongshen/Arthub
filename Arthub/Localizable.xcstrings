@@ -10,6 +10,19 @@
     "%@" : {
 
     },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ left" : {
+
+    },
     "%lld Episode" : {
       "localizations" : {
         "en" : {
@@ -41,8 +54,23 @@
               }
             }
           }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 集"
+                }
+              }
+            }
+          }
         }
       }
+    },
+    "%lld Episodes" : {
+
     },
     "%lld Season" : {
       "localizations" : {
@@ -81,55 +109,64 @@
               }
             }
           }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld 季"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld 季"
+                }
+              }
+            }
+          }
         }
       }
+    },
+    "%lld Seasons" : {
+
+    },
+    "%lld songs, %lld minutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld songs, %2$lld minutes"
+          }
+        }
+      }
+    },
+    "About" : {
+
     },
     "Action" : {
 
     },
-    "Add Library" : {
-      "extractionState" : "stale",
+    "Add a media folder or change your search." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加资源库"
+            "value" : "添加媒体文件夹，或修改搜索条件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入媒體資料夾，或修改搜尋條件。"
           }
         }
       }
     },
-    "Add Network Share" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加网络共享"
-          }
-        }
-      }
-    },
-    "Add Subscribe Link" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加订阅链接"
-          }
-        }
-      }
-    },
-    "Address" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "地址"
-          }
-        }
-      }
+    "Add Artwork" : {
+
     },
     "Album" : {
       "localizations" : {
@@ -137,6 +174,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "专辑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專輯"
           }
         }
       }
@@ -148,6 +191,31 @@
             "state" : "translated",
             "value" : "专辑艺人"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專輯藝人"
+          }
+        }
+      }
+    },
+    "Album Artwork" : {
+
+    },
+    "All Files" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部檔案"
+          }
         }
       }
     },
@@ -157,6 +225,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "又名"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "又名"
+          }
+        }
+      }
+    },
+    "Another match is being saved. Please try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在保存其他匹配结果，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在儲存其他配對結果，請稍後再試。"
           }
         }
       }
@@ -168,6 +258,32 @@
             "state" : "translated",
             "value" : "外观"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外觀"
+          }
+        }
+      }
+    },
+    "Apply show to all episodes in this show's folder" : {
+
+    },
+    "Apply show to episodes in the same folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将剧集归属应用于同目录的其他分集"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將劇集歸屬套用至同資料夾的其他分集"
+          }
         }
       }
     },
@@ -177,6 +293,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "编曲"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編曲"
           }
         }
       }
@@ -188,8 +310,17 @@
             "state" : "translated",
             "value" : "艺人"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "藝人"
+          }
         }
       }
+    },
+    "Artwork" : {
+
     },
     "Ascending" : {
       "localizations" : {
@@ -197,6 +328,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "升序"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遞增"
           }
         }
       }
@@ -208,6 +345,12 @@
             "state" : "translated",
             "value" : "音频"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音訊"
+          }
         }
       }
     },
@@ -217,6 +360,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "音频轨道"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音軌"
           }
         }
       }
@@ -228,6 +377,12 @@
             "state" : "translated",
             "value" : "剧照"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "劇照"
+          }
         }
       }
     },
@@ -237,6 +392,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "个人简介"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "個人簡介"
           }
         }
       }
@@ -248,23 +409,49 @@
             "state" : "translated",
             "value" : "生日"
           }
-        }
-      }
-    },
-    "Cancel" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : " 取消"
+            "value" : "生日"
           }
         }
       }
     },
+    "Box Office" : {
+
+    },
+    "Budget" : {
+
+    },
+    "Cancel" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "Cast & Crew" : {
+
+    },
     "Composer" : {
       "localizations" : {
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作曲家"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "作曲家"
@@ -279,15 +466,31 @@
             "state" : "translated",
             "value" : "内容"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內容"
+          }
         }
       }
     },
+    "Created By" : {
+
+    },
     "Crew" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "剧组人员"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "劇組人員"
           }
         }
       }
@@ -295,6 +498,12 @@
     "Dark" : {
       "localizations" : {
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "深色"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "深色"
@@ -309,6 +518,12 @@
             "state" : "translated",
             "value" : "添加日期"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入日期"
+          }
         }
       }
     },
@@ -318,6 +533,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "发行日期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發行日期"
           }
         }
       }
@@ -329,6 +550,12 @@
             "state" : "translated",
             "value" : "观看日期"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "觀看日期"
+          }
         }
       }
     },
@@ -338,6 +565,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
           }
         }
       }
@@ -349,8 +582,20 @@
             "state" : "needs_review",
             "value" : "降序"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "遞減"
+          }
         }
       }
+    },
+    "Details" : {
+
+    },
+    "Director" : {
+
     },
     "Disc %lld" : {
 
@@ -358,12 +603,34 @@
     "Disc Number" : {
 
     },
+    "Done" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        }
+      }
+    },
     "Duration" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "时长"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時長"
           }
         }
       }
@@ -375,16 +642,11 @@
             "state" : "translated",
             "value" : "编辑元数据"
           }
-        }
-      }
-    },
-    "Enable HTTPS" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "启用HTTPS"
+            "value" : "編輯中繼資料"
           }
         }
       }
@@ -396,12 +658,40 @@
             "state" : "translated",
             "value" : "结束"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "結束"
+          }
+        }
+      }
+    },
+    "Enter a valid year or leave it empty." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入有效年份，或留空。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入有效年份，或留空。"
+          }
         }
       }
     },
     "Episode %lld" : {
       "localizations" : {
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第%lld集"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "第%lld集"
@@ -416,6 +706,12 @@
             "state" : "needs_review",
             "value" : "集"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "集"
+          }
         }
       }
     },
@@ -426,41 +722,71 @@
             "state" : "translated",
             "value" : "错误"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
+          }
         }
       }
     },
-    "example.com" : {
-      "extractionState" : "stale",
+    "Executive Producers" : {
+
+    },
+    "File Missing" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "example.com"
+            "value" : "文件缺失"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案遺失"
           }
         }
       }
     },
     "Files" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "文件"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案"
+          }
         }
       }
     },
-    "Finish" : {
-      "extractionState" : "stale",
+    "First Aired" : {
+
+    },
+    "Folder offline or access unavailable. Saved media is kept." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "完成"
+            "value" : "文件夹已离线或无法访问，已保存的媒体记录会保留。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾已離線或無法存取，已儲存的媒體記錄會保留。"
           }
         }
       }
+    },
+    "Forced" : {
+
     },
     "General" : {
       "localizations" : {
@@ -468,6 +794,12 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "通用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "一般"
           }
         }
       }
@@ -479,6 +811,12 @@
             "state" : "translated",
             "value" : "分类"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "類型"
+          }
         }
       }
     },
@@ -489,18 +827,34 @@
             "state" : "translated",
             "value" : "首页"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首頁"
+          }
         }
       }
     },
     "Info" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "信息"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "資訊"
+          }
         }
       }
+    },
+    "Information" : {
+
     },
     "Inspector" : {
 
@@ -512,6 +866,12 @@
             "state" : "translated",
             "value" : "擅长"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "擅長"
+          }
         }
       }
     },
@@ -522,8 +882,36 @@
             "state" : "translated",
             "value" : "代表电影"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代表電影"
+          }
         }
       }
+    },
+    "Language" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語言"
+          }
+        }
+      }
+    },
+    "Languages" : {
+
+    },
+    "Last Aired" : {
+
     },
     "Library" : {
       "localizations" : {
@@ -531,6 +919,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "资源库"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料庫"
           }
         }
       }
@@ -541,6 +935,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "浅色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "淺色"
           }
         }
       }
@@ -553,6 +953,12 @@
             "state" : "translated",
             "value" : "本地"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機"
+          }
         }
       }
     },
@@ -564,6 +970,12 @@
             "state" : "translated",
             "value" : "本地文件夹"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機資料夾"
+          }
         }
       }
     },
@@ -574,6 +986,12 @@
             "state" : "translated",
             "value" : "作词家"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作詞家"
+          }
         }
       }
     },
@@ -583,6 +1001,44 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "歌词"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌詞"
+          }
+        }
+      }
+    },
+    "Match Metadata" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匹配资料"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配對資料"
+          }
+        }
+      }
+    },
+    "Media Type" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒体类型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒體類型"
           }
         }
       }
@@ -595,6 +1051,28 @@
             "state" : "needs_review",
             "value" : "电影"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "電影"
+          }
+        }
+      }
+    },
+    "Movie" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "电影"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電影"
+          }
         }
       }
     },
@@ -606,6 +1084,12 @@
             "state" : "translated",
             "value" : "电影元数据"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電影中繼資料"
+          }
         }
       }
     },
@@ -615,6 +1099,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "电影"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電影"
           }
         }
       }
@@ -626,41 +1116,17 @@
             "state" : "translated",
             "value" : "音乐"
           }
-        }
-      }
-    },
-    "Music Metadata" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "音乐元数据"
+            "value" : "音樂"
           }
         }
       }
     },
-    "Network Share" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网络共享"
-          }
-        }
-      }
-    },
-    "Next" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下一步"
-          }
-        }
-      }
+    "Network" : {
+
     },
     "No Lyrics" : {
       "localizations" : {
@@ -668,6 +1134,44 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有歌词"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有歌詞"
+          }
+        }
+      }
+    },
+    "No matches. Try another title or remove the year." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有匹配结果，请尝试其他片名或清空年份。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有配對結果，請嘗試其他片名或清除年份。"
+          }
+        }
+      }
+    },
+    "No Media" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有媒体文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有媒體檔案"
           }
         }
       }
@@ -679,16 +1183,49 @@
             "state" : "translated",
             "value" : "没有选择"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇"
+          }
         }
       }
     },
-    "None" : {
-      "extractionState" : "stale",
+    "No Unmatched Media" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无"
+            "value" : "没有未识别媒体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有未辨識媒體"
+          }
+        }
+      }
+    },
+    "Nothing is playing." : {
+
+    },
+    "Off" : {
+
+    },
+    "Offline" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "离线"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "離線"
           }
         }
       }
@@ -696,35 +1233,31 @@
     "OK" : {
 
     },
-    "Optional" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可选"
-          }
-        }
-      }
+    "Open Player" : {
+
     },
-    "Overview" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简介"
-          }
-        }
-      }
+    "Original Audio" : {
+
     },
-    "Password" : {
+    "Original Title" : {
+
+    },
+    "Other files keep the season and episode numbers from their names or Season folders." : {
+
+    },
+    "Other files keep the season and episode numbers in their S01E01 filenames." : {
       "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "密码"
+            "value" : "其他文件保留 S01E01 格式文件名中的季数与集数。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他檔案保留 S01E01 格式檔名中的季數與集數。"
           }
         }
       }
@@ -732,6 +1265,12 @@
     "Place Of Birth" : {
       "localizations" : {
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出生地"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "出生地"
@@ -746,6 +1285,22 @@
             "state" : "translated",
             "value" : "播放"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放"
+          }
+        }
+      }
+    },
+    "Play S%lld, E%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Play S%1$lld, E%2$lld"
+          }
         }
       }
     },
@@ -759,6 +1314,12 @@
             "state" : "translated",
             "value" : "请选择一个对象"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請選擇一個項目"
+          }
         }
       }
     },
@@ -768,6 +1329,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "热门"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "熱門"
           }
         }
       }
@@ -779,6 +1346,12 @@
             "state" : "translated",
             "value" : "热门"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "熱門"
+          }
         }
       }
     },
@@ -788,6 +1361,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "海报"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "海報"
           }
         }
       }
@@ -799,16 +1378,11 @@
             "state" : "translated",
             "value" : "预览"
           }
-        }
-      }
-    },
-    "Previous" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "上一步"
+            "value" : "預覽"
           }
         }
       }
@@ -820,16 +1394,11 @@
             "state" : "translated",
             "value" : "人物图片"
           }
-        }
-      }
-    },
-    "Protocol" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "协议"
+            "value" : "人物圖片"
           }
         }
       }
@@ -841,16 +1410,11 @@
             "state" : "translated",
             "value" : "最近添加"
           }
-        }
-      }
-    },
-    "Recently Watched" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最近观看"
+            "value" : "最近加入"
           }
         }
       }
@@ -862,52 +1426,23 @@
             "state" : "translated",
             "value" : "刷新"
           }
-        }
-      }
-    },
-    "Release Date" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "发行日期"
+            "value" : "重新整理"
           }
         }
       }
     },
-    "Release Year" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发行年份"
-          }
-        }
-      }
+    "Region of Origin" : {
+
     },
-    "Remote" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "远程"
-          }
-        }
-      }
+    "Released" : {
+
     },
-    "Required" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "必填"
-          }
-        }
-      }
+    "Repeat" : {
+
     },
     "Resume" : {
       "localizations" : {
@@ -915,6 +1450,79 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "恢复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續"
+          }
+        }
+      }
+    },
+    "Resume E%lld" : {
+
+    },
+    "Resume S%lld, E%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Resume S%1$lld, E%2$lld"
+          }
+        }
+      }
+    },
+    "Retry Unmatched" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新识别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新辨識"
+          }
+        }
+      }
+    },
+    "Reveal in Finder" : {
+
+    },
+    "Run Time" : {
+
+    },
+    "Scanning folders…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在扫描文件夹…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在掃描資料夾…"
+          }
+        }
+      }
+    },
+    "Search" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋"
           }
         }
       }
@@ -927,6 +1535,12 @@
             "state" : "needs_review",
             "value" : "%@的搜索结果"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@的搜尋結果"
+          }
         }
       }
     },
@@ -937,12 +1551,25 @@
             "state" : "needs_review",
             "value" : "第%lld季"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "第%lld季"
+          }
         }
       }
     },
     "Seasons" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "季"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "季"
@@ -950,12 +1577,21 @@
         }
       }
     },
+    "See All" : {
+
+    },
     "Settings" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
           }
         }
       }
@@ -967,13 +1603,28 @@
             "state" : "translated",
             "value" : "分享"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享"
+          }
         }
       }
+    },
+    "Shuffle" : {
+
     },
     "Songs" : {
       "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌曲"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "歌曲"
@@ -988,8 +1639,23 @@
             "state" : "translated",
             "value" : "排序"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序方式"
+          }
         }
       }
+    },
+    "Specials" : {
+
+    },
+    "Spoken Languages" : {
+
+    },
+    "Starring" : {
+
     },
     "Start" : {
       "localizations" : {
@@ -998,8 +1664,20 @@
             "state" : "translated",
             "value" : "开始"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始"
+          }
         }
       }
+    },
+    "Status" : {
+
+    },
+    "Studio" : {
+
     },
     "Subscribe Link" : {
       "extractionState" : "stale",
@@ -1009,8 +1687,17 @@
             "state" : "translated",
             "value" : "订阅链接"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱連結"
+          }
         }
       }
+    },
+    "Subtitles" : {
+
     },
     "System" : {
       "localizations" : {
@@ -1019,8 +1706,49 @@
             "state" : "translated",
             "value" : "跟随系统"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟隨系統"
+          }
         }
       }
+    },
+    "This file cannot be played by the current player." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前播放器无法播放此文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前的播放器無法播放此檔案。"
+          }
+        }
+      }
+    },
+    "This file is no longer in the library." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此文件已不在媒体库中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此檔案已不在媒體庫中。"
+          }
+        }
+      }
+    },
+    "This song has no lyrics." : {
+
     },
     "Title" : {
       "localizations" : {
@@ -1029,12 +1757,25 @@
             "state" : "translated",
             "value" : "标题"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標題"
+          }
         }
       }
     },
     "Top Cast" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主演"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "主演"
@@ -1049,11 +1790,36 @@
             "state" : "translated",
             "value" : "高分"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高評分"
+          }
         }
       }
     },
     "Track" : {
 
+    },
+    "Trailers" : {
+
+    },
+    "TV Show" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剧集"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "劇集"
+          }
+        }
+      }
     },
     "TV Shows" : {
       "localizations" : {
@@ -1061,6 +1827,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "电视节目"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電視節目"
+          }
+        }
+      }
+    },
+    "Unable to Add Folder" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法添加文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法加入資料夾"
+          }
+        }
+      }
+    },
+    "Unavailable" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法使用"
+          }
+        }
+      }
+    },
+    "Unmatched" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未识别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未辨識"
+          }
+        }
+      }
+    },
+    "Unmatched Media" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未识别媒体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未辨識媒體"
           }
         }
       }
@@ -1073,6 +1909,12 @@
             "state" : "translated",
             "value" : "用户名"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用者名稱"
+          }
         }
       }
     },
@@ -1082,6 +1924,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "视频"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "影片"
           }
         }
       }
@@ -1093,6 +1941,12 @@
             "state" : "translated",
             "value" : "视频轨道"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "視訊軌道"
+          }
         }
       }
     },
@@ -1103,8 +1957,17 @@
             "state" : "translated",
             "value" : "查看全部"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看全部"
+          }
         }
       }
+    },
+    "Volume" : {
+
     },
     "Watching" : {
       "localizations" : {
@@ -1112,6 +1975,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在观看"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在觀看"
+          }
+        }
+      }
+    },
+    "Year (optional)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年份（可选）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年份（選填）"
           }
         }
       }

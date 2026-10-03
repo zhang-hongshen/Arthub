@@ -24,8 +24,12 @@ struct SettingsModifier: ViewModifier {
     @AppStorage(UserDefaults.appearance)
     private var apperance = Appearance.system
     
+    @AppStorage(UserDefaults.language)
+    private var language = Language.system
+    
     func body(content: Content) -> some View {
         content
+            .environment(\.locale, language.locale)
             .preferredColorScheme({
                 switch apperance {
                 case .system:   nil
