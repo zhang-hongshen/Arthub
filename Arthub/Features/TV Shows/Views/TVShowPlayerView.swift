@@ -10,21 +10,23 @@ import SwiftUI
 struct TVShowPlayerView: View {
 
     @Environment(ArthubVideoPlayer.self) private var player
-    
+
     var playlist: [TVEpisodeDetail]
+    /// Episode the player should start from when it first appears.
+    var startAtIndex: Int = 0
+    /// Where playback should resume within the starting episode.
+    var startAtTime: TimeInterval = 0
+
     @State private var episodesViewPresented: Bool = false
-    @State var currentTVEpisodeID: TVEpisodeDetail.ID? = nil
-    
-    private var currentIndex: Int? {
-        playlist.firstIndex { $0.id == currentTVEpisodeID}
-    }
-    
+    @State private var currentTVEpisodeIndex: Int? = nil
+    @State private var didStartPlayback: Bool = false
+
     var body: some View {
         VideoPlayerView(currentTime: Binding(
-            get: { if let index = currentIndex { playlist[index].metrics.currentTime } else { 0 }},
-            set: { if let index = currentIndex { playlist[index].metrics.currentTime = $0 }} )) {
+            get: { currentTVEpisode?.metrics.currentTime ?? 0 },
+            set: { currentTVEpisode?.metrics.currentTime = $0 })) {
             episodesViewPresented = false
-        } sidebarContent :{
+        } sidebarContent: {
             EpisodesView()
                 .background(.ultraThinMaterial)
                 .opacity(episodesViewPresented ? 1 : 0)
@@ -35,30 +37,48 @@ struct TVShowPlayerView: View {
                 Image(systemName: "square.stack")
             }
         }
-        .onChange(of: player.currentItemID, initial: true, handlePlayItemIDChange)
-            
+        .task {
+            guard !didStartPlayback else { return }
+            didStartPlayback = true
+            selectEpisode(at: startAtIndex, at: startAtTime)
+        }
+        .onChange(of: player.currentIndex, initial: true, handleCurrentIndexChange)
+        .onChange(of: currentTVEpisodeIndex, handleSelectedIndexChange)
     }
 }
 
 extension TVShowPlayerView {
-    
+
+    private var currentTVEpisode: TVEpisodeDetail? {
+        guard let currentTVEpisodeIndex, playlist.indices.contains(currentTVEpisodeIndex) else {
+            return nil
+        }
+        return playlist[currentTVEpisodeIndex]
+    }
+
     @ViewBuilder
     func EpisodesView() -> some View {
         ScrollView {
-            ForEach(playlist.sorted(using: KeyPathComparator(\.metadata.episodeNumber,
-                                                              order: .forward))) { episode in
+            ForEach(Array(playlist.enumerated()), id: \.offset) { index, episode in
                 HStack(alignment: .center) {
-                    ImageLoader(url: episode.metadata.stillPath, aspectRatio: Landscape.aspectRatio)
+                    ArtworkImage(url: episode.metadata.stillPath, aspectRatio: Landscape.aspectRatio)
                         .frame(width: Portrait.width(.small))
                         .cornerRadius()
                     VStack(alignment: .leading) {
                         Text(episode.metadata.name).font(.headline)
                         Text("Episode \(episode.metadata.episodeNumber)").font(.subheadline)
                     }
+                    Spacer()
+                    if index == currentTVEpisodeIndex {
+                        Image(systemName: player.isPlaying
+                              ? "waveform" : "pause")
+                            .foregroundStyle(.tint)
+                    }
                 }
-                .tag(episode.id)
+                .tag(index)
+                .contentShape(.rect)
                 .onTapGesture {
-                    currentTVEpisodeID = episode.id
+                    selectEpisode(at: index)
                 }
             }
         }
@@ -66,24 +86,32 @@ extension TVShowPlayerView {
 
 }
 
-// MARK: Operation
+// MARK: Playback
 
 extension TVShowPlayerView {
-    
-    func handlePlayItemIDChange(oldValue: Int? , newValue: Int?) {
-        guard let id = newValue else {
-            self.currentTVEpisodeID = nil
-            return
+
+    /// Start playback at the given episode, resuming where the user left off.
+    /// Tapping the already-playing episode is a no-op (does not rewind).
+    func selectEpisode(at index: Int, at time: TimeInterval? = nil) {
+        guard playlist.indices.contains(index) else { return }
+        if player.currentIndex == index { return }
+        currentTVEpisodeIndex = index
+        let resumeAt = time ?? playlist[index].metrics.currentTime
+        Task {
+            try await player.start(from: index, at: resumeAt)
         }
-        self.currentTVEpisodeID = playlist.first{ $0.id.hashValue == id }?.id
     }
-    
-    func handleCurrentTVEpisodeIDChange(oldValue: TVEpisodeDetail.ID? , newValue: TVEpisodeDetail.ID?) {
-        guard let index = playlist.firstIndex(where: { $0.id == newValue }) else {
-            return
-        }
-        Task(priority: .userInitiated) {
-            try await player.start(from: index, at: playlist[index].metrics.currentTime)
-        }
+
+    /// The player moved on to another item (next/previous track,
+    /// end-of-episode auto-advance) — keep our state in sync.
+    func handleCurrentIndexChange(oldValue: Int?, newValue: Int?) {
+        guard let newValue, playlist.indices.contains(newValue) else { return }
+        currentTVEpisodeIndex = newValue
+    }
+
+    /// The user tapped a different episode in the sidebar.
+    func handleSelectedIndexChange(oldValue: Int?, newValue: Int?) {
+        guard let newValue, newValue != oldValue else { return }
+        selectEpisode(at: newValue)
     }
 }

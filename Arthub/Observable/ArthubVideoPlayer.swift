@@ -28,6 +28,11 @@ import MediaPlayer
         return staticMetadatas[currentIndex].id.intValue
     }
     
+    var currentAssetURL: URL? {
+        guard let currentIndex else { return nil }
+        return staticMetadatas[currentIndex].assetURL
+    }
+
     private(set) var currentTime: TimeInterval = 0
     
     private(set) var currentIndex: Int? = nil
@@ -100,24 +105,25 @@ import MediaPlayer
     }
     
     func start(from index: Int = 0, at: TimeInterval = 0) async throws {
-        
-        
+
+
         if !playerItems.indices.contains(index) {
             return
         }
-        
-        // Start a playback session.
-        try nowPlayableBehavior.handleNowPlayableSessionStart()
-        
-        // Start playing, if there is something to play.
+
+        // Only begin a new session (and register observers) when coming from
+        // a stopped state; repeated calls just jump to another item.
+        if playerState == .stopped {
+            try nowPlayableBehavior.handleNowPlayableSessionStart()
+            registerObserver()
+        }
+
         replaceCurrentItem(with: playerItems[index], at: .init(seconds: at, preferredTimescale: 1))
-        
+
         currentIndex = index
-        
-        registerObserver()
-        
+
         play()
-        
+
     }
     
     func registerObserver() {
