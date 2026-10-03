@@ -10,7 +10,7 @@ import TMDb
 
 @Observable
 class Movie: MediaItem, Identifiable, Hashable {
-    var id: TMDb.Movie.ID { metadata.id }
+    let id: UUID
     var addedAt: Date?
     var metadata: TMDb.Movie
     var metrics: UserMetrics
@@ -22,7 +22,8 @@ class Movie: MediaItem, Identifiable, Hashable {
     var videos: [VideoMetadata] = []
     
     init(fileURL: URL, duration: TimeInterval, addedAt: Date? = nil,
-         metadata: TMDb.Movie, metrics: UserMetrics = UserMetrics()) {
+         metadata: TMDb.Movie, metrics: UserMetrics = UserMetrics(), id: UUID = UUID()) {
+        self.id = id
         self.addedAt = addedAt
         self.metadata = metadata
         self.metrics = metrics

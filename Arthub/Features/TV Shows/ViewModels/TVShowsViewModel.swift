@@ -10,16 +10,14 @@ import OrderedCollections
 import TMDb
 import AVFoundation
 
-@Observable class TVShowsViewModel {
-    
+@MainActor @Observable class TVShowsViewModel {
+
     var tvShows: Set<TVShowDetail> = []
-    private var fetchDataTask: Task<Void, Error>? = nil
     var isFetchingData: Bool = false
     var searchText: String = ""
-
+    var scanErrors: [String] = []
     @ObservationIgnored var sectionMaxTVShow = 10
-    
-    
+
     var filteredTVShows: Set<TVShowDetail> {
         if searchText.isEmpty {
             return tvShows
@@ -33,15 +31,15 @@ import AVFoundation
             return $0.metadata.name.lowercased().contains(search)
         }
     }
-    
+
     var recentlyAddedTVShows: [TVShowDetail] {
         filteredTVShows.sorted(using: KeyPathComparator(\.addedAt, order: .reverse))
     }
-    
+
     var popularityTVShows: [TVShowDetail] {
         filteredTVShows.sorted(using: KeyPathComparator(\.metadata.popularity, order: .reverse))
     }
-    
+
     var groupedTVShows: OrderedDictionary<String, [TVShowDetail]> {
         var res: OrderedDictionary<String, [TVShowDetail]> = [:]
         filteredTVShows.forEach { tvShow in
@@ -53,93 +51,73 @@ import AVFoundation
         res.sort()
         return res
     }
-    
+
+    @ObservationIgnored private var fetchDataTask: Task<Void, Never>? = nil
+
     deinit {
         fetchDataTask?.cancel()
     }
-    
-    func fetchData() {
-        if let fetchDataTask = fetchDataTask {
-            fetchDataTask.cancel()
-        }
+
+    func fetchData() { fetchData(refreshLibrary: true) }
+
+    func fetchData(refreshLibrary: Bool) {
+        fetchDataTask?.cancel()
         isFetchingData = true
         fetchDataTask = Task {
-            let tvShows = try await self.fetchLocalData()
-            DispatchQueue.main.async {
-                self.tvShows = tvShows
-                self.isFetchingData = false
+            let library = LibraryViewModel.shared
+            if refreshLibrary { await library.refresh() }
+            guard !Task.isCancelled else { return }
+            let previousShows = Dictionary(uniqueKeysWithValues: tvShows.map { ($0.id, $0) })
+            let previousEpisodes = Dictionary(uniqueKeysWithValues: tvShows.flatMap { $0.seasons.flatMap { $0.episodes } }.map { ($0.fileID, $0) })
+            var result: [Int: TVShowDetail] = [:]
+            var errors = library.scanErrors
+            for file in library.files {
+                guard let series = file.seriesWithArtwork, let seasonMetadata = file.seasonWithArtwork,
+                      let episodeMetadata = file.episodeWithArtwork else { continue }
+                do {
+                    let episode: TVEpisodeDetail
+                    if let existing = previousEpisodes[file.id], existing.metadata.id == episodeMetadata.id {
+                        episode = existing
+                        episode.metadata = episodeMetadata
+                        episode.fileURL = file.fileURL
+                        episode.duration = file.duration
+                    } else {
+                        episode = TVEpisodeDetail(tvShowID: series.id, fileURL: file.fileURL,
+                            duration: file.duration, metrics: try await UserMetrics.getByTMDbID(episodeMetadata.id),
+                            metadata: episodeMetadata, fileID: file.id)
+                    }
+                    guard !Task.isCancelled else { return }
+                    episode.isAvailable = file.isAvailable
+                    let show = result[series.id] ?? TVShowDetail(addedAt: file.addedAt, metadata: series)
+                    let season = show.seasons.first { $0.metadata.seasonNumber == seasonMetadata.seasonNumber }
+                        ?? TVSeasonDetail(tvShowID: series.id, metadata: seasonMetadata)
+                    season.episodes.insert(episode)
+                    show.seasons.insert(season)
+                    result[series.id] = show
+                } catch { errors.append("\(file.title): \(error.localizedDescription)") }
             }
+            guard !Task.isCancelled else { return }
+            let retained = Set(result.values.flatMap { $0.seasons.flatMap { $0.episodes.map(\.fileID) } })
+            for (id, episode) in previousEpisodes where !retained.contains(id) { episode.isAvailable = false }
+            // Update existing show/season objects so open detail pages reflect disk changes.
+            for (id, show) in result {
+                guard let existing = previousShows[id] else { continue }
+                var seasons: Set<TVSeasonDetail> = []
+                for season in show.seasons {
+                    if let oldSeason = existing.seasons.first(where: { $0.id == season.id }) {
+                        oldSeason.metadata = oldSeason.metadata.copy(posterPath: season.metadata.posterPath)
+                        oldSeason.episodes = season.episodes
+                        seasons.insert(oldSeason)
+                    } else { seasons.insert(season) }
+                }
+                existing.metadata = existing.metadata.copy(posterPath: show.metadata.posterPath,
+                                                           backdropPath: show.metadata.backdropPath)
+                existing.seasons = seasons
+                result[id] = existing
+            }
+            tvShows = Set(result.values)
+            scanErrors = errors
+            isFetchingData = false
         }
-    }
-    
-    private func fetchLocalData() async throws -> Set<TVShowDetail> {
-        let urls = UserDefaults.standard.value(forKey: UserDefaults.library, default: [])
-            .compactMap { URL(string: $0) }
-        if urls.isEmpty { return [] }
-        var tvShows: Set<TVShowDetail> = []
-        for url in urls {
-            try await fetchDirectoryData(url, tvShows: &tvShows)
-        }
-        return tvShows
-    }
-    
-    private func fetchDirectoryData(_ dir: URL, tvShows: inout Set<TVShowDetail>) async throws {
-        guard dir.hasDirectoryPath else { return }
-        let urls = try FileManager.default
-            .contentsOfDirectory(at: dir,
-                             includingPropertiesForKeys: nil,
-                             options: [.skipsHiddenFiles])
-        for url in urls {
-            if url.hasDirectoryPath {
-                try await fetchDirectoryData(url, tvShows: &tvShows)
-                debugPrint("found directory, path \(url.relativePath)")
-                continue
-            }
-            if !url.isVideo { continue }
-            guard let matches = url.fileName.wholeMatch(of: RegexPattern.tvepisodeName),
-                  let seasonNum = Int(matches.output.seasonNum),
-                  let episodeNum = Int(matches.output.episodeNum) else {
-                continue
-            }
-            let title = String(matches.output.title)
-            var tvShow = tvShows.first { $0.metadata.name == title }
-            if tvShow == nil {
-                let newTVShow = TVShowDetail(addedAt: url.addedAt, metadata: try await searchTVShowMetadata(title: title))
-                tvShow = newTVShow
-                tvShows.insert(newTVShow)
-            }
-            guard let tvShow else { continue }
-            let episodeMetadata = try await TVEpisodeService.shared.details(forEpisode: episodeNum, inSeason: seasonNum, inTVSeries: tvShow.id)
-            let metrics = try await UserMetrics.getByTMDbID(episodeMetadata.id)
-            let duration = try await AVURLAsset(url: url).load(.duration).seconds
-
-            let episode = TVEpisodeDetail(tvShowID: tvShow.id, fileURL: url,
-                                          duration: duration, metrics: metrics, metadata: episodeMetadata)
-            // add episode to season
-            let season = tvShow.seasons.first {
-                $0.tvShowID == tvShow.id &&
-                $0.metadata.seasonNumber == seasonNum
-            }
-            guard let season else {
-                tvShow.seasons.insert(
-                    TVSeasonDetail(tvShowID: tvShow.id,
-                                   metadata: try await TVSeasonService.shared.details(forSeason: seasonNum, inTVSeries: tvShow.id),
-                                   episodes: [episode]))
-                continue
-            }
-            season.episodes.insert(episode)
-        }
-    }
-    
-    
-    private func searchTVShowMetadata(title: String, year: Int? = nil) async throws -> TVSeries {
-        guard var metadata = try await SearchService.shared.searchTVSeries(query: title, firstAirDateYear: year).results.first else {
-            return TVSeries(id: UUID().hashValue, name: title)
-        }
-        let imagesConfiguration = try await ConfigurationService.shared.getImageConfiguration()
-        metadata = try await TVSeriesService.shared.details(forTVSeries: metadata.id)
-        return metadata.copy(
-            posterPath: imagesConfiguration.posterURL(for: metadata.posterPath),
-            backdropPath: imagesConfiguration.backdropURL(for: metadata.backdropPath))
     }
 }

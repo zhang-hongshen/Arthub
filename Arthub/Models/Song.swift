@@ -74,6 +74,11 @@ extension Song {
             }
             
             group.addTask {
+                let commonMetadata = try await asset.load(.commonMetadata)
+                try await self.commonMetadata(commonMetadata)
+            }
+
+            group.addTask {
                 let iTunesMetadata = try await asset.loadMetadata(for: .iTunesMetadata)
                 try await self.iTunesMetadata(iTunesMetadata)
             }
@@ -86,6 +91,13 @@ extension Song {
 extension Song {
     
     private func commonMetadata(_ metadata: [AVMetadataItem]) async throws {
+        if title.isEmpty {
+            if let titleItem = AVMetadataItem.metadataItems(from: metadata,
+                                                            filteredByIdentifier: .commonIdentifierTitle).first,
+               let title = try await titleItem.load(.stringValue) {
+                self.title = title
+            }
+        }
         if artist.name.isEmpty {
             if let artworkItem = AVMetadataItem.metadataItems(from: metadata,
                                                               filteredByIdentifier: .commonIdentifierArtist).first,

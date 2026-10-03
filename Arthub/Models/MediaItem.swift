@@ -9,6 +9,7 @@ import Foundation
 
 @Observable
 class MediaItem {
+    var isAvailable = true
     var fileURL: URL
     var duration: TimeInterval
     

@@ -10,16 +10,16 @@ import AVFoundation
 import OrderedCollections
 
 import TMDb
-import FeedKit
 
-@Observable class MoviesViewModel {
-    
+@MainActor @Observable class MoviesViewModel {
+
     var movies: Set<Movie> = []
-    var fetchDataTask: Task<Void, Error>? = nil
     var isFetchingData: Bool = false
     var searchText: String = ""
+    /// Human-readable descriptions of what went wrong during the last scan.
+    var scanErrors: [String] = []
     @ObservationIgnored var maxMoviePerSection = 10
-    
+
     var filteredMovies: Set<Movie> {
         if searchText.isEmpty {
             return movies
@@ -33,24 +33,24 @@ import FeedKit
             return $0.metadata.title.lowercased().contains(search)
         }
     }
-    
+
     var watchingMovies: [Movie] {
         filteredMovies.filter{ $0.metrics.watchedAt != nil }
             .sorted(using: KeyPathComparator(\.metrics.watchedAt, order: .reverse))
     }
-    
+
     var recentlyAddedMovies: [Movie] {
         filteredMovies.sorted(using: KeyPathComparator(\.addedAt, order: .reverse))
     }
-    
+
     var popularityMovies: [Movie] {
         filteredMovies.sorted(using: KeyPathComparator(\.metadata.popularity, order: .reverse))
     }
-    
+
     var topRatedMovies: [Movie] {
         filteredMovies.sorted(using: KeyPathComparator(\.metadata.voteAverage, order: .reverse))
     }
-    
+
     var groupedMovies: OrderedDictionary<String, [Movie]> {
         var res: OrderedDictionary<String, [Movie]> = [:]
         filteredMovies.forEach { movie in
@@ -62,88 +62,57 @@ import FeedKit
         res.sort()
         return res
     }
-    
+
+    @ObservationIgnored private var fetchDataTask: Task<Void, Never>? = nil
+
     deinit {
         fetchDataTask?.cancel()
     }
-    
-    func fetchData() {
-        if let fetchDataTask = fetchDataTask {
-            fetchDataTask.cancel()
-        }
+
+    func fetchData() { fetchData(refreshLibrary: true) }
+
+    func fetchData(refreshLibrary: Bool) {
+        fetchDataTask?.cancel()
         isFetchingData = true
         fetchDataTask = Task {
-            let movies = try await self.fetchLocalData()
-            DispatchQueue.main.async {
-                self.movies = movies
-                self.isFetchingData = false
+            let library = LibraryViewModel.shared
+            if refreshLibrary { await library.refresh() }
+            guard !Task.isCancelled else { return }
+            let previous = Dictionary(uniqueKeysWithValues: movies.map { ($0.id, $0) })
+            var result: Set<Movie> = []
+            var errors: [String] = library.scanErrors
+            for file in library.files {
+                guard let metadata = file.movieWithArtwork else { continue }
+                do {
+                    let movie: Movie
+                    if let existing = previous[file.id] {
+                        movie = existing
+                        if movie.metadata.id != metadata.id {
+                            let metrics = try await UserMetrics.getByTMDbID(metadata.id)
+                            guard !Task.isCancelled else { return }
+                            movie.metrics = metrics
+                            movie.cast = []; movie.crew = []; movie.posters = []
+                            movie.backdrops = []; movie.logos = []; movie.videos = []
+                        }
+                        movie.metadata = metadata
+                        movie.fileURL = file.fileURL
+                        movie.duration = file.duration
+                    } else {
+                        movie = Movie(fileURL: file.fileURL, duration: file.duration,
+                                      addedAt: file.addedAt, metadata: metadata,
+                                      metrics: try await UserMetrics.getByTMDbID(metadata.id), id: file.id)
+                    }
+                    guard !Task.isCancelled else { return }
+                    movie.isAvailable = file.isAvailable
+                    result.insert(movie)
+                } catch { errors.append("\(file.title): \(error.localizedDescription)") }
             }
+            guard !Task.isCancelled else { return }
+            let retained = Set(result.map(\.id))
+            for movie in movies where !retained.contains(movie.id) { movie.isAvailable = false }
+            movies = result
+            scanErrors = errors
+            isFetchingData = false
         }
     }
-    
-    private func fetchLocalData() async throws -> Set<Movie> {
-        let urls = UserDefaults.standard.value(forKey: UserDefaults.library, default: [])
-            .compactMap { URL(string: $0) }
-        if urls.isEmpty { return [] }
-        return try await withThrowingTaskGroup(of: Set<Movie>.self) { group in
-            var movies: Set<Movie> = []
-            for url in urls {
-                group.addTask{ try await self.fetchDirectoryData(url) }
-            }
-            for try await result in group {
-                movies.formUnion(result)
-            }
-            return movies
-        }
-    }
-    
-    private func fetchDirectoryData(_ dir: URL) async throws -> Set<Movie> {
-        guard dir.hasDirectoryPath else { return [] }
-        let urls = try FileManager.default
-            .contentsOfDirectory(at: dir,
-                                 includingPropertiesForKeys: nil,
-                                 options: [.skipsHiddenFiles])
-        var movies: Set<Movie> = []
-        for url in urls {
-            if url.hasDirectoryPath {
-                movies.formUnion(try await fetchDirectoryData(url))
-                continue
-            }
-            if !url.isVideo { continue }
-
-            let movie = try await handleSingleMovie(url)
-            if let movie = movie {
-                movies.insert(movie)
-            }
-        }
-        return movies
-    }
-    
-    private func handleSingleMovie(_ url: URL) async throws -> Movie? {
-        guard let matches = url.fileName.wholeMatch(of: RegexPattern.movieName) else { return nil }
-        let title = String(matches.output.title)
-        let year = Int(matches.output.year ?? "")
-        let metadata = try await searchMovieMetadata(title: title, year: year)
-        guard let metadata = metadata else {
-            return nil
-        }
-        let metrics = try await UserMetrics.getByTMDbID(metadata.id)
-        let duration = try await AVURLAsset(url: url).load(.duration).seconds
-        return Movie(fileURL: url, duration: duration, addedAt: url.addedAt,
-                     metadata: metadata, metrics: metrics)
-    }
-
-    
-    private func searchMovieMetadata(title: String, year: Int?) async throws -> TMDb.Movie? {
-        guard var metadata = try await SearchService.shared.searchMovies(query: title, year: year).results.first else {
-            return nil
-        }
-        let imagesConfiguration = try await ConfigurationService.shared.getImageConfiguration()
-        metadata = try await MovieService.shared.details(forMovie: metadata.id)
-        return metadata.copy(
-            posterPath: imagesConfiguration.posterURL(for: metadata.posterPath),
-            backdropPath: imagesConfiguration.backdropURL(for: metadata.backdropPath)
-        )
-    }
-    
 }

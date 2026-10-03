@@ -9,12 +9,17 @@ import SwiftUI
 import SwiftData
 
 struct MoviesView: View {
-    
-    @State private var viewModel = MoviesViewModel()
+
+    var viewModel: MoviesViewModel
     @State private var idealCardWidth: CGFloat = Portrait.width(.small)
-    
+
+    init(viewModel: MoviesViewModel? = nil) {
+        self.viewModel = viewModel ?? MoviesViewModel()
+    }
+
     var body: some View {
-        MainView()
+        @Bindable var viewModel = viewModel
+        return MainView()
             .frame(minWidth: idealCardWidth)
             .safeAreaPadding()
             .toolbar{ ToolbarItems() }
@@ -31,20 +36,23 @@ extension MoviesView {
     @ToolbarContentBuilder
     func ToolbarItems() -> some ToolbarContent {
         ToolbarItemGroup {
-            if viewModel.isFetchingData {
-                ProgressView()
-                #if !os(tvOS)
-                .controlSize(.small)
-                #endif
-            } else {
-                Button("Refresh", systemImage: "arrow.clockwise", action: viewModel.fetchData)
+            Button(action: viewModel.fetchData) {
+                if viewModel.isFetchingData {
+                    ProgressView()
+                        #if !os(tvOS)
+                        .controlSize(.small)
+                        #endif
+                } else {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
             }
+            .disabled(viewModel.isFetchingData)
         }
     }
 }
 
 extension MoviesView {
-    
+
     @ViewBuilder
     func MainView() -> some View {
         if viewModel.filteredMovies.isEmpty {
@@ -60,8 +68,8 @@ extension MoviesView {
                         MoviesSection(viewModel.popularityMovies, sectionTitle: "Popular", sortable: false)
                         MoviesSection(viewModel.topRatedMovies, sectionTitle: "Top Rated", sortable: false)
                     }
-                    
-                    
+
+
                     GroupedMoviesSection()
                 }
             }
@@ -84,7 +92,7 @@ extension MoviesView {
                     MovieListView(movies: movies, sortable: true)
                         .navigationTitle(Text(genre))
                 } label: {
-                    ImageLoader(url: movies.randomElement()?.metadata.backdropPath) {
+                    ArtworkImage(url: movies.randomElement()?.metadata.backdropPath) {
                         Rectangle().fill(.random.gradient)
                     }
                     .frame(height: Landscape.height(), alignment: .center)
@@ -138,4 +146,8 @@ extension MoviesView {
             }
         }
     }
+}
+
+#Preview {
+    MoviesView()
 }

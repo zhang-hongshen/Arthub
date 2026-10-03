@@ -61,8 +61,10 @@ extension TVSeasonDetail {
         async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
         async let getMetadata = TVSeasonService.shared.details(forSeason: metadata.seasonNumber, inTVSeries: tvShowID)
         let (imagesConfiguration, metadata) = try await(getImageConfiguration, getMetadata)
+        // Local artwork found next to the files wins over TMDb.
+        let localPoster = self.metadata.posterPath.flatMap { $0.isFileURL ? $0 : nil }
         self.metadata = metadata.copy(
-            posterPath: imagesConfiguration.posterURL(for: metadata.posterPath)
+            posterPath: localPoster ?? imagesConfiguration.posterURL(for: metadata.posterPath)
         )
     }
     

@@ -27,7 +27,13 @@ struct TVShowCard: View {
         }
         .frame(width: width)
         .sheet(isPresented: $sheetPreseted) {
-            
+            // An empty sheet has no size and no buttons, so it locked the window.
+            if let fileID = tvShow.seasons.lazy.flatMap(\.episodes).first?.fileID,
+               let file = LibraryViewModel.shared.files.first(where: { $0.id == fileID }) {
+                LibraryMatchView(file: file, applyToShow: true)
+            } else {
+                MissingFileSheet()
+            }
         }
     }
     
@@ -37,7 +43,7 @@ extension TVShowCard {
     
     @ViewBuilder
     func TVShowPoster() -> some View {
-        ImageLoader(url: tvShow.metadata.posterPath, 
+        ArtworkImage(url: tvShow.metadata.posterPath, 
                     aspectRatio: Portrait.aspectRatio) {
             ImageButton(systemImage: "film.stack")
         }

@@ -8,12 +8,17 @@
 import SwiftUI
 
 struct TVShowsView: View {
-    
-    @State private var viewModel = TVShowsViewModel()
+
+    var viewModel: TVShowsViewModel
     @State private var idealCardWidth: CGFloat = Portrait.width(.small)
 
+    init(viewModel: TVShowsViewModel? = nil) {
+        self.viewModel = viewModel ?? TVShowsViewModel()
+    }
+
     var body: some View {
-        MainView()
+        @Bindable var viewModel = viewModel
+        return MainView()
             .frame(minWidth: idealCardWidth)
             .safeAreaPadding()
             .focusEffect()
@@ -30,14 +35,17 @@ extension TVShowsView {
     @ToolbarContentBuilder
     func ToolbarItems() -> some ToolbarContent {
         ToolbarItemGroup {
-            if viewModel.isFetchingData {
-                ProgressView()
-                #if !os(tvOS)
-                .controlSize(.small)
-                #endif
-            } else {
-                Button("Refresh", systemImage: "arrow.clockwise", action: viewModel.fetchData)
+            Button(action: viewModel.fetchData) {
+                if viewModel.isFetchingData {
+                    ProgressView()
+                        #if !os(tvOS)
+                        .controlSize(.small)
+                        #endif
+                } else {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
             }
+            .disabled(viewModel.isFetchingData)
         }
     }
 }
@@ -108,7 +116,7 @@ extension TVShowsView {
                 NavigationLink {
                     TVShowListView(tvShows: tvShows, sortable: true)
                 } label: {
-                    ImageLoader(url: tvShows.randomElement()?.metadata.backdropPath) {
+                    ArtworkImage(url: tvShows.randomElement()?.metadata.backdropPath) {
                         Rectangle().fill(.random.gradient)
                     }
                     .frame(height: Landscape.height(), alignment: .center)

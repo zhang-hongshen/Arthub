@@ -13,12 +13,14 @@ import TMDb
 class TVEpisodeDetail: MediaItem, Identifiable, Hashable {
     
     var id: TVEpisode.ID { metadata.id }
+    let fileID: UUID
     var tvShowID: Int
     var metrics: UserMetrics
     var metadata: TVEpisode
     
     init(tvShowID: Int, fileURL: URL, duration: TimeInterval,
-         metrics: UserMetrics, metadata: TVEpisode) {
+         metrics: UserMetrics, metadata: TVEpisode, fileID: UUID = UUID()) {
+        self.fileID = fileID
         self.tvShowID = tvShowID
         self.metrics = metrics
         self.metadata = metadata
@@ -50,8 +52,10 @@ extension TVEpisodeDetail {
         async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
         async let getMetadata = TVEpisodeService.shared.details(forEpisode: metadata.episodeNumber, inSeason: metadata.seasonNumber, inTVSeries: tvShowID)
         let (imagesConfiguration, metadata) = try await(getImageConfiguration, getMetadata)
+        // Local artwork found next to the file wins over TMDb.
+        let localStill = self.metadata.stillPath.flatMap { $0.isFileURL ? $0 : nil }
         self.metadata = metadata.copy(
-            stillPath: imagesConfiguration.stillURL(for: metadata.stillPath)
+            stillPath: localStill ?? imagesConfiguration.stillURL(for: metadata.stillPath)
         )
     }
 }

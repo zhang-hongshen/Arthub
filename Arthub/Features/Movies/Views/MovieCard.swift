@@ -30,6 +30,8 @@ struct MovieCard: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
 
+            if !movie.isAvailable { Label("Unavailable", systemImage: "externaldrive.badge.exclamationmark").font(.caption).foregroundStyle(.secondary) }
+
             if let releaseDate = movie.metadata.releaseDate {
                 Text(releaseDate.formatted(.dateTime.year())).font(.subheadline)
             }
@@ -51,7 +53,7 @@ extension MovieCard {
     
     @ViewBuilder
     func MoviePosterView() -> some View {
-        ImageLoader(url: movie.metadata.posterPath,
+        ArtworkImage(url: movie.metadata.posterPath,
                     aspectRatio: Portrait.aspectRatio) {
             ImageButton(systemImage: "film")
         }
@@ -67,7 +69,7 @@ extension MovieCard {
     
     @ViewBuilder
     func MoviePosterContextMenu() -> some View {
-        Button("Play", systemImage: "play.fill", action: setupPlayer)
+        Button("Play", systemImage: "play.fill", action: setupPlayer).disabled(!movie.isAvailable)
         Button("Edit Metadata", systemImage: "square.and.pencil", action: { sheetPreseted = true})
         ShareLink(item: movie.fileURL,
                   subject: Text(verbatim: movie.metadata.title),
@@ -83,7 +85,7 @@ extension MovieCard {
             Color.accent
                 .frame(width: width * movie.progress,
                        height: Default.cornerRadius)
-            if isHovering {
+            if isHovering && movie.isAvailable {
                 ImageButton(systemImage: "play.fill", action: setupPlayer)
             }
         }
@@ -93,6 +95,7 @@ extension MovieCard {
 extension MovieCard {
     
     func setupPlayer() {
+        guard movie.isAvailable else { return }
         setupPlayerTask = Task {
             var artwork: MPMediaItemArtwork? = nil
             if let cover = movie.metadata.posterPath {
