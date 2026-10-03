@@ -7,7 +7,6 @@
 
 import SwiftUI
 import MediaPlayer
-import OrderedCollections
 import TMDb
 
 
@@ -17,20 +16,10 @@ struct MovieDetailView: View {
     @State private var fetchDataTask: Task<Void, Error>? = nil
     @State private var setupPlayerTask: Task<Void, Error>? = nil
     @State private var playerPresented: Bool = false
-    @State private var profileSize: CGSize = .init(width: Portrait.width(),
-                                                   height: Portrait.width() / Portrait.aspectRatio)
     @State private var sheetPreseted = false
     
     @Environment(\.openURL) private var openURL
     @Environment(ArthubVideoPlayer.self) private var player: ArthubVideoPlayer
-    
-    private var groudedCrew: OrderedDictionary<String, [CrewMember]> {
-        var res: OrderedDictionary<String, [CrewMember]> = [:]
-        for crewMember in movie.crew {
-            res.updateValue(forKey: crewMember.department, default: []) { $0.append(crewMember) }
-        }
-        return res
-    }
     
     var body: some View {
         MainView()
@@ -54,24 +43,15 @@ extension MovieDetailView {
     
     @ViewBuilder
     func MainView() -> some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            ScrollView {
-                ImageLoader(url: movie.metadata.backdropPath, aspectRatio: Landscape.aspectRatio)
-                    .frame(width: width)
-                    .clipped()
-                    .overlay(alignment: .bottomLeading) {
-                        ZStack(alignment: .bottomLeading) {
-                            BackdropOverlayView()
-                            
-                            Color.accent
-                                .frame(width: width * movie.progress,
-                                       height: Default.cornerRadius)
-                        }
-                    }
-                    
-                DetailView()
-            }
+        MediaDetailPage { size in
+            HeroView(size: size)
+        } content: {
+            CastAndCrewSectionView()
+            TrailersSectionView()
+            AboutSectionView()
+            InformationSectionView()
+            BackdropsSectionView()
+            PostersSectionView()
         }
     }
 }
@@ -97,256 +77,271 @@ extension MovieDetailView {
     }
 }
 
-// MARK: Backdrop Overlay
+// MARK: Hero
 
 extension MovieDetailView {
     
-    @ViewBuilder
-    func BackdropOverlayView() -> some View {
-        VStack(alignment: .leading) {
-            let logo = movie.logos.first
-            ImageLoader(url: logo?.filePath, aspectRatio: CGFloat(logo?.aspectRatio ?? Float(Landscape.aspectRatio))) {
-                EmptyView()
-            }.frame(height: CGFloat(logo?.height ?? 50))
-            
-            VStack(alignment: .leading) {
-                
-                Text(verbatim: movie.metadata.title)
-                    .font(.largeTitle.bold())
-                    
-                
-                HStack(alignment: .center) {
-                    if let voteAverage = movie.metadata.voteAverage {
-                        Rating(value: voteAverage, total: 10)
-                            .frame(height: 15)
-                    }
-                    
-                    if let releaseDate = movie.metadata.releaseDate {
-                        Text(releaseDate.formatted(.dateTime.day().month().year()))
-                    }
-                    
-                    var runtime : TimeInterval {
-                        guard let runtime = movie.metadata.runtime else {
-                            return movie.duration
-                        }
-                        return TimeInterval(runtime * 60)
-                    }
-                    
-                    Text(runtime.formatted(unitsStyle: .full, zeroFormattingBehavior: .dropAll))
-                    
-                    if let genres = movie.metadata.genres {
-                        Text(genres.map{ $0.name }.joined(separator: ","))
-                    }
-                    
-                }.foregroundStyle(.secondary)
-                
-                
-                if let overview = movie.metadata.overview {
-                    Text(overview)
-                        .font(.body)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.leading)
-                }
-            }
-            .padding()
-            .transparentEffect()
-            
+    private var runtime: TimeInterval {
+        guard let runtime = movie.metadata.runtime, runtime > 0 else {
+            return movie.duration
         }
+        return TimeInterval(runtime * 60)
     }
     
-}
-
-extension MovieDetailView {
-    
-    @ViewBuilder
-    func DetailView() -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            
-            VideoPlayButtonView()
-            
-            CastSectionView()
-            
-            PostersSectionView()
-            
-            BackdropsSectionView()
-            
-            CrewSectionView()
-            
-        }
-        .focusEffect()
-        .safeAreaPadding()
+    private var directors: [CrewMember] {
+        movie.crew.filter { $0.job == "Director" }
     }
-}
-
-// MARK: VideoPlay Button
-
-extension MovieDetailView {
     
     @ViewBuilder
-    func VideoPlayButtonView() -> some View {
-        HStack {
-            Button {
-                setupPlayer()
-            } label: {
-                Label(movie.metrics.currentTime == 0 ? "Play" : "Resume",
-                      systemImage: "play.fill")
-                    .padding()
-                    .font(.title)
+    func HeroView(size: CGSize) -> some View {
+        var metadata: [String] {
+            var items: [String] = []
+            if let genres = movie.metadata.genres?.prefix(2), !genres.isEmpty {
+                items.append(genres.map(\.name).joined(separator: ", "))
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.accent)
+            if let releaseDate = movie.metadata.releaseDate {
+                items.append(releaseDate.formatted(.dateTime.year()))
+            }
+            items.append(MediaDetail.runtime(runtime))
+            return items
+        }
+        var badges: [String] {
+            var badges: [String] = []
+            if let voteAverage = movie.metadata.voteAverage, voteAverage > 0 {
+                badges.append("★ " + voteAverage.formatted(.number.precision(.fractionLength(1))))
+            }
+            if movie.metadata.isAdultOnly == true {
+                badges.append("18+")
+            }
+            return badges
+        }
+        var credits: [(label: LocalizedStringKey, value: String)] {
+            var credits: [(label: LocalizedStringKey, value: String)] = []
+            let starring = movie.cast.sorted(using: KeyPathComparator(\.order)).prefix(3).map(\.name)
+            if !starring.isEmpty {
+                credits.append(("Starring", starring.joined(separator: ", ")))
+            }
+            if !directors.isEmpty {
+                credits.append(("Director", directors.map(\.name).joined(separator: ", ")))
+            }
+            return credits
         }
         
-    }
-}
-
-// MARK: Cast Section
-
-extension MovieDetailView {
-    @ViewBuilder
-    func CastSectionView() -> some View {
-        Section {
-            CastView()
-        } header: {
-            Text("Top Cast")
-                .font(.title.bold())
+        MediaHeroView(backdropURL: movie.metadata.backdropPath,
+                      size: size,
+                      metadata: metadata,
+                      badges: badges,
+                      overview: movie.metadata.overview,
+                      credits: credits) {
+            TitleView()
+        } actions: {
+            ActionsView()
         }
     }
     
     @ViewBuilder
-    func CastView() -> some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .top) {
-                ForEach(movie.cast.sorted(using: KeyPathComparator(\.order))) { castMember in
+    func TitleView() -> some View {
+        if let logo = movie.logos.first {
+            ArtworkImage(url: logo.filePath,
+                         aspectRatio: CGFloat(logo.aspectRatio),
+                         contentMode: .fit) {
+                MediaTitleText(title: movie.metadata.title)
+            }
+            .frame(maxWidth: 360, maxHeight: 130, alignment: .bottomLeading)
+        } else {
+            MediaTitleText(title: movie.metadata.title)
+        }
+    }
+    
+    @ViewBuilder
+    func ActionsView() -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Button {
+                    setupPlayer()
+                } label: {
+                    Label(movie.metrics.currentTime == 0 ? "Play" : "Resume",
+                          systemImage: "play.fill")
+                }
+                .buttonStyle(MediaPlayButtonStyle())
+                .disabled(!movie.isAvailable)
+                
+                ShareLink(item: movie.fileURL,
+                          subject: Text(verbatim: movie.metadata.title),
+                          message: Text(verbatim: movie.metadata.overview ?? "" )) {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(MediaCircleButtonStyle())
+                
+                Button("Edit Metadata", systemImage: "square.and.pencil") {
+                    sheetPreseted = true
+                }
+                .buttonStyle(MediaCircleButtonStyle())
+            }
+            
+            if !movie.isAvailable {
+                Label("Unavailable", systemImage: "externaldrive.badge.exclamationmark")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            MediaRemainingView(progress: movie.progress, duration: movie.duration)
+        }
+    }
+}
+
+// MARK: Cast & Crew Section
+
+extension MovieDetailView {
+    
+    private static let featuredJobs = ["Director", "Screenplay", "Writer", "Novel", "Producer",
+                                       "Original Music Composer", "Director of Photography"]
+    
+    /// Crew members Apple TV puts after the cast: directors, writers, producers, ...
+    private var featuredCrew: [CrewMember] {
+        var seen = Set<String>()
+        return movie.crew
+            .filter { Self.featuredJobs.contains($0.job) }
+            .sorted { Self.featuredJobs.firstIndex(of: $0.job)! < Self.featuredJobs.firstIndex(of: $1.job)! }
+            .filter { seen.insert("\($0.id)-\($0.job)").inserted }
+    }
+    
+    @ViewBuilder
+    func CastAndCrewSectionView() -> some View {
+        if !movie.cast.isEmpty || !featuredCrew.isEmpty {
+            MediaShelf("Cast & Crew") {
+                ForEach(movie.cast.sorted(using: KeyPathComparator(\.order)).prefix(30)) { castMember in
                     NavigationLink {
                         PersonDetailView(person: Person(metadata: TMDb.Person(
                             id: castMember.id,
                             name: castMember.name,
                             gender: Gender.unknown)))
                     } label: {
-                        CastMemberCard(castMember: castMember)
+                        MediaPersonCard(name: castMember.name,
+                                        role: castMember.character,
+                                        profilePath: castMember.profilePath)
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.plain)
+                }
+                
+                ForEach(featuredCrew, id: \.creditID) { crewMember in
+                    NavigationLink {
+                        PersonDetailView(person: Person(metadata: TMDb.Person(
+                            id: crewMember.id,
+                            name: crewMember.name,
+                            gender: Gender.unknown)))
+                    } label: {
+                        MediaPersonCard(name: crewMember.name,
+                                        role: crewMember.job,
+                                        profilePath: crewMember.profilePath)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
-        .scrollIndicators(.automatic)
     }
-    
-    @ViewBuilder
-    func CastMemberCard(castMember: CastMember) -> some View {
-        VStack(alignment: .leading) {
-            ImageLoader(url: castMember.profilePath, aspectRatio: Portrait.aspectRatio) {
-                DefaultAvatarView()
-            }
-            .frame(width: Portrait.width(.small),
-                   height: Portrait.width(.small) / Portrait.aspectRatio)
-            .clipped()
-            .cornerRadius()
-            
-            Group {
-                Text(castMember.name).font(.headline)
-                Text(castMember.character).font(.subheadline)
-            }
-            .lineLimit(2)
-            .multilineTextAlignment(.leading)
-            
-            
-        }
-        .frame(width: Portrait.width(.small))
-    }
-    
 }
 
-// MARK: Crew Section
+// MARK: Trailers Section
 
 extension MovieDetailView {
-    @ViewBuilder
-    func CrewSectionView() -> some View {
-        Section {
-            CrewView()
-        } header: {
-            Text("Crew")
-                .font(.title.bold())
-        }
+    
+    private var youTubeVideos: [VideoMetadata] {
+        movie.videos.filter { $0.site == "YouTube" }
     }
     
     @ViewBuilder
-    func CrewView() -> some View {
-        ForEach(groudedCrew.elements, id: \.key) { (groupName, crew) in
-            Section {
-                ScrollView(.horizontal) {
-                    HStack(alignment: .top) {
-                        ForEach(crew, id:\.creditID) { crewMember in
-                            NavigationLink {
-                                PersonDetailView(person: Person(metadata: TMDb.Person(
-                                    id: crewMember.id,
-                                    name: crewMember.name,
-                                    gender: Gender.unknown)))
-                            } label: {
-                                CrewMemberCardView(crewMember: crewMember)
-                            }
-                            .buttonStyle(.borderless)
+    func TrailersSectionView() -> some View {
+        if !youTubeVideos.isEmpty {
+            MediaShelf("Trailers") {
+                ForEach(youTubeVideos) { video in
+                    Button {
+                        if let url = URL(string: "https://www.youtube.com/watch?v=\(video.key)") {
+                            openURL(url)
                         }
+                    } label: {
+                        TrailerCard(video: video)
                     }
+                    .buttonStyle(.plain)
                 }
-                .scrollIndicators(.automatic)
-            } header: {
-                Text(groupName)
-                    .font(.title2.bold())
             }
         }
     }
     
     @ViewBuilder
-    func CrewMemberCardView(crewMember: CrewMember) -> some View {
-        VStack(alignment: .leading) {
-            ImageLoader(url: crewMember.profilePath, aspectRatio: Portrait.aspectRatio) {
-                ImageButton(systemImage: "movieclapper")
-            }
-            .frame(width: Portrait.width(.small),
-                   height: Portrait.width(.small) / Portrait.aspectRatio)
+    func TrailerCard(video: VideoMetadata) -> some View {
+        let width: CGFloat = 300
+        VStack(alignment: .leading, spacing: 6) {
+            ArtworkImage(url: URL(string: "https://img.youtube.com/vi/\(video.key)/hqdefault.jpg"),
+                         aspectRatio: MediaDetail.stillAspectRatio)
+            .frame(width: width, height: width / MediaDetail.stillAspectRatio)
             .clipped()
-            .cornerRadius()
-            
-            Group {
-                Text(crewMember.name).font(.headline)
-                Text(crewMember.job).font(.subheadline)
+            .overlay {
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .shadow()
             }
-            .lineLimit(2)
-            .multilineTextAlignment(.leading)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            
+            Text(verbatim: video.name)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+            Text(verbatim: video.type.rawValue)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .frame(width: Portrait.width(.small))
+        .frame(width: width, alignment: .leading)
     }
 }
 
-// MARK: Posters Section
+// MARK: About Section
 
 extension MovieDetailView {
-
+    
     @ViewBuilder
-    func PostersSectionView() -> some View {
-        
-        Section {
-            PostersView()
-        } header: {
-            Text("Posters")
-                .font(.title.bold())
+    func AboutSectionView() -> some View {
+        if movie.metadata.overview?.isEmpty == false || movie.metadata.tagline?.isEmpty == false {
+            VStack(alignment: .leading, spacing: 14) {
+                MediaSectionHeader(title: "About")
+                    .padding(.horizontal, MediaDetail.horizontalPadding)
+                MediaAboutCard(title: movie.metadata.title,
+                               subtitle: movie.metadata.genres?.map(\.name).joined(separator: ", "),
+                               tagline: movie.metadata.tagline,
+                               overview: movie.metadata.overview)
+            }
         }
+    }
+}
+
+// MARK: Information Section
+
+extension MovieDetailView {
+    
+    private var informationItems: [MediaInfoItem] {
+        let metadata = movie.metadata
+        var items: [MediaInfoItem] = []
+        items.append("Released", metadata.releaseDate?.formatted(date: .long, time: .omitted))
+        items.append("Run Time", MediaDetail.runtime(runtime))
+        items.append("Region of Origin", metadata.productionCountries?.map(\.name).joined(separator: ", "))
+        items.append("Original Audio", MediaDetail.languageName(metadata.originalLanguage))
+        items.append("Spoken Languages", metadata.spokenLanguages?.map(\.name).joined(separator: ", "))
+        items.append("Original Title", metadata.originalTitle == metadata.title ? nil : metadata.originalTitle)
+        items.append("Director", directors.map(\.name).joined(separator: ", "))
+        items.append("Studio", metadata.productionCompanies?.map(\.name).joined(separator: ", "))
+        items.append("Status", metadata.status?.rawValue)
+        if let budget = metadata.budget, budget > 0 {
+            items.append("Budget", budget.formatted(.currency(code: "USD").precision(.fractionLength(0))))
+        }
+        if let revenue = metadata.revenue, revenue > 0 {
+            items.append("Box Office", revenue.formatted(.currency(code: "USD").precision(.fractionLength(0))))
+        }
+        return items
     }
     
     @ViewBuilder
-    func PostersView() -> some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .center) {
-                ForEach(movie.posters) { poster in
-                    ImageLoader(url: poster.filePath, aspectRatio: CGFloat(poster.aspectRatio))
-                        .frame(height: Portrait.height(.small))
-                        .cornerRadius()
-                }
-            }
-        }
-        .scrollIndicators(.automatic)
+    func InformationSectionView() -> some View {
+        MediaInfoSection(items: informationItems)
     }
 }
 
@@ -356,27 +351,33 @@ extension MovieDetailView {
     
     @ViewBuilder
     func BackdropsSectionView() -> some View {
-        Section {
-            BackdropsView()
-        } header: {
-            Text("Backdrops")
-                .font(.title.bold())
-        }
-    }
-    
-    
-    @ViewBuilder
-    func BackdropsView() -> some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .center) {
+        if !movie.backdrops.isEmpty {
+            MediaShelf("Backdrops") {
                 ForEach(movie.backdrops) { backdrop in
-                    ImageLoader(url: backdrop.filePath, aspectRatio: CGFloat(backdrop.aspectRatio))
-                        .frame(height: Landscape.height(.small))
-                        .cornerRadius()
+                    ArtworkImage(url: backdrop.filePath, aspectRatio: CGFloat(backdrop.aspectRatio))
+                        .frame(height: Landscape.height(.small) * 1.4)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             }
         }
-        .scrollIndicators(.automatic)
+    }
+}
+
+// MARK: Posters Section
+
+extension MovieDetailView {
+    
+    @ViewBuilder
+    func PostersSectionView() -> some View {
+        if !movie.posters.isEmpty {
+            MediaShelf("Posters") {
+                ForEach(movie.posters) { poster in
+                    ArtworkImage(url: poster.filePath, aspectRatio: CGFloat(poster.aspectRatio))
+                        .frame(height: Portrait.height(.small))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+        }
     }
 }
 
@@ -393,6 +394,7 @@ extension MovieDetailView {
     }
     
     func setupPlayer() {
+        guard movie.isAvailable else { return }
         setupPlayerTask = Task {
             var artwork: MPMediaItemArtwork? = nil
             if let cover = movie.metadata.posterPath {
