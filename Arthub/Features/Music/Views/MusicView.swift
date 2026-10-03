@@ -9,28 +9,24 @@ import SwiftUI
 import MediaPlayer
 
 struct MusicView: View {
-    
-    @State private var viewModel = MusicViewModel()
+
+    var viewModel: MusicViewModel
     @Environment(ArthubAudioPlayer.self) private var player
-    
+
+    init(viewModel: MusicViewModel? = nil) {
+        self.viewModel = viewModel ?? MusicViewModel()
+    }
+
     private var frameMinSize: CGSize = .init(width: 600, height: 400)
-    
+
     var body: some View {
-        MainView()
+        @Bindable var viewModel = viewModel
+        return MainView()
             .frame(minWidth: frameMinSize.width,
                    minHeight: frameMinSize.height)
             .focusEffect()
-            .toolbar {
-                MiniMusicPlayer()
-                ToolbarItems()
-            }
+            .toolbar { ToolbarItems() }
             .searchable(text: $viewModel.searchText, placement: .automatic)
-            #if os(macOS)
-            .inspector(isPresented: $viewModel.inspectorPresented) {
-                InspectorView()
-                    .inspectorColumnWidth(min: 300, ideal: 300, max: 400)
-            }
-            #endif
             .task{ viewModel.fetchData() }
             .refreshable{ viewModel.fetchData() }
             .navigationDestination(isPresented: $viewModel.playerPresented) {
@@ -47,81 +43,18 @@ struct MusicView: View {
 extension MusicView {
     
     @ToolbarContentBuilder
-    func MiniMusicPlayer() -> some ToolbarContent {
-        #if os(macOS)
-        let placement: ToolbarItemPlacement = .destructiveAction
-        #else
-        let placement: ToolbarItemPlacement = .bottomBar
-        #endif
-        
-        let height: CGFloat = 44
-        
-        ToolbarItemGroup(placement: placement) {
-            HStack {
-                ImageLoader(data: viewModel.currentSong?.album.cover, aspectRatio: 1, contentMode: .fit) {
-                    ImageButton(systemImage: "music.note")
-                }
-                .frame(height: height)
-                .onTapGesture { viewModel.playerPresented = true }
-                    
-                VStack(alignment: .center) {
-                    MarqueeText(verbatim: "\(viewModel.currentSong?.title ?? "")  - \(viewModel.currentSong?.album.title ?? "")").font(.headline)
-                    MarqueeText(verbatim: "\(viewModel.currentSong?.artist.name ?? "-")")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(width: 100)
-                
-                Spacer()
-        
-                #if os(iOS)
-                if !UIDevice.isIPhone {
-                    MusicPlayer.ShuffleButton()
-                }
-                #else
-                MusicPlayer.ShuffleButton()
-                #endif
-
-                MusicPlayer.PreviousTrackButton()
-                TogglePlayPauseButton()
-                MusicPlayer.NextTrackButton()
-
-                #if os(iOS)
-                if !UIDevice.isIPhone {
-                    MusicPlayer.PlaybackModeButton()
-                }
-                #else
-                MusicPlayer.PlaybackModeButton()
-                #endif
-            }
-            .imageScale(.large)
-            #if os(iOS)
-            .frame(height: height)
-            .padding(Default.cornerRadius)
-            .background(.ultraThinMaterial, in: RoundedRectangle())
-            .safeAreaPadding(.bottom)
-            #endif
-        }
-    }
-    
-    @ToolbarContentBuilder
     func ToolbarItems() -> some ToolbarContent {
-        #if os(macOS)
-        let placement: ToolbarItemPlacement = .music
-        #else
-        let placement: ToolbarItemPlacement = .automatic
-        #endif
-                                                                   
-        ToolbarItemGroup(placement: placement) {
-            
-            Spacer()
-            
-            if viewModel.isFetchingData {
-                ProgressView().controlSize(.small)
-            } else {
-                Button("Refresh", systemImage: "arrow.clockwise", action: viewModel.fetchData)
+        @Bindable var viewModel = viewModel
+        ToolbarItemGroup(placement: .primaryAction) {
+            Button(action: viewModel.fetchData) {
+                if viewModel.isFetchingData {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
             }
-            
+            .disabled(viewModel.isFetchingData)
+
             Menu("Action", systemImage: "ellipsis.circle") {
                 Menu("Sort By") {
                     Group {
@@ -142,7 +75,7 @@ extension MusicView {
             }
             #if os(macOS)
             Button("Inspector", systemImage: "sidebar.right") {
-                viewModel.inspectorPresented.toggle()
+                viewModel.toggleInspector(.info)
             }
             #endif
         }
@@ -150,20 +83,44 @@ extension MusicView {
 }
 
 extension MusicView {
-    
+
     @ViewBuilder
     func MainView() -> some View {
         MusicTable()
-            .ignoresSafeArea(edges: .bottom)
             .overlay {
                 if viewModel.filteredSongs.isEmpty {
                     ContentUnavailableView.search
                 }
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) { MiniPlayer() }
+    }
+
+    func editMetadata(_ song: Song) {
+        viewModel.selectedSongID = song.id
+        viewModel.inspectorContent = .info
+        viewModel.inspectorPresented = true
+    }
+
+    @ViewBuilder
+    func MiniPlayer() -> some View {
+        MiniMusicPlayer(song: viewModel.currentSong,
+                        lyricsPresented: viewModel.lyricsPresented,
+                        onToggleLyrics: toggleLyrics,
+                        onOpenPlayer: { viewModel.playerPresented = true },
+                        onStartPlayback: startPlayback)
+    }
+
+    func toggleLyrics() {
+        #if os(macOS)
+        viewModel.toggleInspector(.lyrics)
+        #else
+        viewModel.playerPresented = true
+        #endif
     }
     
     @ViewBuilder
     func MusicTable() -> some View {
+        @Bindable var viewModel = viewModel
         Table(of: Song.self, selection: $viewModel.selectedSongID) {
             TableColumn("Title") { song in
                 HStack(alignment: .center) {
@@ -171,29 +128,25 @@ extension MusicView {
                     
                     VStack(alignment: .leading) {
                         Text(song.title).font(.headline)
-                        Text(song.album.title).font(.subheadline)
+                        if !song.isAvailable { Text("Unavailable").font(.caption).foregroundStyle(.secondary) }
                     }
                 }
             }
-            TableColumn("Artist") { Text($0.artist.name) }
             TableColumn("Duration") { Text($0.duration.formatted()) }
         } rows: {
             ForEach(viewModel.filteredSongs) { song in
                 TableRow(song)
-                    #if os(macOS)
-                    .onHover { viewModel.hoveringSongID = $0 ? song.id : nil }
-                    #endif
                     .contextMenu {
                         Button("Play", systemImage: "play.fill"){
                             Task { try await startPlay(from: song.id) }
                         }
                         Button("Edit Metadata", systemImage: "info.circle") {
-                            viewModel.selectedSongID = song.id
-                            viewModel.inspectorPresented = true
+                            editMetadata(song)
                         }
                         
                         NavigationLink {
-                            AlbumDetailView(album: song.album)
+                            AlbumDetailView(album: song.album, onEditMetadata: editMetadata)
+                                .safeAreaInset(edge: .bottom, spacing: 0) { MiniPlayer() }
                         } label: {
                             Label("Album", systemImage: "music.note.list")
                         }
@@ -219,7 +172,7 @@ extension MusicView {
     
     @ViewBuilder
     func MusicCover(_ music: Song) -> some View {
-        ImageLoader(data: music.album.cover, aspectRatio: 1) {
+        ArtworkImage(data: music.album.cover, aspectRatio: 1) {
             ImageButton(systemImage: "music.note")
         }
         .frame(width: 50, height: 50)
@@ -230,24 +183,12 @@ extension MusicView {
     @ViewBuilder
     func MusicCoverOverlay(_ music: Song) -> some View {
         let isPlaying = music.id == viewModel.currentSong?.id && player.isPlaying
-        let isHovering = music.id == viewModel.hoveringSongID
-        ZStack {
-            if isPlaying && !isHovering {
-                ImageButton {
-                    
-                } label: {
-                    Waveform(animated: isPlaying)
-                }
-            }
-            if isHovering {
-                ImageButton(systemImage: isPlaying ? "pause.fill" : "play.fill")
-                    .onTapGesture {
-                        if isPlaying {
-                            player.togglePlayPause()
-                        } else {
-                            Task { try await startPlay(from: music.id) }
-                        }
-                    }
+        if isPlaying {
+            ImageButton {
+                
+            } label: {
+                Waveform(animated: isPlaying)
+                    .foregroundStyle(.white)
             }
         }
     }
@@ -258,21 +199,13 @@ extension MusicView {
 // MARK: Mini Player Component
 
 extension MusicView {
-    
-    @ViewBuilder
-    func TogglePlayPauseButton() -> some View {
-        Button {
-            if player.isPlaylistEmpty {
-                Task {
-                    let songID =  viewModel.selectedSongID ?? viewModel.songs.randomElement()?.id
-                    guard let songID else { return }
-                    try await startPlay(from: songID)
-                }
-            } else {
-                player.togglePlayPause()
-            }
-        } label: {
-            Image(systemName: player.isPlaying ? "pause.fill": "play.fill")
+
+    /// Play pressed with an empty queue: start from the selection, or a random song.
+    func startPlayback() {
+        Task {
+            let songID = viewModel.selectedSongID ?? viewModel.songs.filter(\.isAvailable).randomElement()?.id
+            guard let songID else { return }
+            try await startPlay(from: songID)
         }
     }
 }
@@ -280,11 +213,16 @@ extension MusicView {
 
 // MARK: Inspector
 
-extension MusicView {
-    
-    @ViewBuilder
-    func InspectorView() -> some View {
-        if let song = viewModel.songs.first(where: { $0.id == viewModel.selectedSongID }) {
+/// Window-level inspector content for the Music tab, hosted by ContentView
+/// so it spans the full window height beside the split view.
+struct MusicInspector: View {
+
+    var viewModel: MusicViewModel
+
+    var body: some View {
+        if viewModel.inspectorContent == .lyrics {
+            LyricsInspectorView(song: viewModel.currentSong)
+        } else if let song = viewModel.songs.first(where: { $0.id == viewModel.selectedSongID }) {
             MusicInspectorView(song: song)
         } else {
             ContentUnavailableView("No Selection",
@@ -303,17 +241,19 @@ extension MusicView {
 extension MusicView {
     
     func startPlay(from: Song.ID) async throws {
+        guard viewModel.songs.contains(where: { $0.id == from && $0.isAvailable }) else { return }
         viewModel.selectedSongID = from
         await setupPlayer()
         try player.start()
     }
     
     func setupPlayer() {
-        guard let index = viewModel.filteredSongs.firstIndex(where: { $0.id == viewModel.selectedSongID }) else {
+        let songs = viewModel.filteredSongs.filter(\.isAvailable)
+        guard let index = songs.firstIndex(where: { $0.id == viewModel.selectedSongID }) else {
             return
         }
         var playableAssets: [NowPlayableStaticMetadata] = []
-        for song in Array(viewModel.filteredSongs[index...] + viewModel.filteredSongs[0...index]) {
+        for song in Array(songs[index...] + songs[..<index]) {
             var artwork: MPMediaItemArtwork? = nil
             if let cover = song.album.cover {
                 artwork = MPMediaItemArtwork(data: cover)

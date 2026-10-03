@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct Waveform: View {
-    @State var animated: Bool = false
+    var animated: Bool = false
     
     @State private var animationTrigger: Bool = false
     
@@ -28,7 +28,6 @@ struct Waveform: View {
                     RoundedRectangle(cornerRadius: width/2)
                         .frame(width: width,
                                height: animated ? .random(in: heightRange) : 0)
-                        .foregroundStyle(.white)
                 }
                 .animation(animated ? animation : .none,
                            value: animationTrigger)

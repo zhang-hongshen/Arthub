@@ -9,29 +9,55 @@ import SwiftUI
 
 struct MusicInspectorView: View {
     
-    enum Tab {
-        case info, lyrics
+    enum Tab: Hashable, CaseIterable {
+        case details, artwork, lyrics
+        
+        var title: LocalizedStringKey {
+            switch self {
+            case .details: "Details"
+            case .artwork: "Artwork"
+            case .lyrics: "Lyrics"
+            }
+        }
     }
     
     @Bindable var song: Song
     @State private var fileImporterPresented = false
-    @State private var currentTab: Tab? = .info
+    @State private var currentTab: Tab = .details
     @State private var error: ArthubError?
     
     var body: some View {
-        
-        TabView(selection: $currentTab) {
-            Group {
-                InfoView().tag(Tab.info).tabItem {
-                    Text("Info")
-                }
-                LyricsEditView(song: song).tag(Tab.lyrics).tabItem {
-                    Text("Lyrics")
+        VStack(spacing: 0) {
+            HeaderView()
+                .padding()
+            
+            Picker("", selection: $currentTab) {
+                ForEach(Tab.allCases, id: \.self) { tab in
+                    Text(tab.title).tag(tab)
                 }
             }
-            .padding()
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal)
+            
+            Group {
+                switch currentTab {
+                case .details: DetailsView()
+                case .artwork: ArtworkView()
+                case .lyrics: LyricsEditView(song: song).padding()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .safeAreaPadding(.top)
+        #if !os(tvOS)
+        .fileImporter(isPresented: $fileImporterPresented, allowedContentTypes: [.image]) { result in
+            switch result {
+            case .success(let url): importAlbumCover(url)
+            case .failure(let error): print(error.localizedDescription)
+            }
+        }
+        #endif
         .alert(error: $error)
     }
 }
@@ -39,101 +65,107 @@ struct MusicInspectorView: View {
 extension MusicInspectorView {
     
     @ViewBuilder
-    func InfoView() -> some View {
-        GeometryReader { proxy in
-            ScrollView {
-                ImageLoader(data: song.album.cover) {
-                    ImageButton(systemImage: "music.note")
-                }
-                    .frame(width: proxy.size.width,
-                           height: proxy.size.width)
-                    .cornerRadius()
-                    #if !os(tvOS)
-                    .dropDestination(for: URL.self) { urls, _ in
-                        guard let url = urls.first, url.isImage else { return false }
-                        return importAlbumCover(url)
-                    }
-                    .fileImporter(isPresented: $fileImporterPresented, allowedContentTypes: [.image]) { result in
-                        switch result {
-                        case .success(let url): importAlbumCover(url)
-                        case .failure(let error): print(error.localizedDescription)
-                        }
-                    }
-                    #endif
-                    InfoView1()
+    func HeaderView() -> some View {
+        HStack(spacing: 12) {
+            ArtworkImage(data: song.album.cover, aspectRatio: 1) {
+                ImageButton(systemImage: "music.note")
             }
-            .scrollIndicators(.never)
+            .frame(width: 64, height: 64)
+            .cornerRadius()
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(song.title).font(.headline)
+                Text(song.artist.name).foregroundStyle(.secondary)
+                Text(song.album.title).foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
     
+    @ViewBuilder
+    func ArtworkView() -> some View {
+        VStack(alignment: .leading) {
+            Text("Album Artwork")
+                .foregroundStyle(.secondary)
+            
+            ArtworkImage(data: song.album.cover, aspectRatio: 1) {
+                ImageButton(systemImage: "music.note", action: { fileImporterPresented = true })
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+            .cornerRadius()
+            #if !os(tvOS)
+            .dropDestination(for: URL.self) { urls, _ in
+                guard let url = urls.first, url.isImage else { return false }
+                return importAlbumCover(url)
+            }
+            #endif
+            
+            Spacer(minLength: 0)
+            
+            Button("Add Artwork") {
+                fileImporterPresented = true
+            }
+        }
+        .padding()
+    }
+    
+    // Plain SwiftUI layout on purpose: a grouped Form is an NSTableView whose cells host
+    // their own NSHostingViews, and resizing the inspector made those cells re-invalidate
+    // each other until AppKit threw "more Update Constraints in Window passes than views".
+    @ViewBuilder
+    func DetailsView() -> some View {
+        ScrollView {
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+                TextRow("Title", \.title)
+                TextRow("Artist", \.artist.name)
+                TextRow("Composer", \.composer)
+                TextRow("Lyricist", \.lyricist)
+                TextRow("Arranger", \.arranger)
+                TextRow("Album", \.album.title)
+                TextRow("Album Artist", \.album.artist.name)
+                NumberRow("Track", \.trackNumber)
+                NumberRow("Disc Number", \.discNumber)
+            }
+            .textFieldStyle(.roundedBorder)
+            .padding()
+        }
+        .scrollIndicators(.never)
+    }
     
     @ViewBuilder
-    func InfoView1() -> some View {
-        Form {
-            LabeledContent("Title") {
-                TextField(text: $song.title,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-            }
-            
-            LabeledContent("Artist") {
-                TextField(text: $song.artist.name,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-            }
-            
-            LabeledContent("Composer") {
-                TextField(text: $song.composer,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-            }
-            
-            LabeledContent("Lyricist") {
-                TextField(text: $song.lyricist,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-            }
-            
-            LabeledContent("Arranger") {
-                TextField(text: $song.arranger,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-            }
-            
-            LabeledContent("Album") {
-                TextField(text: $song.album.title,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-            }
-            
-            LabeledContent("Album Artist") {
-                TextField(text: $song.album.artist.name,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-            }
-            LabeledContent("Track") {
-                TextField(value: $song.trackNumber,
-                          format: .number,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-                .fixedSize()
-            }
-            
-            LabeledContent("Disc Number") {
-                TextField(value: $song.discNumber,
-                          format: .number,
-                          prompt: Text(""),
-                          label: { EmptyView() })
-                    .fixedSize()
-            }
-            
+    func TextRow(_ title: LocalizedStringKey, _ keyPath: ReferenceWritableKeyPath<Song, String>) -> some View {
+        GridRow {
+            Text(title)
+                .foregroundStyle(.secondary)
+                .gridColumnAlignment(.trailing)
+            TextField(text: binding(keyPath), prompt: Text(""), label: { EmptyView() })
         }
-        .font(.title3)
+    }
+    
+    @ViewBuilder
+    func NumberRow(_ title: LocalizedStringKey, _ keyPath: ReferenceWritableKeyPath<Song, Int?>) -> some View {
+        GridRow {
+            Text(title)
+                .foregroundStyle(.secondary)
+            TextField(value: binding(keyPath), format: .number, prompt: Text(""), label: { EmptyView() })
+                .frame(width: 60)
+        }
     }
 }
 
 extension MusicInspectorView {
     
+    /// `@Observable` notifies on every assignment, even an unchanged one. Text fields write their
+    /// value back while updating (formatted ones on every pass), so a plain `$song.x` binding
+    /// re-invalidated the inspector forever and froze the app as soon as it opened.
+    private func binding<Value: Equatable>(_ keyPath: ReferenceWritableKeyPath<Song, Value>) -> Binding<Value> {
+        Binding(get: { song[keyPath: keyPath] },
+                set: { if song[keyPath: keyPath] != $0 { song[keyPath: keyPath] = $0 } })
+    }
+    
+    @discardableResult
     func importAlbumCover(_ url: URL) -> Bool {
         do {
             song.album.cover = try Data(contentsOf: url)

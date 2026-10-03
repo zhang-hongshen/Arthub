@@ -108,7 +108,6 @@
 		70A15BB22B8F47B800B8ACE7 /* Rating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A15BB12B8F47B800B8ACE7 /* Rating.swift */; };
 		70A15BB42B8F8A1400B8ACE7 /* TVEpisodeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A15BB32B8F8A1400B8ACE7 /* TVEpisodeCard.swift */; };
 		70A15BBC2B90867300B8ACE7 /* MarqueeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A15BBB2B90867300B8ACE7 /* MarqueeText.swift */; };
-		70B3CF7A2BA32C9000D9BEEE /* ToolbarItemPlacement+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B3CF792BA32C9000D9BEEE /* ToolbarItemPlacement+.swift */; };
 		70B3DEFC2BA45FB000AD2AB3 /* NowPlayableBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B3DEFB2BA45FB000AD2AB3 /* NowPlayableBehavior.swift */; };
 		70B3E05B2BA471E400AD2AB3 /* VideoNowPlayableBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B3E05A2BA471E400AD2AB3 /* VideoNowPlayableBehavior.swift */; };
 		70B3E05D2BA4722800AD2AB3 /* AudioNowPlayableBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B3E05C2BA4722800AD2AB3 /* AudioNowPlayableBehavior.swift */; };
@@ -152,6 +151,8 @@
 		70E794BF2B9D8F4C00DFBA22 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E794BE2B9D8F4C00DFBA22 /* VideoPlayerView.swift */; };
 		70F3A9D72B6F37030091EB65 /* ArthubVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70F3A9D62B6F37030091EB65 /* ArthubVideoPlayer.swift */; };
 		7A8386E8C11D469ABCC833B6 /* LibraryMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA8512A39254C819489C588 /* LibraryMatchView.swift */; };
+		A1C0FFEE00000000000000A2 /* MiniMusicPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0FFEE00000000000000A1 /* MiniMusicPlayer.swift */; };
+		A1C0FFEE00000000000000B2 /* LyricsInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0FFEE00000000000000B1 /* LyricsInspectorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -287,7 +288,6 @@
 		70A15BB12B8F47B800B8ACE7 /* Rating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rating.swift; sourceTree = "<group>"; };
 		70A15BB32B8F8A1400B8ACE7 /* TVEpisodeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVEpisodeCard.swift; sourceTree = "<group>"; };
 		70A15BBB2B90867300B8ACE7 /* MarqueeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeText.swift; sourceTree = "<group>"; };
-		70B3CF792BA32C9000D9BEEE /* ToolbarItemPlacement+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ToolbarItemPlacement+.swift"; sourceTree = "<group>"; };
 		70B3DEFB2BA45FB000AD2AB3 /* NowPlayableBehavior.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NowPlayableBehavior.swift; sourceTree = "<group>"; };
 		70B3E05A2BA471E400AD2AB3 /* VideoNowPlayableBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoNowPlayableBehavior.swift; sourceTree = "<group>"; };
 		70B3E05C2BA4722800AD2AB3 /* AudioNowPlayableBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioNowPlayableBehavior.swift; sourceTree = "<group>"; };
@@ -331,6 +331,8 @@
 		70F3A9D62B6F37030091EB65 /* ArthubVideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArthubVideoPlayer.swift; sourceTree = "<group>"; };
 		8799F36C2DE64628A435F145 /* MetadataCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataCache.swift; sourceTree = "<group>"; };
 		98B95209BB884665835FCAC6 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		A1C0FFEE00000000000000A1 /* MiniMusicPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniMusicPlayer.swift; sourceTree = "<group>"; };
+		A1C0FFEE00000000000000B1 /* LyricsInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsInspectorView.swift; sourceTree = "<group>"; };
 		F12981891F604375B53CE692 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -470,6 +472,8 @@
 				705DF71C2B6C9FB9006D9726 /* MusicInspectorView.swift */,
 				705DF71E2B6C9FB9006D9726 /* MusicView.swift */,
 				705DF71F2B6C9FB9006D9726 /* MusicPlayer.swift */,
+				A1C0FFEE00000000000000B1 /* LyricsInspectorView.swift */,
+				A1C0FFEE00000000000000A1 /* MiniMusicPlayer.swift */,
 				705DF7412B6D240B006D9726 /* TimeSyncedLyricsView.swift */,
 				707261D72B709E3A00F82D58 /* LyricsEditView.swift */,
 				70C2ED482B884C2500989895 /* DynamicLyricView.swift */,
@@ -770,7 +774,6 @@
 				705DF7112B6C9FA9006D9726 /* View+.swift */,
 				7075B57B2B8DC54300757230 /* TabView+.swift */,
 				709D915F2BA1CF6800232D1C /* RoundedRectangle+.swift */,
-				70B3CF792BA32C9000D9BEEE /* ToolbarItemPlacement+.swift */,
 				7068506E2BA976F000FA502B /* ShapeStyle+.swift */,
 				70CE60592BAC66ED00A2D0B0 /* Image+.swift */,
 			);
@@ -996,6 +999,8 @@
 				7075B5862B8E31F800757230 /* ConfigModel.swift in Sources */,
 				70A15B9E2B8F0D6C00B8ACE7 /* TVSeason+.swift in Sources */,
 				705DF72B2B6C9FB9006D9726 /* MusicPlayer.swift in Sources */,
+				A1C0FFEE00000000000000B2 /* LyricsInspectorView.swift in Sources */,
+				A1C0FFEE00000000000000A2 /* MiniMusicPlayer.swift in Sources */,
 				70CC22A02B7B384400B7EBE5 /* UTType+.swift in Sources */,
 				705DF72C2B6C9FB9006D9726 /* MovieCard.swift in Sources */,
 				701A461D2B923A6A008D7578 /* LyricsDetail.swift in Sources */,
@@ -1055,7 +1060,6 @@
 				70E2AE692B80C9E70085E8EE /* SearchService+.swift in Sources */,
 				707578412B8330C30019A254 /* ArthubSlider.swift in Sources */,
 				7075B5842B8DFD1E00757230 /* OrderedDictionary+.swift in Sources */,
-				70B3CF7A2BA32C9000D9BEEE /* ToolbarItemPlacement+.swift in Sources */,
 				70A15BB02B8F3C0300B8ACE7 /* TVSeasonDetailView.swift in Sources */,
 				7068506B2BA85BAE00FA502B /* Bool+.swift in Sources */,
 				70564C282B97129100D6159E /* DevicePickerView.swift in Sources */,

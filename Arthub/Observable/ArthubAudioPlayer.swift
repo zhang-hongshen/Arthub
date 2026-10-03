@@ -58,7 +58,8 @@ class ArthubAudioPlayer: ArthubPlayer {
     private var itemObserver: NSKeyValueObservation!
     private var rateObserver: NSKeyValueObservation!
     private var statusObserver: NSObjectProtocol!
-    
+    private var currentTimeObserver: Any? = nil
+
     private var itemDidPlayToEndTimeObserver: NSObjectProtocol!
     
     override init() {
@@ -113,13 +114,13 @@ class ArthubAudioPlayer: ArthubPlayer {
     
     
     func registerObserver() {
-        
+
         // Observe changes to the current item and playback rate.
         itemObserver = player.observe(\.currentItem, options: .initial) {
             [unowned self] _, _ in
             self.handlePlayerItemChange()
         }
-        
+
         rateObserver = player.observe(\.rate, options: .initial) {
             [unowned self] _, _ in
             self.handlePlaybackChange()
@@ -128,20 +129,24 @@ class ArthubAudioPlayer: ArthubPlayer {
             [unowned self] _, _ in
             self.handlePlaybackChange()
         }
-        
+
         // sync player currentTime
-        player.addPeriodicTimeObserver(forInterval:
-                .init(seconds: 1, preferredTimescale: 1),
+        currentTimeObserver = player.addPeriodicTimeObserver(forInterval:
+                .init(seconds: 0.25, preferredTimescale: 600),
                                        queue: .main) { time in
             self.currentTime = time.seconds
         }
     }
-    
+
     func deregisterObserver() {
         itemObserver = nil
         rateObserver = nil
         statusObserver = nil
         itemDidPlayToEndTimeObserver = nil
+        if let observer = currentTimeObserver {
+            player.removeTimeObserver(observer)
+            currentTimeObserver = nil
+        }
     }
     
     // Stop the playback session.
