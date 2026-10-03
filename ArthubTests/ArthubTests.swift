@@ -40,10 +40,7 @@ final class ArthubTests: XCTestCase {
     func testURLHasDirectoryPath() {
         print(URL(string: "file:///Users/zhanghongshen/Movies/Arthub/Movies/")!.hasDirectoryPath)
         let url = URL(string:  "file:///Users/zhanghongshen/Movies/Arthub/Movies/%E9%99%B6%E5%96%86Love%20Can%E9%A6%99%E6%B8%AF%E6%BC%94%E5%94%B1%E4%BC%9A%20(2006)/%E9%99%B6%E5%96%86Love%20Can%E9%A6%99%E6%B8%AF%E6%BC%94%E5%94%B1%E4%BC%9A%20(2006).mp4")!
-        guard let matches = url.fileName.wholeMatch(of: RegexPattern.movieName) else { return }
-        let title = String(matches.output.title)
-        let year = Int(matches.output.year ?? "")
-        print("title \(title), year \(year)")
+        print(String(describing: MediaNaming.parseMovie(url)))
     }
     
     
@@ -123,6 +120,93 @@ final class ArthubTests: XCTestCase {
         self.measure {
             // Put the code you want to measure the time of here.
         }
+    }
+
+    // MARK: Naming
+
+    private let library = URL(fileURLWithPath: "/Media")
+
+    func testMovieNames() {
+        let cases: [(String, String, Int?)] = [
+            ("Movies/Pulp Fiction (1994).mkv", "Pulp Fiction", 1994),
+            ("Movies/Inception.avi", "Inception", nil),
+            ("Movies/Captain-America-The-Winter-Soldier-2014.mp4", "Captain America The Winter Soldier", 2014),
+            ("Movies/The.Matrix.1999.1080p.BluRay.x264.mkv", "The Matrix", 1999),
+            ("Movies/1917 (2019).mkv", "1917", 2019),
+            ("Movies/Blade Runner (1982)/Blade Runner (1982) Director's Cut cd1.mkv", "Blade Runner", 1982),
+            ("Movies/Inception (2010)/movie.mkv", "Inception", 2010),
+        ]
+        for (path, title, year) in cases {
+            guard case .movie(let movie) = MediaNaming.parseVideo(library.appending(path: path), library: library) else {
+                XCTFail(path); continue
+            }
+            XCTAssertEqual(movie.title, title, path)
+            XCTAssertEqual(movie.year, year, path)
+        }
+        let pinned = MediaNaming.parseMovie(name: "Inception {tmdb-27205} {edition-Extended}")
+        XCTAssertEqual(pinned, MediaNaming.Movie(title: "Inception", tmdbID: 27205))
+    }
+
+    func testEpisodeNames() {
+        let cases: [(String, String, Int, Int)] = [
+            ("show-name_s01.e02.mkv", "show name", 1, 2),
+            ("show-name_s1e2.mkv", "show name", 1, 2),
+            ("show-name_1x02.mkv", "show name", 1, 2),
+            ("show-name_se1.ep2.mkv", "show name", 1, 2),
+            ("show-name-season1.episode2.mkv", "show name", 1, 2),
+            ("TV Shows/Show Name/any folder/S01E02.mkv", "Show Name", 1, 2),
+            ("TV Shows/Show Name/any folder/01.02 NameOfEpisode.mkv", "Show Name", 1, 2),
+            ("TV Shows/Show Name/Season 1/02 NameOfEpisode.mkv", "Show Name", 1, 2),
+            ("TV Shows/Show Name/Season 1/1-02 NameOfEpisode.mkv", "Show Name", 1, 2),
+            ("TV Shows/Show Name/Season 1/episode 02 - NameOfEpisode.mkv", "Show Name", 1, 2),
+            ("TV Shows/Show Name/第二季/第05集.mkv", "Show Name", 2, 5),
+            ("Breaking-Bad.S00.E01.mkv", "Breaking Bad", 0, 1),
+            ("Mad Men S01 E01 720p.mp4", "Mad Men", 1, 1),
+        ]
+        for (path, show, season, episode) in cases {
+            guard case .episode(let parsed) = MediaNaming.parseVideo(library.appending(path: path), library: library) else {
+                XCTFail(path); continue
+            }
+            XCTAssertEqual(parsed.show, show, path)
+            XCTAssertEqual(parsed.season, season, path)
+            XCTAssertEqual(parsed.episode, episode, path)
+        }
+        // The show folder groups episodes whose file names disagree.
+        let folder = "TV Shows/Doctor Who (2005)/Season 01/"
+        for name in ["Doctor.Who.S01E01.mkv", "DW S01E02.mkv"] {
+            guard case .episode(let parsed) = MediaNaming.parseVideo(library.appending(path: folder + name), library: library) else {
+                XCTFail(name); continue
+            }
+            XCTAssertEqual(parsed.show, "Doctor Who")
+            XCTAssertEqual(parsed.year, 2005)
+        }
+        guard case .episode(let multi) = MediaNaming.parseVideo(library.appending(path: "Show S01E01-E02.mkv"), library: library) else {
+            return XCTFail("multi-episode")
+        }
+        XCTAssertEqual(multi.episodes, [1, 2])
+        XCTAssertNotNil(MediaNaming.parseVideo(library.appending(path: "Movies/Avatar 1920x1080.mkv"), library: library)
+            .flatMap { if case .movie = $0 { true } else { nil } })
+    }
+
+    func testExtras() {
+        XCTAssertTrue(MediaNaming.isExtra(library.appending(path: "Movies/Inception-2010-trailer.mp4"), library: library))
+        XCTAssertTrue(MediaNaming.isExtra(library.appending(path: "Movies/Inception (2010)/Deleted Scenes/Level 3.mkv"), library: library))
+        XCTAssertFalse(MediaNaming.isExtra(library.appending(path: "Movies/The Big Short (2015).mkv"), library: library))
+    }
+
+    func testTrackNames() {
+        let track = MediaNaming.parseTrack(library.appending(path: "Music/Adele/25 (2015)/Disc 1/01 Hello.flac"), library: library)
+        XCTAssertEqual(track, MediaNaming.Track(title: "Hello", trackNumber: 1, discNumber: 1, album: "25", year: 2015, artist: "Adele"))
+        XCTAssertEqual(MediaNaming.parseTrack(URL(fileURLWithPath: "/Media/Album/2-05 Song.mp3"), library: library).discNumber, 2)
+    }
+
+    func testSidecarParsing() {
+        let srt = "1\n00:00:01,000 --> 00:00:02,500\n<i>Hello</i>\nworld\n\n2\n00:00:03,000 --> 00:00:04,000\nBye"
+        XCTAssertEqual(SidecarParser.parseSRT(srt), [SubtitleCue(start: 1, end: 2.5, text: "Hello\nworld"),
+                                                     SubtitleCue(start: 3, end: 4, text: "Bye")])
+        let lyrics = SidecarParser.lyrics(lrc: "[ti:Song]\n[00:01.00][00:05.00]Hi\n[00:03.50]There")
+        XCTAssertEqual(lyrics.map(\.content), ["Hi", "There", "Hi"])
+        XCTAssertEqual(lyrics.map(\.start), [1, 3.5, 5])
     }
 
 }

@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 import AVFoundation
 
 extension URL {
-    
+
     var isImage: Bool {
         if ["jpg", "jpeg", "png", "gif", "bmp", "svg"]
             .contains(where: { pathExtension.lowercased() == $0 }) {
@@ -18,46 +18,48 @@ extension URL {
         }
         return UTType(filenameExtension: pathExtension)?.conforms(to: .image) ?? false
     }
-    
-    var isVideo: Bool {
-        if ["mp4", "mov", "avi", "mkv"]
+
+    /// Fast, allocation-free checks for common media extensions.
+    /// Falls back to UTType conformance for anything else.
+    private var isVideoByExtension: Bool {
+        if ["mp4", "mov", "avi", "mkv", "m4v", "mpg", "mpeg", "webm", "wmv", "flv", "3gp"]
             .contains(where: { pathExtension.lowercased() == $0 }) {
                 return true
         }
-        let asset = AVURLAsset(url: self)
-        let semaphore = DispatchSemaphore(value: 0)
-        var res = false
-        asset.loadTracks(withMediaType: .video) { tracks, err in
-            if let tracks = tracks {
-                res = !tracks.isEmpty
-            }
-            DispatchQueue.userInitiated.async {
-                semaphore.signal()
-            }
-        }
-        semaphore.wait()
-        return res
+        return UTType(filenameExtension: pathExtension)?.conforms(to: .movie) ?? false
     }
-    
-    var isAudio: Bool {
-        if ["mp3", "wav", "aac", "flac", "m4a"]
+
+    private var isAudioByExtension: Bool {
+        if ["mp3", "wav", "aac", "flac", "m4a", "aiff", "aif", "alac", "ogg", "wma", "opus"]
             .contains(where: { pathExtension.lowercased() == $0 }) {
                 return true
         }
-        if isVideo { return true }
+        return UTType(filenameExtension: pathExtension)?.conforms(to: .audio) ?? false
+    }
+
+    var isVideo: Bool {
+        isVideoByExtension
+    }
+
+    var isAudio: Bool {
+        isAudioByExtension || isVideoByExtension
+    }
+
+    /// Thorough check that probes the file's actual tracks.
+    /// Use for files with unusual extensions; `isVideo`/`isAudio` above
+    /// are instant and sufficient for normal libraries.
+    func hasVideoTracks() async -> Bool {
+        if isVideoByExtension { return true }
         let asset = AVURLAsset(url: self)
-        let semaphore = DispatchSemaphore(value: 0)
-        var res = false
-        asset.loadTracks(withMediaType: .audio) { tracks, err in
-            if let tracks = tracks {
-                res = !tracks.isEmpty
-            }
-            DispatchQueue.userInitiated.async {
-                semaphore.signal()
-            }
-        }
-        semaphore.wait()
-        return res
+        let tracks = (try? await asset.loadTracks(withMediaType: .video)) ?? []
+        return !tracks.isEmpty
+    }
+
+    func hasAudioTracks() async -> Bool {
+        if isAudioByExtension || isVideoByExtension { return true }
+        let asset = AVURLAsset(url: self)
+        let tracks = (try? await asset.loadTracks(withMediaType: .audio)) ?? []
+        return !tracks.isEmpty
     }
     
     var fileName: String {

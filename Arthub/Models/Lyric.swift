@@ -42,6 +42,9 @@ extension Lyric {
         if url.isTTML {
             return TTMLParser().parse(url: url)
         }
+        if url.pathExtension.lowercased() == "lrc", let text = SidecarParser.readText(url) {
+            return SidecarParser.lyrics(lrc: text)
+        }
         return []
     }
     

@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		701123272B839E9B002BB21E /* RegexPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701123262B839E9B002BB21E /* RegexPattern.swift */; };
+		A1B2C3D4E5F60718293A4B03 /* SidecarParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B04 /* SidecarParser.swift */; };
+		A1B2C3D4E5F60718293A4B01 /* MediaNaming.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B02 /* MediaNaming.swift */; };
 		7011232F2B83A4B8002BB21E /* KeychainStorage+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7011232E2B83A4B8002BB21E /* KeychainStorage+.swift */; };
 		701123362B847C77002BB21E /* PersonDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701123352B847C77002BB21E /* PersonDetailView.swift */; };
 		701123382B847E24002BB21E /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701123372B847E24002BB21E /* Person.swift */; };
@@ -178,7 +179,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		701123262B839E9B002BB21E /* RegexPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegexPattern.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B04 /* SidecarParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidecarParser.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B02 /* MediaNaming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaNaming.swift; sourceTree = "<group>"; };
 		7011232E2B83A4B8002BB21E /* KeychainStorage+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeychainStorage+.swift"; sourceTree = "<group>"; };
 		701123352B847C77002BB21E /* PersonDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailView.swift; sourceTree = "<group>"; };
 		701123372B847E24002BB21E /* Person.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Person.swift; sourceTree = "<group>"; };
@@ -384,7 +386,6 @@
 			isa = PBXGroup;
 			children = (
 				7075782E2B824F700019A254 /* DisplayResolution.swift */,
-				701123262B839E9B002BB21E /* RegexPattern.swift */,
 				701A46142B91F615008D7578 /* Landscape.swift */,
 				701A46162B91F623008D7578 /* Portrait.swift */,
 				701A46182B91F657008D7578 /* Default.swift */,
@@ -586,6 +587,8 @@
 			isa = PBXGroup;
 			children = (
 				70CC229D2B7AFAD200B7EBE5 /* TTMLParser.swift */,
+				A1B2C3D4E5F60718293A4B04 /* SidecarParser.swift */,
+				A1B2C3D4E5F60718293A4B02 /* MediaNaming.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -935,7 +938,6 @@
 				70E2AE7D2B81D2370085E8EE /* ImageMetadata+.swift in Sources */,
 				70A15BAA2B8F2F1500B8ACE7 /* TVEpisodeService+.swift in Sources */,
 				70DF83392B86558A00352A16 /* ConfigCommand.swift in Sources */,
-				701123272B839E9B002BB21E /* RegexPattern.swift in Sources */,
 				701910A52BA209B60012BF9C /* Waveform.swift in Sources */,
 				70DF833E2B87244700352A16 /* ArthubAudioPlayer.swift in Sources */,
 				705BD9222B71F830004CED50 /* Comparable+.swift in Sources */,
@@ -948,6 +950,8 @@
 				7075B5822B8DE1C200757230 /* MovieOrder.swift in Sources */,
 				705DF7262B6C9FB9006D9726 /* Song.swift in Sources */,
 				70CC229E2B7AFAD200B7EBE5 /* TTMLParser.swift in Sources */,
+				A1B2C3D4E5F60718293A4B03 /* SidecarParser.swift in Sources */,
+				A1B2C3D4E5F60718293A4B01 /* MediaNaming.swift in Sources */,
 				705DF72A2B6C9FB9006D9726 /* MusicView.swift in Sources */,
 				701875CD2B751FBA00A560FC /* WindowState.swift in Sources */,
 				701A46232B94329D008D7578 /* TVShowPlayerView.swift in Sources */,
