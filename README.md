@@ -105,6 +105,16 @@ Embedded tags (ID3 / iTunes) take precedence; the path only fills missing title,
 
 `.srt`, `.vtt`, `.ass` and `.ssa` files are found next to the video when they start with the video's name, or in a `Subs/` / `Subtitles/` folder (`Subs/<video name>/…` for episodes). Language tags such as `en`, `eng`, `English`, `zh-Hans`, `chs`, `cht` and the `forced` / `sdh` flags are recognized. A forced or preferred-language track is selected automatically and can be changed from the player controls. UTF-8, UTF-16, GB18030 and Big5 encodings are supported.
 
+## 📦 Install
+
+Download the latest `Arthub_<version>.dmg` from [Releases](https://github.com/zhang-hongshen/Arthub/releases) and drag Arthub into Applications.
+
+The app is ad-hoc signed and not notarized by Apple, so macOS blocks it on first launch. Either open **System Settings → Privacy & Security** and click **Open Anyway**, or run:
+
+```bash
+xattr -cr /Applications/Arthub.app
+```
+
 ## 🛠 Build
 
 ```bash

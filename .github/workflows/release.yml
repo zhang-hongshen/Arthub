@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]*"
+      - "v[0-9]*"
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: Arthub
+  SCHEME: Arthub
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # actions/checkout can turn the pushed tag into a lightweight tag,
+      # so fetch the tags again to keep annotated tag messages.
+      - name: Fetch tags
+        run: git fetch --force --tags origin
+
+      - name: Set version
+        run: |
+          TAG="$GITHUB_REF_NAME"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Build archive
+        run: |
+          xcodebuild archive \
+            -project Arthub.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination "generic/platform=macOS" \
+            -archivePath "build/$APP_NAME.xcarchive" \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=""
+
+      - name: Check version
+        run: |
+          APP="build/$APP_NAME.xcarchive/Products/Applications/$APP_NAME.app"
+          APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Contents/Info.plist")
+          echo "CFBundleShortVersionString: $APP_VERSION"
+          if [ "$APP_VERSION" != "$VERSION" ]; then
+            echo "::error::App version $APP_VERSION does not match tag version $VERSION"
+            exit 1
+          fi
+
+      - name: Create DMG
+        run: |
+          mkdir -p build/dmg
+          ditto "build/$APP_NAME.xcarchive/Products/Applications/$APP_NAME.app" "build/dmg/$APP_NAME.app"
+          ln -s /Applications build/dmg/Applications
+          hdiutil create \
+            -volname "$APP_NAME" \
+            -srcfolder build/dmg \
+            -format UDZO \
+            -ov \
+            "build/${APP_NAME}_${VERSION}.dmg"
+
+      - name: Write release notes
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)
+
+          if [ "$(git cat-file -t "$TAG")" = "tag" ]; then
+            git tag -l --format="%(contents)" "$TAG" > notes.md
+          elif [ -n "$PREV_TAG" ]; then
+            git log --no-merges --pretty="- %s (%h)" "$PREV_TAG..$TAG" > notes.md
+          else
+            git log --no-merges --pretty="- %s (%h)" "$TAG" > notes.md
+          fi
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "" >> notes.md
+            echo "**Full Changelog**: https://github.com/$GITHUB_REPOSITORY/compare/$PREV_TAG...$TAG" >> notes.md
+          fi
+
+          cat notes.md
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" "build/${APP_NAME}_${VERSION}.dmg" \
+            --title "$VERSION" \
+            --notes-file notes.md
