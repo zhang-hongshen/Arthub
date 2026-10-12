@@ -7,6 +7,7 @@
 
 import Foundation
 import TMDb
+import MediaPlayer
 
 
 @Observable
@@ -41,21 +42,30 @@ class TVEpisodeDetail: MediaItem, Identifiable, Hashable {
 extension TVEpisodeDetail {
     
     var progress: Double {
-        return duration != 0 ? Double(metrics.currentTime) / Double(duration) : 0
+        duration != 0 ? metrics.currentTime / duration : 0
+    }
+
+    /// What the player and the system's Now Playing panel show for this episode.
+    func playlistItem() async -> PlaylistItem {
+        var item = PlaylistItem(id: id, url: fileURL, title: metadata.name)
+        if let still = metadata.stillPath {
+            item.artwork = await MPMediaItemArtwork(contentsOf: still)
+        }
+        return item
     }
 
 }
 
 extension TVEpisodeDetail {
-    
+
     func fetchDetail() async throws {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let getMetadata = TVEpisodeService.shared.details(forEpisode: metadata.episodeNumber, inSeason: metadata.seasonNumber, inTVSeries: tvShowID)
-        let (imagesConfiguration, metadata) = try await(getImageConfiguration, getMetadata)
+        async let images = ConfigurationService.shared.getImageConfiguration()
+        async let details = TVEpisodeService.shared.details(forEpisode: metadata.episodeNumber,
+                                                             inSeason: metadata.seasonNumber, inTVSeries: tvShowID)
+        let config = try await images
+        let metadata = try await details
         // Local artwork found next to the file wins over TMDb.
         let localStill = self.metadata.stillPath.flatMap { $0.isFileURL ? $0 : nil }
-        self.metadata = metadata.copy(
-            stillPath: localStill ?? imagesConfiguration.stillURL(for: metadata.stillPath)
-        )
+        self.metadata = metadata.copy(stillPath: localStill ?? config.stillURL(for: metadata.stillPath))
     }
 }

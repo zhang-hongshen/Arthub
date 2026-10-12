@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import MediaPlayer
 
 struct MovieCard: View {
     
@@ -97,17 +96,7 @@ extension MovieCard {
     func setupPlayer() {
         guard movie.isAvailable else { return }
         setupPlayerTask = Task {
-            var artwork: MPMediaItemArtwork? = nil
-            if let cover = movie.metadata.posterPath {
-                artwork = await MPMediaItemArtwork(contentsOf: cover)
-            }
-            let metadata = NowPlayableStaticMetadata(
-                id: NSNumber(value: movie.id.hashValue),
-                assetURL: movie.fileURL, mediaType: .video,
-                isLiveStream: false,
-                title: movie.metadata.title,
-                artwork: artwork)
-            player.preloadItems(playableAssets: [metadata])
+            player.setPlaylist([await movie.playlistItem()])
             playerPresented = true
         }
     }

@@ -11,11 +11,15 @@ import AVFoundation
 struct TimeSyncedLyricsView: View {
     
     var lyrics: [Lyric]
-    @Binding var syncedTime: TimeInterval
-    @State var onLyricClicked: (Lyric) -> Void = {_ in}
+    var syncedTime: TimeInterval
+    var onLyricClicked: (Lyric) -> Void = {_ in}
     
+    /// Lyrics without timing (plain embedded text) aren't blurred.
+    private var isTimeSynced: Bool { lyrics.contains { $0.end > 0 } }
+
+    /// The first line being sung; lines sharing its time, like a translation, are lit with it.
     private var currentLyricID: Lyric.ID? {
-        lyrics.first { $0.start <= syncedTime && $0.end > syncedTime }?.id
+        lyrics.first { $0.isActive(at: syncedTime) }?.id
     }
 
     var body: some View {
@@ -38,8 +42,8 @@ extension TimeSyncedLyricsView {
         ScrollView {
             LazyVStack(alignment: .leading) {
                 ForEach(lyrics) { lyric in
-                    DynamicLyricView(lyric: lyric, syncedTime: $syncedTime).id(lyric.id)
-                        .blur(radius: currentLyricID == lyric.id ? 0 : 2)
+                    DynamicLyricView(lyric: lyric, time: syncedTime).id(lyric.id)
+                        .blur(radius: !isTimeSynced || lyric.isActive(at: syncedTime) ? 0 : 2)
                         .cornerRadius()
                         .onTapGesture { onLyricClicked(lyric) }
                 }

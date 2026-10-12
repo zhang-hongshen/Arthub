@@ -7,31 +7,19 @@
 
 import Foundation
 
-
-struct Portrait {
+/// Poster sizes.
+enum Portrait {
     static let aspectRatio: CGFloat = 0.75
-    
-    enum PortraitSize: Identifiable {
-        case mini, small, regular, large, extraLarge
-        var id: Self { self }
+
+    enum Size {
+        case small, regular
     }
-    
-    static func width(_ size: PortraitSize = .regular) -> CGFloat {
-        switch size {
-        case .mini:
-            60
-        case .small:
-            150
-        case .regular:
-            210
-        case .large:
-            375
-        case .extraLarge:
-            525
-        }
+
+    static func width(_ size: Size = .regular) -> CGFloat {
+        size == .small ? 150 : 210
     }
-    
-    static func height(_ size: PortraitSize = .regular) -> CGFloat {
+
+    static func height(_ size: Size = .regular) -> CGFloat {
         width(size) / aspectRatio
     }
 }

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import MediaPlayer
 
 struct TVSeasonCardView: View {
 
@@ -107,20 +106,11 @@ extension TVSeasonCardView {
             playerStartIndex = episodes.startIndex
         }
         setupPlayerTask = Task {
-            var playableAssets: [NowPlayableStaticMetadata] = []
-
+            var items: [PlaylistItem] = []
             for episode in episodes {
-                var artwork: MPMediaItemArtwork?  = nil
-                if let still = episode.metadata.stillPath {
-                    artwork = await MPMediaItemArtwork(contentsOf: still)
-                }
-                playableAssets.append(NowPlayableStaticMetadata(
-                    id: NSNumber(value: episode.id),
-                    assetURL: episode.fileURL, mediaType: .video,
-                    isLiveStream: false, title: episode.metadata.name,
-                    artwork: artwork))
+                items.append(await episode.playlistItem())
             }
-            player.preloadItems(playableAssets: playableAssets)
+            player.setPlaylist(items)
             playerPresented = true
         }
     }

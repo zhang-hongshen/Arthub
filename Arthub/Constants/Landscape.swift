@@ -7,25 +7,15 @@
 
 import Foundation
 
-struct Landscape {
+/// Backdrop and episode still sizes.
+enum Landscape {
     static let aspectRatio: CGFloat = 1.4
-    
-    enum LandscapeSize {
-        case mini, small, regular, large, extraLarge
+
+    enum Size {
+        case small, regular
     }
-    
-    static func height(_ size: LandscapeSize = .regular) -> CGFloat {
-        switch size {
-        case .mini:
-            50
-        case .small:
-            100
-        case .regular:
-            200
-        case .large:
-            400
-        case .extraLarge:
-            600
-        }
+
+    static func height(_ size: Size = .regular) -> CGFloat {
+        size == .small ? 100 : 200
     }
 }

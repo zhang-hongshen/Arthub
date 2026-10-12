@@ -6,122 +6,33 @@
 //
 import SwiftUI
 
-struct RoundedRectangleModifier: ViewModifier {
-    let cornerRadius: CGFloat
-
-    init(cornerRadius: CGFloat) {
-        self.cornerRadius = cornerRadius
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-    }
-}
-
-struct SettingsModifier: ViewModifier {
-    
-    @AppStorage(UserDefaults.appearance)
-    private var apperance = Appearance.system
-    
-    @AppStorage(UserDefaults.language)
-    private var language = Language.system
-    
-    func body(content: Content) -> some View {
-        content
-            .environment(\.locale, language.locale)
-            .preferredColorScheme({
-                switch apperance {
-                case .system:   nil
-                case .light:    .light
-                case .dark:     .dark
-                }
-            }())
-    }
-}
-
-struct ScaleEffectModifier: ViewModifier {
-    
-    private var scaled : Bool = false
-    
-    init(_ scaled: Bool) {
-        self.scaled = scaled
-    }
-    
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(scaled ? Default.selectedScale : Default.scale,
-                         anchor: .center)
-            .animation(.spring(duration: 0.5), value: scaled)
-    }
-}
-
-struct FocusEffectModifier: ViewModifier {
-    
-    func body(content: Content) -> some View {
-        content
-            .focusable()
-            .focusEffectDisabled()
-    }
-}
-
-struct AlertModifier: ViewModifier {
-    
-    @Binding var error: ArthubError?
-    
-    func body(content: Content) -> some View {
-        content
-            .alert(error?.localizedDescription ?? "",
-                   isPresented: Binding(
-                    get: { error != nil },
-                    set: { _ in })) {
-                Button("OK") {
-                    error = nil
-                }
-            }
-    }
-}
-
-@available(iOS 13.4, macOS 10.15, *)
-struct HoverEffectModifier: ViewModifier {
-    
-    @State private var isHovering = false
-    
-    func body(content: Content) -> some View {
-        content.onHover { isHovering = $0 }
-            .padding(10)
-            .background {
-                if isHovering {
-                    RoundedRectangle().fill(.selection)
-                }
-            }
-    }
-}
-
 extension View {
-    
+
     func cornerRadius(_ cornerRadius: CGFloat = Default.cornerRadius) -> some View {
-        self.modifier(RoundedRectangleModifier(cornerRadius: cornerRadius))
+        clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
-    
+
+    /// The appearance and language picked in Settings.
     func applyUserSettings() -> some View {
-        self.modifier(SettingsModifier())
+        modifier(UserSettingsModifier())
     }
-    
-    func scaleEffect(_ scaled: Bool = true) -> some View {
-        self.modifier(ScaleEffectModifier(scaled))
-    }
-    
+
+    /// Lets the view take keyboard focus without drawing a focus ring.
     func focusEffect() -> some View {
-        self.modifier(FocusEffectModifier())
+        focusable().focusEffectDisabled()
     }
-    
-    func alert(error: Binding<ArthubError?>) -> some View {
-        self.modifier(AlertModifier(error: error))
+
+    /// Shows `error` in an alert until OK is pressed.
+    func alert(error: Binding<Error?>) -> some View {
+        alert(error.wrappedValue?.localizedDescription ?? "",
+              isPresented: Binding(get: { error.wrappedValue != nil },
+                                   set: { if !$0 { error.wrappedValue = nil } })) {
+            Button("OK") {}
+        }
     }
-    
+
     func transparentEffect() -> some View {
-        self.background {
+        background {
             Rectangle()
                 .fill(.thinMaterial.opacity(0.4))
                 .blur(radius: 6, opaque: true)
@@ -129,88 +40,102 @@ extension View {
                 .background(.secondary.opacity(0.2))
         }
     }
-    
+
     func shadow() -> some View {
-        self.shadow(radius: Default.shadowRadius)
+        shadow(radius: Default.shadowRadius)
     }
-    
+
     #if !os(tvOS)
+    /// Highlights the view while the pointer is over it.
     func hoverEffect() -> some View {
-        self.modifier(HoverEffectModifier())
+        modifier(HoverEffectModifier())
     }
     #endif
-    
+}
+
+private struct UserSettingsModifier: ViewModifier {
+
+    @AppStorage(UserDefaults.appearance)
+    private var appearance = Appearance.system
+
+    @AppStorage(UserDefaults.language)
+    private var language = Language.system
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.locale, language.locale)
+            #if canImport(AppKit)
+            // preferredColorScheme(nil) leaves macOS windows in the last forced appearance
+            // instead of following the system again, so set the app's appearance instead.
+            .onChange(of: appearance, initial: true) {
+                NSApp.appearance = switch appearance {
+                case .system:   nil
+                case .light:    NSAppearance(named: .aqua)
+                case .dark:     NSAppearance(named: .darkAqua)
+                }
+            }
+            #else
+            .preferredColorScheme({
+                switch appearance {
+                case .system:   nil
+                case .light:    .light
+                case .dark:     .dark
+                }
+            }())
+            #endif
+    }
+}
+
+private struct HoverEffectModifier: ViewModifier {
+
+    @State private var isHovering = false
+
+    func body(content: Content) -> some View {
+        content.onHover { isHovering = $0 }
+            .padding(10)
+            .background {
+                if isHovering {
+                    RoundedRectangle(cornerRadius: Default.cornerRadius).fill(.selection)
+                }
+            }
+    }
 }
 
 #if canImport(AppKit)
 
 extension View {
+    /// Hides the toolbar and menu bar in full screen until the pointer reaches the top of the screen.
     func hideToolbarWhenFullscreen() -> some View {
-        self.modifier(HideToolbarWhenFullscreenModifier())
-    }
-}
-
-struct CursorModifier: ViewModifier {
-    
-    var cursor: NSCursor = .pointingHand
-    
-    func body(content: Content) -> some View {
-        content.onContinuousHover(coordinateSpace: .local) { phase in
-            switch phase {
-            case .active(_):
-                guard NSCursor.current != cursor else {
-                    return
-                }
-                DispatchQueue.main.async {
-                    cursor.push()
-                }
-            case .ended:
-                DispatchQueue.main.async {
-                    NSCursor.pop()
-                }
+        background {
+            HostingWindowFinder { window in
+                window?.delegate = FullScreenWindowDelegate.shared
+                window?.titlebarAppearsTransparent = true
             }
         }
-                
     }
 }
 
-struct HideToolbarWhenFullscreenModifier: ViewModifier {
-    
-    private var customWindowDelegate = CustomWindowDelegate()
-    
-    func body(content: Content) -> some View {
-        content
-            .background {
-                HostingWindowFinder { window in
-                    guard let window else { return }
-                    window.delegate = customWindowDelegate
-                    window.titlebarAppearsTransparent = true
-                }
-            }
-    }
-}
+private class FullScreenWindowDelegate: NSObject, NSWindowDelegate {
 
-class CustomWindowDelegate: NSObject, NSWindowDelegate {
-    override init() {
-        super.init()
-    }
-    
+    static let shared = FullScreenWindowDelegate()
+
     func window(_ window: NSWindow, willUseFullScreenPresentationOptions proposedOptions: NSApplication.PresentationOptions = []) -> NSApplication.PresentationOptions {
-        return [.autoHideToolbar, .autoHideMenuBar, .fullScreen]
+        [.autoHideToolbar, .autoHideMenuBar, .fullScreen]
     }
 }
 
-struct HostingWindowFinder: NSViewRepresentable {
+/// Hands the view's window to `callback` once the view is in one.
+private struct HostingWindowFinder: NSViewRepresentable {
     var callback: (NSWindow?) -> ()
-    
-    func makeNSView(context: Self.Context) -> NSView {
+
+    func makeNSView(context: Context) -> NSView {
         let view = NSView()
-        DispatchQueue.main.async { self.callback(view.window) }
+        DispatchQueue.main.async { callback(view.window) }
         return view
     }
-    
+
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { self.callback(nsView.window) }
+        DispatchQueue.main.async { callback(nsView.window) }
     }
 }
 #endif

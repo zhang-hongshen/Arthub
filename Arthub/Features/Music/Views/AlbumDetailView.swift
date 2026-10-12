@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import MediaPlayer
 import OrderedCollections
 
 struct AlbumDetailView: View {
@@ -17,6 +16,7 @@ struct AlbumDetailView: View {
     @Environment(ArthubAudioPlayer.self) private var player
     @State private var hoveredSongID: Song.ID?
     @State private var selectedSongID: Song.ID?
+    @State private var searchText = ""
 
     private var sortedSongs: [Song] {
         groupedAlbum.values.flatMap { $0 }
@@ -29,6 +29,18 @@ struct AlbumDetailView: View {
         }
         res.sort { $0.key < $1.key }
         return res.mapValues { $0.sorted { ($0.trackNumber ?? .max) < ($1.trackNumber ?? .max) } }
+    }
+
+    /// The track list narrowed by the search text; playback still uses the whole album.
+    private var filteredAlbum: OrderedDictionary<Int, [Song]> {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return groupedAlbum }
+        return groupedAlbum
+            .mapValues { songs in
+                songs.filter { $0.title.localizedCaseInsensitiveContains(query)
+                    || $0.artist.name.localizedCaseInsensitiveContains(query) }
+            }
+            .filter { !$0.value.isEmpty }
     }
 
     private var totalMinutes: Int {
@@ -45,6 +57,8 @@ struct AlbumDetailView: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 24)
         }
+        .navigationTitle("")
+        .searchable(text: $searchText, placement: .toolbar, prompt: Text("Find in Album"))
     }
 }
 
@@ -115,14 +129,20 @@ extension AlbumDetailView {
     @ViewBuilder
     func TrackList() -> some View {
         let showsDisc = groupedAlbum.count > 1
+        let discs = filteredAlbum
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(groupedAlbum.elements, id: \.key) { discNumber, songs in
+            if discs.isEmpty {
+                ContentUnavailableView.search(text: searchText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+            }
+            ForEach(discs.elements, id: \.key) { discNumber, songs in
                 if showsDisc {
                     Text("Disc \(discNumber)")
                         .font(.headline)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 12)
-                        .padding(.top, discNumber == groupedAlbum.keys.first ? 0 : 24)
+                        .padding(.top, discNumber == discs.keys.first ? 0 : 24)
                         .padding(.bottom, 8)
                     Divider()
                 }
@@ -277,16 +297,7 @@ extension AlbumDetailView {
     }
 
     private func startPlay(_ songs: [Song], from index: Int) {
-        let playableAssets = (songs[index...] + songs[..<index]).map { song in
-            NowPlayableStaticMetadata(
-                id: NSNumber(value: song.id.hashValue),
-                assetURL: song.fileURL, mediaType: .audio, isLiveStream: false,
-                title: song.title, artist: song.artist.name,
-                artwork: song.album.cover.map { MPMediaItemArtwork(data: $0) } ?? nil,
-                albumArtist: song.album.artist.name,
-                albumTitle: song.album.title)
-        }
-        player.preloadItems(playableAssets: playableAssets)
-        try? player.start()
+        player.setPlaylist((songs[index...] + songs[..<index]).map(\.playlistItem))
+        player.start()
     }
 }

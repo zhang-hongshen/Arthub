@@ -30,68 +30,33 @@ class Person: Identifiable, Hashable {
 }
 
 extension Person {
-    
+
     func fetchDetail() async throws {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let fetchDetail = PersonService.shared.details(forPerson: metadata.id)
-        let (imageConfiguration, metadata) =  try await (getImageConfiguration, fetchDetail)
-        self.metadata = metadata.copy(
-            profilePath: imageConfiguration.profileURL(for: metadata.profilePath)
-        )
+        async let images = ConfigurationService.shared.getImageConfiguration()
+        async let details = PersonService.shared.details(forPerson: metadata.id)
+        let config = try await images
+        let metadata = try await details
+        self.metadata = metadata.copy(profilePath: config.profileURL(for: metadata.profilePath))
     }
-    
+
+    /// Movies, known-for movies and profile pictures from TMDb.
     func fetchRelatedData() async throws {
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask { try await self.fetchCastMovies() }
-            group.addTask { try await self.fetchKnownFor() }
-            group.addTask { try await self.fetchProfiles() }
-            try await group.waitForAll()
+        let id = metadata.id
+        async let images = ConfigurationService.shared.getImageConfiguration()
+        async let credits = PersonService.shared.movieCredits(forPerson: id)
+        async let knownFor = PersonService.shared.knownFor(forPerson: id)
+        async let pictures = PersonService.shared.images(forPerson: id)
+
+        let config = try await images
+        func withImages(_ movie: TMDb.Movie) -> TMDb.Movie {
+            movie.copy(posterPath: config.posterURL(for: movie.posterPath),
+                       backdropPath: config.backdropURL(for: movie.backdropPath))
         }
-    }
-    
-    func fetchCastMovies() async throws {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let fetchMovieCredits = PersonService.shared.movieCredits(forPerson: metadata.id)
-        let (imageConfiguration, movieCredits) = try await (getImageConfiguration, fetchMovieCredits)
-        var castMovies: [TMDb.Movie] = []
-        movieCredits.cast.forEach { cast in
-            castMovies.append(cast.copy(
-                posterPath:imageConfiguration.posterURL(for: cast.posterPath),
-                backdropPath: imageConfiguration.backdropURL(for: cast.backdropPath)
-            ))
+        castMovies = try await credits.cast.map(withImages)
+        knownForMovies = try await knownFor.compactMap { show -> TMDb.Movie? in
+            guard case .movie(let movie) = show else { return nil }
+            return withImages(movie)
         }
-        self.castMovies = castMovies
-    }
-    
-    func fetchKnownFor() async throws {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let fetchKnownFor = PersonService.shared.knownFor(forPerson: metadata.id)
-        let (imageConfiguration, knownFor) = try await (getImageConfiguration, fetchKnownFor)
-        var knownForMovies: [TMDb.Movie] = []
-        knownFor.forEach { show in
-            switch show {
-            case .movie(let movie):
-                knownForMovies.append(movie.copy(
-                    posterPath: imageConfiguration.posterURL(for: movie.posterPath),
-                    backdropPath: imageConfiguration.backdropURL(for: movie.backdropPath)
-                ))
-            case .tvSeries(let tvSeries):
-               break
-            }
-        }
-        self.knownForMovies = knownForMovies
-    }
-    
-    func fetchProfiles() async throws {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let fetchImages = PersonService.shared.images(forPerson: metadata.id)
-        let (imageConfiguration, images) = try await (getImageConfiguration, fetchImages)
-        var profiles: [ImageMetadata] = []
-        images.profiles.forEach { profile in
-            profiles.append(profile.copy(
-                filePath: imageConfiguration.profileURL(for: profile.filePath)
-            ))
-        }
-        self.profiles = profiles
+        profiles = try await pictures.profiles.map { $0.copy(filePath: config.profileURL(for: $0.filePath)) }
     }
 }

@@ -20,13 +20,9 @@ struct TVShowListView: View {
     private var filteredTVShows: [TVShowDetail] {
         var filtered: [TVShowDetail] = tvShows
         if !searchText.isEmpty {
-            let search = searchText.lowercased()
             filtered = tvShows.filter {
-                if let originalName = $0.metadata.originalName,
-                    originalName.contains(search) {
-                    return true
-                }
-                return $0.metadata.name.lowercased().contains(search)
+                $0.metadata.name.localizedStandardContains(searchText)
+                    || $0.metadata.originalName?.localizedStandardContains(searchText) == true
             }
         }
         guard sortable else { return filtered }
@@ -92,7 +88,7 @@ extension TVShowListView {
         GeometryReader { proxy in
             ScrollView {
                 LazyVGrid(columns: columns, alignment: .leading) {
-                    ForEach(tvShows) { tvShow in
+                    ForEach(filteredTVShows) { tvShow in
                         NavigationLink {
                             TVShowDetailView(tvShow: tvShow)
                                 .navigationTitle(tvShow.metadata.name)

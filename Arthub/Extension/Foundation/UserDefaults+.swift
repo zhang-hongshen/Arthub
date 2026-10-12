@@ -13,7 +13,16 @@ extension UserDefaults {
     
     // Storage
     static let library = "library"
-    
+
+    /// Folders scanned until the list is first changed: the user's Movies and Music folders on macOS.
+    static var defaultLibraries: [String] {
+        #if os(macOS)
+        [URL.moviesDirectory, URL.musicDirectory].map(\.absoluteString)
+        #else
+        []
+        #endif
+    }
+
     func value<T>(forKey key: String, default defaultValue: T) -> T {
         return self.value(forKey: key) as? T ?? defaultValue
     }

@@ -100,17 +100,7 @@ extension MiniMusicPlayer {
     @ViewBuilder
     func NowPlayingView() -> some View {
         HStack(spacing: 10) {
-            ArtworkImage(data: song?.album.cover, aspectRatio: 1, contentMode: .fill) {
-                Image(systemName: "music.note")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.quaternary)
-            }
-            .frame(width: artworkSize, height: artworkSize)
-            .cornerRadius(6)
-            .contentShape(Rectangle())
-            .onTapGesture(perform: onOpenPlayer)
-            .help("Open Player")
+            MiniArtwork(cover: song?.album.cover, size: artworkSize, onOpenPlayer: onOpenPlayer)
 
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 1) {
@@ -126,7 +116,7 @@ extension MiniMusicPlayer {
 
                 Spacer(minLength: 0)
 
-                MiniProgressBar(currentTime: player.currentTime,
+                PlaybackProgressBar(currentTime: player.currentTime,
                                 duration: player.duration,
                                 onSeek: player.seek(to:))
                     .disabled(song == nil)
@@ -167,6 +157,50 @@ extension MiniMusicPlayer {
     }
 }
 
+/// Artwork that grows slightly under the pointer and reveals an expand button for the full player.
+fileprivate struct MiniArtwork: View {
+
+    var cover: Data?
+    var size: CGFloat
+    var onOpenPlayer: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: onOpenPlayer) {
+            ArtworkImage(data: cover, aspectRatio: 1, contentMode: .fill) {
+                Image(systemName: "music.note")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.quaternary)
+            }
+            .frame(width: size, height: size)
+            .overlay {
+                if isHovering {
+                    ZStack {
+                        Color.black.opacity(0.35)
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: size * 0.4, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.3), radius: 2)
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .shadow(color: .black.opacity(isHovering ? 0.25 : 0), radius: 4, y: 2)
+            .scaleEffect(isHovering ? 1.1 : 1)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Open Player")
+        #if os(macOS)
+        .onHover { isHovering = $0 }
+        #endif
+        .animation(.snappy(duration: 0.2), value: isHovering)
+    }
+}
+
 fileprivate struct VolumeButton: View {
 
     @Environment(ArthubAudioPlayer.self) private var player
@@ -193,10 +227,14 @@ fileprivate struct VolumeButton: View {
 
 // MARK: Progress
 
-fileprivate struct MiniProgressBar: View {
+/// A thin bar that thickens under the pointer; click or drag it to seek. `MusicPlayer` shows a thicker one.
+struct PlaybackProgressBar: View {
 
     var currentTime: TimeInterval
     var duration: TimeInterval
+    var thickness: CGFloat = 3
+    /// The time being dragged to, and nil once the drag ends.
+    var onScrub: (TimeInterval?) -> Void = { _ in }
     var onSeek: (TimeInterval) -> Void
 
     @State private var dragProgress: Double? = nil
@@ -208,6 +246,8 @@ fileprivate struct MiniProgressBar: View {
         return (currentTime / duration).clamp(to: 0...1)
     }
 
+    private var expandedThickness: CGFloat { thickness * 5 / 3 }
+
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
@@ -216,22 +256,25 @@ fileprivate struct MiniProgressBar: View {
                 Capsule().fill(.primary.opacity(isHovering ? 0.8 : 0.5))
                     .frame(width: width * progress)
             }
-            .frame(height: isHovering || dragProgress != nil ? 5 : 3)
+            .frame(height: isHovering || dragProgress != nil ? expandedThickness : thickness)
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         guard duration > 0, width > 0 else { return }
-                        dragProgress = (value.location.x / width).clamp(to: 0...1)
+                        let fraction = (value.location.x / width).clamp(to: 0...1)
+                        dragProgress = fraction
+                        onScrub(fraction * duration)
                     }
                     .onEnded { _ in
                         if let dragProgress { onSeek(dragProgress * duration) }
                         dragProgress = nil
+                        onScrub(nil)
                     }
             )
         }
-        .frame(height: 8)
+        .frame(height: expandedThickness + 3)
         #if os(macOS)
         .onHover { isHovering = $0 }
         #endif
@@ -249,7 +292,7 @@ fileprivate extension View {
             self.glassEffect(.regular.interactive(), in: .capsule)
         } else {
             self.background(.regularMaterial, in: Capsule())
-                .overlay { Capsule().strokeBorder(.white.opacity(0.1)) }
+                .overlay { Capsule().strokeBorder(.primary.opacity(0.1)) }
                 .shadow(color: .black.opacity(0.2), radius: 12, y: 4)
         }
     }

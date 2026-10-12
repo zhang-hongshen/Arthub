@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import MediaPlayer
 
 struct MusicView: View {
 
@@ -33,7 +32,7 @@ struct MusicView: View {
                 MusicPlayer(currentSong: viewModel.currentSong)
             }
             .onChange(of: player.currentItemID, initial: true, viewModel.handlePlayItemIDChange)
-            .onDisappear(perform: player.optOut)
+            .onDisappear(perform: player.stop)
     }
     
 }
@@ -54,6 +53,20 @@ extension MusicView {
                 }
             }
             .disabled(viewModel.isFetchingData)
+
+            // The toolbar shows only the mode's icon; the menu lists the modes by name.
+            Menu {
+                Picker("View", selection: $viewModel.viewMode) {
+                    ForEach(MusicViewMode.allCases) { mode in
+                        Label(mode.localizedKey, systemImage: mode.systemImage).tag(mode)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } label: {
+                Label("View", systemImage: viewModel.viewMode.systemImage)
+                    .labelStyle(.iconOnly)
+            }
 
             Menu("Action", systemImage: "ellipsis.circle") {
                 Menu("Sort By") {
@@ -86,13 +99,87 @@ extension MusicView {
 
     @ViewBuilder
     func MainView() -> some View {
-        MusicTable()
-            .overlay {
-                if viewModel.filteredSongs.isEmpty {
-                    ContentUnavailableView.search
+        Group {
+            switch viewModel.viewMode {
+            case .songs: MusicTable()
+            case .albums: AlbumGrid(viewModel.filteredAlbums)
+            case .artists: ArtistList()
+            }
+        }
+        .overlay {
+            if viewModel.filteredSongs.isEmpty {
+                ContentUnavailableView.search
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { MiniPlayer() }
+    }
+
+    @ViewBuilder
+    func AlbumGrid(_ albums: [Album]) -> some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160, maximum: 220), spacing: 20, alignment: .top)],
+                      alignment: .leading, spacing: 24) {
+                ForEach(albums) { album in
+                    NavigationLink {
+                        AlbumDetailView(album: album, onEditMetadata: editMetadata)
+                            .safeAreaInset(edge: .bottom, spacing: 0) { MiniPlayer() }
+                    } label: {
+                        AlbumCard(album)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) { MiniPlayer() }
+            .padding(20)
+        }
+    }
+
+    @ViewBuilder
+    func AlbumCard(_ album: Album) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ArtworkImage(data: album.cover, aspectRatio: 1) {
+                ImageButton(systemImage: "music.note")
+            }
+            .cornerRadius()
+            .shadow()
+            .padding(.bottom, 4)
+
+            Text(album.title.isEmpty ? String(localized: "Unknown Album") : album.title)
+                .font(.headline)
+                .lineLimit(1)
+            Text(album.artist.name.isEmpty ? String(localized: "Unknown Artist") : album.artist.name)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    func ArtistList() -> some View {
+        List(viewModel.filteredArtists) { artist in
+            let name = artist.name.isEmpty ? String(localized: "Unknown Artist") : artist.name
+            NavigationLink {
+                AlbumGrid(artist.albums)
+                    .navigationTitle(name)
+                    .safeAreaInset(edge: .bottom, spacing: 0) { MiniPlayer() }
+            } label: {
+                HStack(spacing: 12) {
+                    ArtworkImage(data: artist.albums.lazy.compactMap(\.cover).first, aspectRatio: 1) {
+                        ImageButton(systemImage: "music.mic")
+                    }
+                    .frame(width: 50, height: 50)
+                    .clipShape(Circle())
+
+                    VStack(alignment: .leading) {
+                        Text(name).font(.headline)
+                        Text("\(artist.albums.count) albums")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .listStyle(.inset)
     }
 
     func editMetadata(_ song: Song) {
@@ -132,13 +219,18 @@ extension MusicView {
                     }
                 }
             }
-            TableColumn("Duration") { Text($0.duration.formatted()) }
+            TableColumn("Duration") {
+                Text($0.duration.formatted())
+                    .monospacedDigit()
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .width(60)
         } rows: {
             ForEach(viewModel.filteredSongs) { song in
                 TableRow(song)
                     .contextMenu {
                         Button("Play", systemImage: "play.fill"){
-                            Task { try await startPlay(from: song.id) }
+                            startPlay(from: song.id)
                         }
                         Button("Edit Metadata", systemImage: "info.circle") {
                             editMetadata(song)
@@ -165,7 +257,7 @@ extension MusicView {
                      menu: { _ in },
                      primaryAction: { items in
             guard let item = items.first else { return }
-            Task { try await startPlay(from: item)}
+            startPlay(from: item)
         })
     }
     
@@ -188,7 +280,7 @@ extension MusicView {
                 
             } label: {
                 Waveform(animated: isPlaying)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
             }
         }
     }
@@ -202,11 +294,9 @@ extension MusicView {
 
     /// Play pressed with an empty queue: start from the selection, or a random song.
     func startPlayback() {
-        Task {
-            let songID = viewModel.selectedSongID ?? viewModel.songs.filter(\.isAvailable).randomElement()?.id
-            guard let songID else { return }
-            try await startPlay(from: songID)
-        }
+        let songID = viewModel.selectedSongID ?? viewModel.songs.filter(\.isAvailable).randomElement()?.id
+        guard let songID else { return }
+        startPlay(from: songID)
     }
 }
 
@@ -223,7 +313,8 @@ struct MusicInspector: View {
         if viewModel.inspectorContent == .lyrics {
             LyricsInspectorView(song: viewModel.currentSong)
         } else if let song = viewModel.songs.first(where: { $0.id == viewModel.selectedSongID }) {
-            MusicInspectorView(song: song)
+            // The library reads the saved file again, so albums regroup.
+            MusicInspectorView(song: song) { viewModel.fetchData() }
         } else {
             ContentUnavailableView("No Selection",
                                    systemImage: "music.note",
@@ -240,33 +331,13 @@ struct MusicInspector: View {
 
 extension MusicView {
     
-    func startPlay(from: Song.ID) async throws {
+    func startPlay(from: Song.ID) {
         guard viewModel.songs.contains(where: { $0.id == from && $0.isAvailable }) else { return }
         viewModel.selectedSongID = from
-        await setupPlayer()
-        try player.start()
-    }
-    
-    func setupPlayer() {
         let songs = viewModel.filteredSongs.filter(\.isAvailable)
-        guard let index = songs.firstIndex(where: { $0.id == viewModel.selectedSongID }) else {
-            return
-        }
-        var playableAssets: [NowPlayableStaticMetadata] = []
-        for song in Array(songs[index...] + songs[..<index]) {
-            var artwork: MPMediaItemArtwork? = nil
-            if let cover = song.album.cover {
-                artwork = MPMediaItemArtwork(data: cover)
-            }
-            let metadata = NowPlayableStaticMetadata(
-                id: NSNumber(value: song.id.hashValue),
-                assetURL: song.fileURL, mediaType: .audio, isLiveStream: false,
-                title: song.title, artist: song.artist.name,
-                artwork: artwork, albumArtist: song.album.artist.name,
-                albumTitle: song.album.title)
-            playableAssets.append(metadata)
-        }
-        player.preloadItems(playableAssets: playableAssets)
+        guard let index = songs.firstIndex(where: { $0.id == from }) else { return }
+        player.setPlaylist((songs[index...] + songs[..<index]).map(\.playlistItem))
+        player.start()
     }
 }
 

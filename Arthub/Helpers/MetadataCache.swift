@@ -18,94 +18,40 @@ actor MetadataCache {
 
     static let shared = MetadataCache()
 
-    /// Cached entries older than this are re-fetched.
+    /// Cached entries older than this are fetched again.
     private let expiryInterval: TimeInterval = 60 * 60 * 24 * 7 // 1 week
 
-    private let fileManager = FileManager.default
-    private let decoder: JSONDecoder
-    private let encoder: JSONEncoder
-    private let directory: URL
+    private let directory = URL.applicationSupportDirectory
+        .appending(path: "Arthub/MetadataCache", directoryHint: .isDirectory)
+    private let decoder = JSONDecoder()
+    private let encoder = JSONEncoder()
 
-    /// TMDb encodes dates as `yyyy-MM-dd`; this is the inverse so cached
-    /// blobs round-trip identically.
-    private static let dateFormatter: DateFormatter = {
+    private init() {
+        // TMDb writes dates as `yyyy-MM-dd`, so cached entries are written the same way.
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        return formatter
-    }()
-
-    private init(directory: URL? = nil) {
-        self.decoder = JSONDecoder()
-        self.decoder.dateDecodingStrategy = .formatted(Self.dateFormatter)
-        self.encoder = JSONEncoder()
-        self.encoder.dateEncodingStrategy = .formatted(Self.dateFormatter)
-
-        let baseDirectory = directory ?? FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appending(path: "Arthub/MetadataCache", directoryHint: .isDirectory)
-        self.directory = baseDirectory
-        try? FileManager.default.createDirectory(at: baseDirectory,
-                                                 withIntermediateDirectories: true)
+        decoder.dateDecodingStrategy = .formatted(formatter)
+        encoder.dateEncodingStrategy = .formatted(formatter)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
-
-    // MARK: Read
 
     func value<T: Codable>(of type: T.Type, domain: String, id: String) -> T? {
-        guard let data = contents(at: fileURL(domain: domain, id: id)) else { return nil }
-        guard !isStale(fileURL: fileURL(domain: domain, id: id)) else { return nil }
+        let file = fileURL(domain: domain, id: id)
+        guard let modifiedAt = try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+              Date.now.timeIntervalSince(modifiedAt) < expiryInterval,
+              let data = try? Data(contentsOf: file) else { return nil }
         return try? decoder.decode(T.self, from: data)
     }
-
-    // MARK: Write
 
     func store<T: Codable>(_ value: T, domain: String, id: String) {
         guard let data = try? encoder.encode(value) else { return }
         try? data.write(to: fileURL(domain: domain, id: id), options: .atomic)
     }
 
-    // MARK: Maintenance
-
-    /// Remove entries older than the expiry interval.
-    func removeExpired() {
-        guard let files = try? fileManager.contentsOfDirectory(
-            at: directory, includingPropertiesForKeys: [.contentModificationDateKey]) else {
-            return
-        }
-        for file in files where isStale(fileURL: file) {
-            try? fileManager.removeItem(at: file)
-        }
-    }
-
-    func removeAll() {
-        guard let files = try? fileManager.contentsOfDirectory(
-            at: directory, includingPropertiesForKeys: nil) else {
-            return
-        }
-        for file in files {
-            try? fileManager.removeItem(at: file)
-        }
-    }
-
-    // MARK: Private
-
     private func fileURL(domain: String, id: String) -> URL {
-        directory
-            .appending(path: "\(domain)-\(id).json", directoryHint: .notDirectory)
-    }
-
-    private func contents(at url: URL) -> Data? {
-        try? Data(contentsOf: url)
-    }
-
-    private func isStale(fileURL: URL) -> Bool {
-        guard let modifiedAt = try? fileURL
-            .resourceValues(forKeys: [.contentModificationDateKey])
-            .contentModificationDate else {
-            return true
-        }
-        return Date.now.timeIntervalSince(modifiedAt) > expiryInterval
+        directory.appending(path: "\(domain)-\(id).json")
     }
 }
 

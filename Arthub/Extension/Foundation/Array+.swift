@@ -27,10 +27,3 @@ extension Array: RawRepresentable where Element: Codable {
         return result
     }
 }
-
-extension Array where Element: Artist {
-    
-    func formatted() -> String {
-        return self.map{ $0.name }.joined(separator: " & ")
-    }
-}

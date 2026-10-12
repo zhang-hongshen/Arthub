@@ -13,8 +13,8 @@ enum MediaDetail {
     static let horizontalPadding: CGFloat = 40
     static let sectionSpacing: CGFloat = 36
     static let stillAspectRatio: CGFloat = 16 / 9
-    /// Apple TV detail pages are always dark.
-    static let background = Color(white: 0.07)
+    /// White in light mode, near black in dark mode.
+    static let background = Color.mediaBackground
 
     static func heroHeight(for size: CGSize) -> CGFloat {
         max(min(size.height * 0.82, size.width / MediaDetail.stillAspectRatio * 1.15), 380)
@@ -42,7 +42,7 @@ enum MediaDetail {
 
 // MARK: Page
 
-/// Scroll container shared by detail pages: hero on top, sections below, dark background.
+/// Scroll container shared by detail pages: hero on top, sections below.
 struct MediaDetailPage<Hero: View, Content: View>: View {
 
     @ViewBuilder var hero: (CGSize) -> Hero
@@ -60,7 +60,6 @@ struct MediaDetailPage<Hero: View, Content: View>: View {
             .scrollIndicators(.hidden)
         }
         .background(MediaDetail.background)
-        .environment(\.colorScheme, .dark)
     }
 }
 
@@ -181,7 +180,17 @@ struct MediaTitleText: View {
             .font(.system(size: 44, weight: .heavy))
             .lineLimit(2)
             .minimumScaleFactor(0.6)
-            .shadow(radius: 8)
+            .shadow(color: MediaDetail.background.opacity(0.5), radius: 8)
+    }
+}
+
+/// TMDb logos are mostly white, made for dark backdrops; light mode draws them as a dark silhouette.
+struct MediaLogoModifier: ViewModifier {
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content.colorMultiply(colorScheme == .dark ? .white : .black)
     }
 }
 
@@ -207,7 +216,7 @@ struct MediaRemainingView: View {
 
 // MARK: Buttons
 
-/// Big light rounded button, the "Play" button on Apple TV.
+/// Big rounded button in the inverse of the page, the "Play" button on Apple TV.
 struct MediaPlayButtonStyle: ButtonStyle {
 
     @Environment(\.isEnabled) private var isEnabled
@@ -216,11 +225,11 @@ struct MediaPlayButtonStyle: ButtonStyle {
         configuration.label
             .labelStyle(.titleAndIcon)
             .font(.headline)
-            .foregroundStyle(.black)
+            .foregroundStyle(MediaDetail.background)
             .padding(.horizontal, 28)
             .padding(.vertical, 12)
             .frame(minWidth: 160)
-            .background(.white, in: RoundedRectangle(cornerRadius: 10))
+            .background(Color.primary, in: RoundedRectangle(cornerRadius: 10))
             .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
@@ -234,7 +243,7 @@ struct MediaCircleButtonStyle: ButtonStyle {
         configuration.label
             .labelStyle(.iconOnly)
             .font(.headline)
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             .frame(width: 44, height: 44)
             .background(.ultraThinMaterial, in: Circle())
             .opacity(configuration.isPressed ? 0.7 : 1)
@@ -340,7 +349,7 @@ struct MediaAboutCard: View {
         }
         .padding(20)
         .frame(maxWidth: 560, alignment: .leading)
-        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, MediaDetail.horizontalPadding)
     }
 }

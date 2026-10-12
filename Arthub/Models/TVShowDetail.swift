@@ -55,39 +55,13 @@ extension TVShowDetail{
 }
 
 extension TVShowDetail {
-    
+
+    /// Cast and crew from TMDb.
     func fetchRelatedData() async throws {
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask{ try await self.fetchCredits() }
-            try await group.waitForAll()
-        }
-    }
-    
-    func fetchCredits() async throws  {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let fetchCredits = try await TVSeriesService.shared.credits(forTVSeries: metadata.id)
-        let (imagesConfiguration, credits) = try await(getImageConfiguration, fetchCredits)
-        
-        await withTaskGroup(of: Void.self) { group in
-            
-            group.addTask {
-                var cast: [CastMember] = []
-                for castMember in credits.cast {
-                    cast.append(castMember.copy(
-                        profilePath: imagesConfiguration.profileURL(for: castMember.profilePath)))
-                }
-                self.cast = cast
-            }
-            
-            group.addTask {
-                var crew: [CrewMember] = []
-                for crewMember in credits.crew {
-                    crew.append(crewMember.copy(
-                        profilePath: imagesConfiguration.profileURL(for: crewMember.profilePath)))
-                }
-                self.crew = crew
-            }
-            await group.waitForAll()
-        }
+        async let images = ConfigurationService.shared.getImageConfiguration()
+        async let credits = TVSeriesService.shared.credits(forTVSeries: metadata.id)
+        let config = try await images
+        cast = try await credits.cast.map { $0.copy(profilePath: config.profileURL(for: $0.profilePath)) }
+        crew = try await credits.crew.map { $0.copy(profilePath: config.profileURL(for: $0.profilePath)) }
     }
 }

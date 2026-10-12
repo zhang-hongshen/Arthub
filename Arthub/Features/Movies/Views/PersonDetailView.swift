@@ -215,11 +215,8 @@ extension PersonDetailView {
     
     func fetchData() {
         fetchDataTask = Task {
-            try await withThrowingTaskGroup(of: Void.self) { group in
-                group.addTask { try await person.fetchDetail() }
-                group.addTask { try await person.fetchRelatedData() }
-                try await group.waitForAll()
-            }
+            try await person.fetchDetail()
+            try await person.fetchRelatedData()
         }
     }
 }

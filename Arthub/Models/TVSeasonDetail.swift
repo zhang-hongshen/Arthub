@@ -56,33 +56,22 @@ extension TVSeasonDetail {
 }
 
 extension TVSeasonDetail {
-    
+
     func fetchDetail() async throws {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let getMetadata = TVSeasonService.shared.details(forSeason: metadata.seasonNumber, inTVSeries: tvShowID)
-        let (imagesConfiguration, metadata) = try await(getImageConfiguration, getMetadata)
+        async let images = ConfigurationService.shared.getImageConfiguration()
+        async let details = TVSeasonService.shared.details(forSeason: metadata.seasonNumber, inTVSeries: tvShowID)
+        let config = try await images
+        let metadata = try await details
         // Local artwork found next to the files wins over TMDb.
         let localPoster = self.metadata.posterPath.flatMap { $0.isFileURL ? $0 : nil }
-        self.metadata = metadata.copy(
-            posterPath: localPoster ?? imagesConfiguration.posterURL(for: metadata.posterPath)
-        )
+        self.metadata = metadata.copy(posterPath: localPoster ?? config.posterURL(for: metadata.posterPath))
     }
-    
+
+    /// Posters from TMDb.
     func fetchRelatedData() async throws {
-        try await fetchImages()
+        async let images = ConfigurationService.shared.getImageConfiguration()
+        async let artwork = TVSeasonService.shared.images(forSeason: metadata.seasonNumber, inTVSeries: tvShowID)
+        let config = try await images
+        posters = try await artwork.posters.map { $0.copy(filePath: config.posterURL(for: $0.filePath)) }
     }
-    
-    func fetchImages() async throws {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let getImages = TVSeasonService.shared.images(forSeason: metadata.seasonNumber, inTVSeries: tvShowID)
-        let (imagesConfiguration, images) = try await(getImageConfiguration, getImages)
-        var posters: [ImageMetadata] = []
-        images.posters.forEach { image in
-            posters.append(image.copy(
-                filePath: imagesConfiguration.posterURL(for: image.filePath)
-            ))
-        }
-        self.posters = posters
-    }
-    
 }

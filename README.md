@@ -20,7 +20,7 @@ Arthub is a native macOS app that aims to help you to manage your local media re
 
 ⏯ **Players** — custom AVFoundation-based video and audio players with Now Playing integration, remote control support, playback-rate control, and resume-where-you-left-off
 
-💾 **SwiftData persistence** — watch progress and watched history survive restarts
+💾 **SwiftData persistence** — watch progress and watched history survive restarts in release builds; debug builds keep them in memory
 
 🚀 **Metadata cache** — matched TMDb entities are cached on disk, so rescans are instant and don't re-hit the API
 
@@ -28,6 +28,7 @@ Arthub is a native macOS app that aims to help you to manage your local media re
 
 ## Local Library Management
 
+- **Library folders** — add and remove folders in Settings › Library. On macOS, your Movies and Music folders are included until you change the list.
 - **Files and folders** — browse added folders, search filenames, and open media even when no TMDb match is found. Unmatched videos have their own sidebar entry.
 - **Saved matching** — search by title/year and choose a movie or TV show. For TV, specify season/episode and optionally apply the show to every episode in the show folder. Matches are saved per file and survive rescans and restarts.
 - **Incremental refresh** — while the app is active, folders are checked every 30 seconds and when returning to the foreground. Only new or modified media is probed and automatically matched; Refresh remains available.

@@ -114,6 +114,11 @@ final class LibraryViewModel {
                     files[index].season = nil; files[index].episode = nil
                 }
             }
+            // Audio read by an older tag reader, e.g. before embedded lyrics were parsed, is read again once.
+            for index in files.indices
+            where files[index].audio != nil && files[index].audio?.readerVersion != LibraryAudioMetadata.readerVersion {
+                files[index].didIdentify = false
+            }
             loaded = true
             revision += 1
         }
@@ -180,6 +185,8 @@ final class LibraryViewModel {
 
     func folderURL(for library: String) -> URL? { resolvedFolders[library] ?? URL(string: library) }
 
+    func displayName(for library: String) -> String { folderURL(for: library)?.lastPathComponent ?? library }
+
     private func resolveFolder(_ library: String) -> URL? {
         var url = URL(string: library)
         let bookmarks = UserDefaults.standard.dictionary(forKey: Self.bookmarkKey) as? [String: Data] ?? [:]
@@ -219,10 +226,10 @@ final class LibraryViewModel {
 
     private func readAudio(_ file: LibraryFile) async throws -> LibraryAudioMetadata {
         let url = file.fileURL
-        let path = MediaNaming.parseTrack(url, library: folderURL(for: file.library))
         let song = Song(fileURL: url, duration: file.duration)
         // Embedded tags win; `Artist/Album (Year)/Disc 1/01 Title` only fills what they leave empty.
         try? await song.loadMetadata()
+        let path = MediaNaming.parseTrack(url, library: folderURL(for: file.library), album: song.album.title)
         if song.title.isEmpty { song.title = path.title }
         if song.trackNumber == nil { song.trackNumber = path.trackNumber }
         if song.discNumber == nil { song.discNumber = path.discNumber }
@@ -239,7 +246,7 @@ final class LibraryViewModel {
             albumArtist: song.album.artist.name, composer: song.composer, lyricist: song.lyricist,
             arranger: song.arranger, releaseDate: song.releaseDate, cover: song.album.cover,
             trackNumber: song.trackNumber, discNumber: song.discNumber ?? 1,
-            lyrics: song.lyrics.body.map(LibraryLyric.init))
+            lyrics: song.lyrics.body.map(LibraryLyric.init), readerVersion: LibraryAudioMetadata.readerVersion)
     }
 
     private func identify(_ file: inout LibraryFile) async throws {
@@ -450,7 +457,9 @@ extension LibraryViewModel {
             }
             var file = old ?? LibraryFile(fileURL: url, library: library, namingVersion: MediaNaming.version)
             remaining.removeValue(forKey: file.id)
-            if old == nil || file.modifiedAt != values.contentModificationDate || file.size != (values.fileSize ?? 0) {
+            // A moved or renamed file is identified again, since its folders and name carry metadata.
+            if old == nil || file.fileURL != url || file.modifiedAt != values.contentModificationDate ||
+                file.size != (values.fileSize ?? 0) {
                 file.didIdentify = false
                 if !file.isManuallyMatched {
                     file.movie = nil; file.series = nil; file.season = nil; file.episode = nil
@@ -478,6 +487,9 @@ extension LibraryViewModel {
 }
 
 struct LibraryAudioMetadata: Codable, Equatable {
+    /// Bump when tags are read differently so the library reads audio files again.
+    static let readerVersion = 2
+
     var title: String
     var artist: String
     var album: String
@@ -490,6 +502,7 @@ struct LibraryAudioMetadata: Codable, Equatable {
     var trackNumber: Int?
     var discNumber: Int?
     var lyrics: [LibraryLyric]
+    var readerVersion: Int?
 }
 
 struct LibraryLyric: Codable, Equatable {

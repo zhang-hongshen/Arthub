@@ -10,9 +10,9 @@ import Foundation
 class TTMLParser: NSObject {
 
     private var lyrics: [Lyric] = []
-    private var parsingP: Bool = false
-    private var parsingSpan: Bool = false
     private var currentLyric: Lyric? = nil
+    /// Whether each open `<span>` is timed, innermost last.
+    private var spans: [Bool] = []
     
     func parse(url: URL) -> [Lyric] {
         if let parser = XMLParser(contentsOf: url) {
@@ -38,48 +38,58 @@ extension TTMLParser: XMLParserDelegate {
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI titlespaceURI: String?,
                 qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
         if elementName == "p" {
-            parsingP = true
             currentLyric = Lyric()
+            spans = []
             if  let lyric = currentLyric,
                 let start = attributeDict["begin"],
                 let end = attributeDict["end"] {
                 lyric.start = timeInterval(start)
                 lyric.end = timeInterval(end)
             }
-        } else if elementName == "span" {
-            parsingSpan = true
-            if  let lyric = currentLyric,
-                let start = attributeDict["begin"],
-                let end = attributeDict["end"] {
-                lyric.phrases.append(Lyric(start: timeInterval(start),
-                                           end: timeInterval(end),
-                                           content: ""))
+        } else if elementName == "span", let lyric = currentLyric {
+            if let start = attributeDict["begin"], let end = attributeDict["end"] {
+                lyric.phrases.append(Lyric(start: timeInterval(start), end: timeInterval(end)))
+                spans.append(true)
+            } else {
+                spans.append(false)
             }
+        } else if elementName == "br", let lyric = currentLyric {
+            lyric.content.append(" ")
         }
     }
     
     func parser(_ parser: XMLParser, foundCharacters string: String) {
-        if let lyric = currentLyric, parsingP {
-            if parsingSpan {
-                if let phrase = lyric.phrases.last, phrase.content.isEmpty {
-                    phrase.content.append(string)
-                }
-            } else {
-                lyric.content.append(string)
-            }
+        guard let lyric = currentLyric else { return }
+        // The line keeps all of its text, including the spaces between words.
+        lyric.content.append(string)
+        // Inside a timed span, even through an untimed one such as background vocals.
+        if spans.contains(true), let phrase = lyric.phrases.last {
+            phrase.content.append(string)
         }
     }
         
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI titlespaceURI: String?, qualifiedName qName: String?) {
-        if elementName == "p" {
-            parsingP = false
-            if let lyric = currentLyric {
-                lyrics.append(lyric)
-                currentLyric = nil
+        if elementName == "p", let lyric = currentLyric {
+            lyric.content = collapsed(lyric.content)
+            for phrase in lyric.phrases {
+                phrase.content = collapsed(phrase.content)
             }
-        } else if elementName == "span"{
-            parsingSpan = false
+            lyric.phrases.removeAll { $0.content.isEmpty }
+            // Word-timed lines may leave the line itself untimed.
+            if lyric.end <= lyric.start, let first = lyric.phrases.first, let last = lyric.phrases.last {
+                lyric.start = first.start
+                lyric.end = last.end
+            }
+            lyrics.append(lyric)
+            currentLyric = nil
+        } else if elementName == "span" {
+            _ = spans.popLast()
         }
+    }
+    
+    /// Indentation and line breaks in the markup become single spaces.
+    private func collapsed(_ text: String) -> String {
+        text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
     
     private func timeInterval(_ timeString: String) -> TimeInterval {

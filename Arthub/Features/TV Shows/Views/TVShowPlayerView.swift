@@ -14,17 +14,18 @@ struct TVShowPlayerView: View {
     var playlist: [TVEpisodeDetail]
     /// Episode the player should start from when it first appears.
     var startAtIndex: Int = 0
-    /// Where playback should resume within the starting episode.
-    var startAtTime: TimeInterval = 0
+    /// Where playback should start within the starting episode; `nil` resumes its saved progress.
+    var startAtTime: TimeInterval? = nil
 
     @State private var episodesViewPresented: Bool = false
     @State private var currentTVEpisodeIndex: Int? = nil
     @State private var didStartPlayback: Bool = false
 
     var body: some View {
-        VideoPlayerView(currentTime: Binding(
-            get: { currentTVEpisode?.metrics.currentTime ?? 0 },
-            set: { currentTVEpisode?.metrics.currentTime = $0 })) {
+        VideoPlayerView(startTime: nil, onProgress: { index, time in
+            guard playlist.indices.contains(index) else { return }
+            WatchProgressStore.shared.record(time, for: playlist[index].metrics)
+        }) {
             episodesViewPresented = false
         } sidebarContent: {
             EpisodesView()
@@ -48,13 +49,6 @@ struct TVShowPlayerView: View {
 }
 
 extension TVShowPlayerView {
-
-    private var currentTVEpisode: TVEpisodeDetail? {
-        guard let currentTVEpisodeIndex, playlist.indices.contains(currentTVEpisodeIndex) else {
-            return nil
-        }
-        return playlist[currentTVEpisodeIndex]
-    }
 
     @ViewBuilder
     func EpisodesView() -> some View {
@@ -97,9 +91,7 @@ extension TVShowPlayerView {
         if player.currentIndex == index { return }
         currentTVEpisodeIndex = index
         let resumeAt = time ?? playlist[index].metrics.currentTime
-        Task {
-            try await player.start(from: index, at: resumeAt)
-        }
+        player.start(from: index, at: resumeAt)
     }
 
     /// The player moved on to another item (next/previous track,

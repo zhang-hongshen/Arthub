@@ -9,6 +9,7 @@ import SwiftUI
 
 enum AppSettingsTab: String, CaseIterable, Identifiable {
     case general
+    case library
     var id: Self { self }
 }
 
@@ -36,10 +37,14 @@ extension SettingsView {
                         Image(systemName: "gearshape")
                         Text("General")
                     }
+                LibrarySettingsView().tag(AppSettingsTab.library)
+                    .tabItem {
+                        Image(systemName: "folder")
+                        Text("Library")
+                    }
             }
             .safeAreaPadding()
         }
-        .autoSize()
     }
     
     @ViewBuilder
@@ -47,6 +52,9 @@ extension SettingsView {
         Form {
             NavigationLink("General") {
                 GeneralView()
+            }
+            NavigationLink("Library") {
+                LibrarySettingsView()
             }
         }
     }

@@ -24,13 +24,9 @@ import TMDb
         if searchText.isEmpty {
             return movies
         }
-        let search = searchText.lowercased()
         return movies.filter {
-            if let originalTitle = $0.metadata.originalTitle,
-                originalTitle.contains(search) {
-                return true
-            }
-            return $0.metadata.title.lowercased().contains(search)
+            $0.metadata.title.localizedStandardContains(searchText)
+                || $0.metadata.originalTitle?.localizedStandardContains(searchText) == true
         }
     }
 
@@ -79,39 +75,33 @@ import TMDb
             if refreshLibrary { await library.refresh() }
             guard !Task.isCancelled else { return }
             let previous = Dictionary(uniqueKeysWithValues: movies.map { ($0.id, $0) })
+            let progress = WatchProgressStore.shared
             var result: Set<Movie> = []
-            var errors: [String] = library.scanErrors
             for file in library.files {
                 guard let metadata = file.movieWithArtwork else { continue }
-                do {
-                    let movie: Movie
-                    if let existing = previous[file.id] {
-                        movie = existing
-                        if movie.metadata.id != metadata.id {
-                            let metrics = try await UserMetrics.getByTMDbID(metadata.id)
-                            guard !Task.isCancelled else { return }
-                            movie.metrics = metrics
-                            movie.cast = []; movie.crew = []; movie.posters = []
-                            movie.backdrops = []; movie.logos = []; movie.videos = []
-                        }
-                        movie.metadata = metadata
-                        movie.fileURL = file.fileURL
-                        movie.duration = file.duration
-                    } else {
-                        movie = Movie(fileURL: file.fileURL, duration: file.duration,
-                                      addedAt: file.addedAt, metadata: metadata,
-                                      metrics: try await UserMetrics.getByTMDbID(metadata.id), id: file.id)
+                let movie: Movie
+                if let existing = previous[file.id] {
+                    movie = existing
+                    if movie.metadata.id != metadata.id {
+                        movie.metrics = progress.metrics(.movie, tmdbID: metadata.id)
+                        movie.cast = []; movie.crew = []; movie.posters = []
+                        movie.backdrops = []; movie.logos = []; movie.videos = []
                     }
-                    guard !Task.isCancelled else { return }
-                    movie.isAvailable = file.isAvailable
-                    result.insert(movie)
-                } catch { errors.append("\(file.title): \(error.localizedDescription)") }
+                    movie.metadata = metadata
+                    movie.fileURL = file.fileURL
+                    movie.duration = file.duration
+                } else {
+                    movie = Movie(fileURL: file.fileURL, duration: file.duration,
+                                  addedAt: file.addedAt, metadata: metadata,
+                                  metrics: progress.metrics(.movie, tmdbID: metadata.id), id: file.id)
+                }
+                movie.isAvailable = file.isAvailable
+                result.insert(movie)
             }
-            guard !Task.isCancelled else { return }
             let retained = Set(result.map(\.id))
             for movie in movies where !retained.contains(movie.id) { movie.isAvailable = false }
             movies = result
-            scanErrors = errors
+            scanErrors = library.scanErrors
             isFetchingData = false
         }
     }

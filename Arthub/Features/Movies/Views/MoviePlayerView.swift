@@ -9,9 +9,11 @@ import SwiftUI
 
 struct MoviePlayerView: View {
     
-    @Bindable var metrics: UserMetrics
-    
+    let metrics: UserMetrics
+
     var body: some View {
-        VideoPlayerView(currentTime: $metrics.currentTime)
+        VideoPlayerView(startTime: metrics.currentTime, onProgress: { _, time in
+            WatchProgressStore.shared.record(time, for: metrics)
+        })
     }
 }

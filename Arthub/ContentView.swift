@@ -59,13 +59,15 @@ struct ContentView: View {
     
     @Environment(\.scenePhase) private var scenePhase
     @State private var libraryIndex = LibraryViewModel.shared
-    @State private var folderError: String?
     @State private var currentTab: AppTab? = .movies
-    @State private var fileImporterPresented: Bool = false
     // ViewModels live here so switching tabs doesn't discard scan results.
     @State private var moviesViewModel = MoviesViewModel()
     @State private var tvShowsViewModel = TVShowsViewModel()
     @State private var musicViewModel = MusicViewModel()
+    #if os(macOS)
+    /// Sidebar (200) + `MusicView`'s 600pt minimum + inspector (320) + the two dividers.
+    private let musicMinWindowWidth: CGFloat = 200 + 600 + 320 + 2
+    #endif
 
     @AppStorage(UserDefaults.library)
     private var libraries: [String] = []
@@ -97,10 +99,6 @@ struct ContentView: View {
                     currentTab = .movies
                 }
             }
-            .alert("Unable to Add Folder", isPresented: Binding(
-                get: { folderError != nil }, set: { if !$0 { folderError = nil } })) {
-                Button("OK") { folderError = nil }
-            } message: { Text(folderError ?? "") }
     }
 }
 
@@ -109,62 +107,40 @@ extension ContentView {
     @ViewBuilder
     func NavigationView() -> some View {
         #if canImport(UIKit)
-        Group {
-            if UIDevice.isIPhone {
-                NavigationTabView()
-            } else {
-                NavigationListView()
-            }
-        }.fileImporter(isPresented: $fileImporterPresented,
-                       allowedContentTypes: [.folder],
-                       onCompletion: { result in
-             switch result {
-             case .success(let url):
-                 addLibrary(url)
-             case .failure(let error):
-                 print(error.localizedDescription)
-             }
-         })
+        if UIDevice.isIPhone {
+            NavigationTabView()
+        } else {
+            NavigationListView()
+        }
         #else
         NavigationListView()
-            .fileImporter(isPresented: $fileImporterPresented,
-                                           allowedContentTypes: [.folder],
-                          onCompletion: { result in
-                switch result {
-                case .success(let url):
-                    addLibrary(url)
-                case .failure(let error):
-                    print(error.localizedDescription)
-                }
-            })
         #endif
-            
     }
     
     @ViewBuilder
     func NavigationTabView() -> some View {
         TabView(selection: $currentTab){
-            NavigationStack { MoviesView(viewModel: moviesViewModel).toolbar { ToolbarItems() } }.tag(AppTab.movies)
+            NavigationStack { MoviesView(viewModel: moviesViewModel) }.tag(AppTab.movies)
                 .tabItem {
                     Text(AppTab.movies.localizedName)
                     Image(systemName: AppTab.movies.systemImage)
                 }
 
-            NavigationStack { TVShowsView(viewModel: tvShowsViewModel).toolbar { ToolbarItems() } }.tag(AppTab.tvshows)
+            NavigationStack { TVShowsView(viewModel: tvShowsViewModel) }.tag(AppTab.tvshows)
                 .tabItem {
                     Text(AppTab.tvshows.localizedName)
                     Image(systemName: AppTab.tvshows.systemImage)
                 }
 
 
-            NavigationStack { MusicView(viewModel: musicViewModel).toolbar { ToolbarItems() } }.tag(AppTab.music)
+            NavigationStack { MusicView(viewModel: musicViewModel) }.tag(AppTab.music)
                 .tabItem {
                     Text(AppTab.music.localizedName)
                     Image(systemName: AppTab.music.systemImage)
                 }
 
 
-            NavigationStack { LibraryView(library: nil).toolbar { ToolbarItems() } }.tag(AppTab.files)
+            NavigationStack { LibraryView(library: nil) }.tag(AppTab.files)
                 .tabItem { Label("Files", systemImage: "folder") }
 
             NavigationStack { SettingsView() }.tag(AppTab.settings)
@@ -177,14 +153,12 @@ extension ContentView {
 
     @ViewBuilder
     func NavigationListView() -> some View {
-        NavigationSplitView(columnVisibility: Binding(
-            get: { state.columnVisibility },
-            set: { state.setColumnVisibility($0) }
-        ), preferredCompactColumn: .constant(.sidebar)) {
+        @Bindable var state = state
+        NavigationSplitView(columnVisibility: $state.columnVisibility,
+                            preferredCompactColumn: .constant(.sidebar)) {
 
             SidebarView()
                 .toolbar(removing: state.toolbarRemove)
-                .toolbar(content: ToolbarItems)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 200)
 
         } detail : {
@@ -205,6 +179,8 @@ extension ContentView {
                 NavigationStack { LibraryView(library: nil) }
             case .library(let url):
                 NavigationStack { LibraryView(library: url) }.id(url)
+            case .settings:
+                NavigationStack { SettingsView().navigationTitle("Settings") }
             default: EmptyView()
             }
         }
@@ -221,6 +197,11 @@ extension ContentView {
                        minHeight: 0, idealHeight: 0, maxHeight: .infinity)
                 .inspectorColumnWidth(min: 300, ideal: 320, max: 400)
         }
+        // AppKit's split view throws the same exception whenever the window is narrower than
+        // sidebar + detail + inspector, e.g. when the inspector opens in an 800pt window and the
+        // window has to grow mid-layout. So keep the window wide enough for all three while Music is
+        // shown, and while its inspector is open, so it can reappear safely when Music is reselected.
+        .frame(minWidth: currentTab == .music || musicViewModel.inspectorPresented ? musicMinWindowWidth : nil)
         #endif
     }
     
@@ -247,8 +228,8 @@ extension ContentView {
             }
             if !libraries.isEmpty {
                 Section {
-                    ForEach(libraries) { library in
-                        Label(libraryDisplayName(library),
+                    ForEach(libraries, id: \.self) { library in
+                        Label(libraryIndex.displayName(for: library),
                               systemImage: libraryIndex.offlineLibraries.contains(library)
                               ? "externaldrive.badge.exclamationmark" : AppTab.library(library).systemImage)
                         .tag(AppTab.library(library))
@@ -275,39 +256,17 @@ extension ContentView {
                     Text("Library")
                 }
             }
-        }
-    }
-    
-    @ToolbarContentBuilder
-    func ToolbarItems() -> some ToolbarContent {
-        ToolbarItem(placement: .automatic) {
-            Button("", systemImage: "plus") {
-                fileImporterPresented = true
+            #if os(iOS)
+            // iPad has no Settings window, and adding folders lives in Settings.
+            Section {
+                Label(AppTab.settings.localizedName,
+                      systemImage: AppTab.settings.systemImage)
+                .tag(AppTab.settings)
             }
+            #endif
         }
     }
     
-}
-
-extension ContentView {
-    func addLibrary(_ url: URL) {
-        // fileImporter hands over a security-scoped URL; keep its absolute
-        // form and skip folders already in the list.
-        let entry = url.absoluteString
-        if libraries.contains(entry) {
-            do { try libraryIndex.rememberFolder(url); Task { await libraryIndex.refresh() } }
-            catch { folderError = error.localizedDescription }
-            return
-        }
-        do {
-            try libraryIndex.rememberFolder(url)
-            libraries.append(entry)
-        } catch { folderError = error.localizedDescription }
-    }
-
-    func libraryDisplayName(_ library: String) -> String {
-        libraryIndex.folderURL(for: library)?.lastPathComponent ?? library
-    }
 }
 
 #Preview {

@@ -23,6 +23,22 @@
     "%@ left" : {
 
     },
+    "%lld albums" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 张专辑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 張專輯"
+          }
+        }
+      }
+    },
     "%lld Episode" : {
       "localizations" : {
         "en" : {
@@ -168,6 +184,22 @@
     "Add Artwork" : {
 
     },
+    "Add Folder…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加文件夹…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入資料夾…"
+          }
+        }
+      }
+    },
     "Album" : {
       "localizations" : {
         "zh-Hans" : {
@@ -303,6 +335,22 @@
         }
       }
     },
+    "Arthub scans these folders for movies, TV shows and music." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arthub 会在这些文件夹中查找电影、电视节目和音乐。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arthub 會在這些資料夾中尋找電影、電視節目和音樂。"
+          }
+        }
+      }
+    },
     "Artist" : {
       "localizations" : {
         "zh-Hans" : {
@@ -321,6 +369,54 @@
     },
     "Artwork" : {
 
+    },
+    "as Albums" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "专辑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專輯"
+          }
+        }
+      }
+    },
+    "as Artists" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "艺人"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "藝人"
+          }
+        }
+      }
+    },
+    "as Songs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌曲"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌曲"
+          }
+        }
+      }
     },
     "Ascending" : {
       "localizations" : {
@@ -443,6 +539,22 @@
     "Cast & Crew" : {
 
     },
+    "Close" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉"
+          }
+        }
+      }
+    },
     "Composer" : {
       "localizations" : {
         "zh-Hans" : {
@@ -471,6 +583,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "內容"
+          }
+        }
+      }
+    },
+    "Couldn't search for lyrics. Check your connection and try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法搜索歌词，请检查网络连接后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法搜尋歌詞，請檢查網路連線後再試一次。"
           }
         }
       }
@@ -635,6 +763,22 @@
         }
       }
     },
+    "Earlier" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提前"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提前"
+          }
+        }
+      }
+    },
     "Edit Metadata" : {
       "localizations" : {
         "zh-Hans" : {
@@ -734,6 +878,22 @@
     "Executive Producers" : {
 
     },
+    "Export" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出"
+          }
+        }
+      }
+    },
     "File Missing" : {
       "localizations" : {
         "zh-Hans" : {
@@ -762,6 +922,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "檔案"
+          }
+        }
+      }
+    },
+    "Find in Album" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在专辑中查找"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在專輯中尋找"
           }
         }
       }
@@ -820,6 +996,22 @@
         }
       }
     },
+    "Hi-Res Lossless" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高解析度无损"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高解析度無損"
+          }
+        }
+      }
+    },
     "Home" : {
       "localizations" : {
         "zh-Hans" : {
@@ -832,6 +1024,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "首頁"
+          }
+        }
+      }
+    },
+    "How far the lyrics have been moved." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌词已调整的时间。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌詞已調整的時間。"
+          }
+        }
+      }
+    },
+    "Import…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入…"
           }
         }
       }
@@ -913,6 +1137,22 @@
     "Last Aired" : {
 
     },
+    "Later" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "延后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "延後"
+          }
+        }
+      }
+    },
     "Library" : {
       "localizations" : {
         "zh-Hans" : {
@@ -979,6 +1219,22 @@
         }
       }
     },
+    "Lossless" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无损"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無損"
+          }
+        }
+      }
+    },
     "Lyricist" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1039,6 +1295,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "媒體類型"
+          }
+        }
+      }
+    },
+    "More" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多"
           }
         }
       }
@@ -1128,6 +1400,22 @@
     "Network" : {
 
     },
+    "No Folders" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有資料夾"
+          }
+        }
+      }
+    },
     "No Lyrics" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1140,6 +1428,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有歌詞"
+          }
+        }
+      }
+    },
+    "No lyrics were found online." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "网上没有找到这首歌的歌词。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網路上沒有找到這首歌的歌詞。"
           }
         }
       }
@@ -1209,7 +1513,20 @@
       }
     },
     "Nothing is playing." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前没有在播放。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前沒有在播放。"
+          }
+        }
+      }
     },
     "Off" : {
 
@@ -1441,6 +1758,22 @@
     "Released" : {
 
     },
+    "Remove" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
+        }
+      }
+    },
     "Repeat" : {
 
     },
@@ -1495,6 +1828,38 @@
     "Run Time" : {
 
     },
+    "Save" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存"
+          }
+        }
+      }
+    },
+    "Saves the lyrics into the song file." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将歌词写入歌曲文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將歌詞寫入歌曲檔案。"
+          }
+        }
+      }
+    },
     "Scanning folders…" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1540,6 +1905,22 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@的搜尋結果"
+          }
+        }
+      }
+    },
+    "Searching for Lyrics…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在搜索歌词…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在搜尋歌詞…"
           }
         }
       }
@@ -1608,6 +1989,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "分享"
+          }
+        }
+      }
+    },
+    "Shows the lyrics 0.5 seconds earlier." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌词提前 0.5 秒显示。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌詞提前 0.5 秒顯示。"
+          }
+        }
+      }
+    },
+    "Shows the lyrics 0.5 seconds later." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌词延后 0.5 秒显示。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌詞延後 0.5 秒顯示。"
           }
         }
       }
@@ -1715,6 +2128,38 @@
         }
       }
     },
+    "Tags can only be written into MP3, M4A and FLAC files." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只能将标签写入 MP3、M4A 和 FLAC 文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只能將標籤寫入 MP3、M4A 和 FLAC 檔案。"
+          }
+        }
+      }
+    },
+    "The artwork is too large to write into this file." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面太大，无法写入此文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面太大，無法寫入此檔案。"
+          }
+        }
+      }
+    },
     "This file cannot be played by the current player." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1727,6 +2172,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "目前的播放器無法播放此檔案。"
+          }
+        }
+      }
+    },
+    "This file couldn't be read as audio." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法将此文件读取为音频。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法將此檔案讀取為音訊。"
           }
         }
       }
@@ -1747,8 +2208,37 @@
         }
       }
     },
+    "This file's tags are in an older version that can't be written." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此文件的标签版本较旧，无法写入。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此檔案的標籤版本較舊，無法寫入。"
+          }
+        }
+      }
+    },
     "This song has no lyrics." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这首歌没有歌词。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這首歌沒有歌詞。"
+          }
+        }
+      }
     },
     "Title" : {
       "localizations" : {
@@ -1869,6 +2359,38 @@
         }
       }
     },
+    "Unknown Album" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知专辑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知專輯"
+          }
+        }
+      }
+    },
+    "Unknown Artist" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知艺人"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知藝人"
+          }
+        }
+      }
+    },
     "Unmatched" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1950,6 +2472,22 @@
         }
       }
     },
+    "View" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示方式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示方式"
+          }
+        }
+      }
+    },
     "View All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1981,6 +2519,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在觀看"
+          }
+        }
+      }
+    },
+    "Writes the changes into the song file." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将更改写入歌曲文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將變更寫入歌曲檔案。"
           }
         }
       }

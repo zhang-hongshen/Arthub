@@ -29,5 +29,23 @@ extension CIImage {
                        blue: CGFloat(bitmap[2]) / 255,
                        alpha: CGFloat(bitmap[3]) / 255)
     }
-    
+
+    private static let backdropContext = CIContext()
+
+    /// The image shrunk and blurred into soft patches of its own colours, each where it is in the image,
+    /// for the background of the full-screen player.
+    func backdrop(size: CGFloat = 256) -> CGImage? {
+        guard extent.width > 0, extent.height > 0 else { return nil }
+        let scale = size / max(extent.width, extent.height)
+        let image = transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+        let output = image.clampedToExtent()
+            .applyingGaussianBlur(sigma: size / 10)
+            .cropped(to: image.extent)
+            // Blurring greys the colours; bring them back, a little darker. The player washes them
+            // further towards black or white for its text.
+            .applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 1.7,
+                                                            kCIInputBrightnessKey: -0.08])
+        return Self.backdropContext.createCGImage(output, from: output.extent)
+    }
+
 }

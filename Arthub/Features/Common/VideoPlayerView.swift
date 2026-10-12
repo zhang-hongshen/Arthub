@@ -9,62 +9,72 @@ import SwiftUI
 import AVFoundation
 import AVKit
 
-struct VideoPlayerView<SidebarContent, ControlsContent>: View
-        where SidebarContent: View, ControlsContent: View {
-    
-    @Binding var currentTime: TimeInterval
+/// A position within one item of the player's playlist.
+private struct PlaybackPosition: Equatable {
+    var index: Int
+    var time: TimeInterval
+}
+
+/// How far playback moves between progress reports.
+private let progressReportInterval: TimeInterval = 10
+
+struct VideoPlayerView<SidebarContent: View, ControlsContent: View>: View {
+
+    /// Where this view starts playback, or `nil` when the caller starts the player itself (e.g. an episode picker).
+    var startTime: TimeInterval?
+    /// Receives the playing item's index and position every few seconds of playback,
+    /// and when playback pauses, moves to another item, or this view goes away.
+    var onProgress: (_ index: Int, _ time: TimeInterval) -> Void
     var onTapOverlay: () -> Void
     var sidebarContent: () -> SidebarContent
     var controlsTrailingContent: () -> ControlsContent
-    
-    enum PlayerSettingsTab: Identifiable {
-        case video, audio
-        var id: Self { self }
-    }
-    
-    // playback control
+
+    // Playback controls
     @State private var isHovering = false
     @State private var mouseIsMoving = false
-    private var playerOverlayPresented: Bool {
-        isHovering && mouseIsMoving
-    }
-    @State private var settingsPresented: Bool = false
-    @State private var playbackControlMinSize: CGSize = .init(width: 350, height: .zero)
+    @State private var controlsHeight: CGFloat = 0
     @State private var currentVolume: Float = 0.5
-    @State private var seeking: Bool = false
-    // Preview Image
+    @State private var currentTime: TimeInterval
+    @State private var seeking = false
+    @State private var lastPosition: PlaybackPosition? = nil
+    @State private var reportedPosition: PlaybackPosition? = nil
+    // Preview image shown above the progress bar while hovering it
     @State private var previewTime: TimeInterval? = nil
     @State private var previewImage: CGImage? = nil
-    @State private var previewImageOffsetX: CGFloat = .zero
-    @State private var playbackCoordinate: CGRect = .zero
-    @State private var previewImageSize: CGSize = .init(width: .zero, height: 100)
-    @State private var currentResolution: VideoResolution? = nil
-    @State private var selectedTab: PlayerSettingsTab = .video
+    @State private var previewImageOffsetX: CGFloat = 0
+    @State private var progressBarFrame: CGRect = .zero
+    @State private var videoAspectRatio: CGFloat = 16 / 9
     // Sidecar subtitles
     @State private var subtitles: [MediaNaming.Subtitle] = []
     @State private var selectedSubtitle: MediaNaming.Subtitle? = nil
     @State private var subtitleCues: [SubtitleCue] = []
-    
+
     @Environment(\.dismiss) private var dismiss
     @Environment(ArthubVideoPlayer.self) private var player
     @Environment(WindowState.self) private var windowState
-    
-    @State private var timer: Timer? = nil
-    
-    private var frameMinSize: CGSize {
-        .init(width: playbackControlMinSize.width,
-              height: playbackControlMinSize.height + previewImageSize.height)
-    }
-    
-    public init(currentTime: Binding<TimeInterval>, onTapOverlay: @escaping () -> Void = {},
-                @ViewBuilder sidebarContent: @escaping () -> SidebarContent = { EmptyView() },
-                @ViewBuilder controlsTrailingContent: @escaping () -> ControlsContent = { EmptyView() }) {
-        self._currentTime = currentTime
+    @Environment(\.scenePhase) private var scenePhase
+
+    #if canImport(AppKit)
+    @State private var hideControlsTimer: Timer? = nil
+    /// The mouse-moved monitor added on appear; it outlives the player unless removed on disappear.
+    @State private var mouseMonitor: Any? = nil
+    #endif
+
+    private let previewImageHeight: CGFloat = 100
+    private var controlsPresented: Bool { isHovering && mouseIsMoving }
+
+    init(startTime: TimeInterval?, onProgress: @escaping (_ index: Int, _ time: TimeInterval) -> Void,
+         onTapOverlay: @escaping () -> Void = {},
+         @ViewBuilder sidebarContent: @escaping () -> SidebarContent = { EmptyView() },
+         @ViewBuilder controlsTrailingContent: @escaping () -> ControlsContent = { EmptyView() }) {
+        self.startTime = startTime
+        self.onProgress = onProgress
+        self._currentTime = State(initialValue: startTime ?? 0)
         self.onTapOverlay = onTapOverlay
         self.sidebarContent = sidebarContent
         self.controlsTrailingContent = controlsTrailingContent
     }
-    
+
     var body: some View {
         VideoPlayer(player: player.player)
             .ignoresSafeArea()
@@ -72,121 +82,111 @@ struct VideoPlayerView<SidebarContent, ControlsContent>: View
             .overlay {
                 PlayerOverlayView()
                     .contentShape(.rect)
-                    .onTapGesture{
-                        settingsPresented = false
-                        onTapOverlay()
-                    }
+                    .onTapGesture(perform: onTapOverlay)
                     .simultaneousGesture(TapGesture(count: 2).onEnded(player.togglePlayPause))
             }
-            .frame(minWidth: frameMinSize.width,
-                   minHeight: frameMinSize.height)
+            .frame(minWidth: 350, minHeight: controlsHeight + previewImageHeight)
             .navigationBarBackButtonHidden(true)
             .toolbar(.hidden, for: .automatic)
             .task {
-                // Only bootstrap playback here if nobody (e.g. an episode
-                // picker) hasn't already started a specific item.
-                guard player.currentIndex == nil else { return }
-                do { try await player.start(at: currentTime) }
-                catch {}
+                guard let startTime, player.playerState == .stopped else { return }
+                player.start(at: startTime)
             }
-            .task(id: player.currentAssetURL) { await loadSubtitles() }
+            .task(id: player.currentAssetURL) {
+                await loadSubtitles()
+                await loadAspectRatio()
+            }
             .task(id: selectedSubtitle) {
                 guard let url = selectedSubtitle?.url else { subtitleCues = []; return }
                 subtitleCues = await Task.detached { SidecarParser.subtitles(url: url) }.value
             }
             .onAppear(perform: onAppear)
-            .onHover(perform: { isHovering = $0 })
+            .onHover { isHovering = $0 }
             .onKeyPress(keys: [.leftArrow, .rightArrow, .space], action: handleKeyPress)
             .onChange(of: player.currentTime, initial: true) { _, newValue in
-                if !seeking {
-                    currentTime  = newValue
-                }
+                // A stopped player reads 0, which must not replace the start position or the saved progress.
+                guard player.playerState != .stopped else { return }
+                if !seeking { currentTime = newValue }
+                recordPosition(newValue)
             }
-            .onChange(of: player.currentVideoSize, initial: true) { _, newValue in
-                guard let newValue else { return  }
-                currentResolution = VideoResolution(size: newValue)
+            .onChange(of: player.isPlaying) { _, isPlaying in
+                if !isPlaying { reportCurrentPosition() }
             }
+            .onChange(of: scenePhase) { _, phase in
+                if phase != .active { reportCurrentPosition() }
+            }
+            #if os(macOS)
+            // Quitting doesn't make this view disappear.
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                reportCurrentPosition()
+            }
+            #endif
             #if os(macOS) || os(tvOS)
             .onExitCommand(perform: dismiss.callAsFunction)
             #endif
             .onDisappear(perform: onDisappear)
-            
     }
 }
 
 // MARK: Player Overlay
 
 extension VideoPlayerView {
-    
+
     @ViewBuilder
     func PlayerOverlayView() -> some View {
-        
         VStack(alignment: .leading) {
-            
-            HStack(alignment: .center) {
+            HStack {
                 Button("", systemImage: "chevron.left", action: dismiss.callAsFunction)
                 Spacer()
             }
             .imageScale(.large)
             .padding()
             .background(.ultraThinMaterial)
-            
-            
+
             Spacer()
-            
+
             PreviewImageView()
                 .offset(x: previewImageOffsetX)
-            
+
             PlaybackControlView()
                 .overlay {
                     GeometryReader { proxy in
-                        Color.clear.task {
-                            playbackControlMinSize.height = proxy.size.height
-                        }
+                        Color.clear.onAppear { controlsHeight = proxy.size.height }
                     }
                 }
         }
         .safeAreaPadding()
-        .opacity(playerOverlayPresented ? 1 : 0)
-        .transition(.opacity)
+        .opacity(controlsPresented ? 1 : 0)
         .buttonStyle(.borderless)
         .overlay(alignment: .trailing) {
-            Group {
-                PlayerSettingsView()
-                    .background(.ultraThinMaterial)
-                    .frame(width: 300)
-                    .offset(x: settingsPresented ? 0 : 300)
-                    .opacity(settingsPresented ? 1 : 0)
-                
-                sidebarContent()
-            }
-            .safeAreaPadding(.top)
+            sidebarContent()
+                .safeAreaPadding(.top)
         }
     }
-    
+
     @ViewBuilder
     func PlaybackControlView() -> some View {
-        
-        VStack(alignment: .center) {
-            
+        @Bindable var player = player
+
+        VStack {
             ProgressBar()
-            
-            HStack(alignment: .center)  {
+
+            HStack {
                 VolumeBar(volume: $currentVolume)
-                    .onChange(of: currentVolume, initial: true, { player.volume = $1 })
+                    .onChange(of: currentVolume, initial: true) { player.volume = $1 }
                     .frame(minWidth: 100, maxWidth: 150)
-                
+
                 Spacer()
-                
-                Button("", systemImage: "gobackward.15", action: { player.skipBackward(by: 15) })
+
+                Button("", systemImage: "gobackward.15") { player.skip(by: -15) }
                 Button("", systemImage: player.isPlaying ? "pause" : "play", action: player.togglePlayPause)
                     .symbolVariant(.fill)
-                Button("", systemImage: "goforward.15", action: {player.skipForward(by: 15)})
-                
+                Button("", systemImage: "goforward.15") { player.skip(by: 15) }
+
                 Spacer()
-                
+
                 controlsTrailingContent()
-                
+
                 if !subtitles.isEmpty {
                     Menu {
                         Picker("Subtitles", selection: $selectedSubtitle) {
@@ -202,76 +202,51 @@ extension VideoPlayerView {
                     .menuIndicator(.hidden)
                     .fixedSize()
                 }
-                
-                Group {
-                    if currentResolution != nil {
-                        Picker("", selection: $currentResolution) {
-                            ForEach(player.videoSizeOptions.map { VideoResolution(size: $0) }) { resolution in
-                                Text(resolution.localizedName).tag(resolution as VideoResolution?)
-                            }
-                        }
-                    }
-                    
-                    Picker("", selection: Binding(
-                        get: { player.rate },
-                        set: { player.setPlaybackRate($0) }
-                    )) {
-                        ForEach(AVPlaybackSpeed.systemDefaultSpeeds, id: \.rate) { speed in
-                            Text(speed.localizedNumericName).tag(speed)
-                        }
+
+                Picker("", selection: $player.playbackRate) {
+                    ForEach(AVPlaybackSpeed.systemDefaultSpeeds, id: \.rate) { speed in
+                        Text(speed.localizedNumericName).tag(speed.rate)
                     }
                 }
                 .menuIndicator(.hidden)
-                Button("", systemImage: "ellipsis", action: {settingsPresented.toggle()})
             }
             .font(.title2)
         }
     }
-    
+
     @ViewBuilder
     func ProgressBar() -> some View {
-        HStack(alignment: .center) {
+        HStack {
             Text(currentTime.formatted())
-            ArthubSlider(value: $currentTime,
-                            in: 0...player.duration) { newValue in
-                if seeking && !newValue {
+            ArthubSlider(value: $currentTime, in: 0...player.duration) { isEditing in
+                // Seek once the thumb is let go.
+                if seeking && !isEditing {
                     player.seek(to: currentTime)
                 }
-                seeking = newValue
-            } onHoveringValueChanged: { newValue in
-                handlePreviewTimeChange(oldValue: previewTime, newValue: newValue)
-                previewTime = newValue
+                seeking = isEditing
+            } onHoveringValueChanged: { time in
+                showPreview(at: time)
             } onHoverEnded: {
-                handlePreviewTimeChange(oldValue: previewTime, newValue: nil)
                 previewTime = nil
+                previewImage = nil
             }
             .overlay {
                 GeometryReader { proxy in
-                    Color.clear
-                        .preference(
-                            key: PlaybackCoordinatePreference.self,
-                            value: proxy.frame(in: .global)
-                            )
+                    let frame = proxy.frame(in: .global)
+                    Color.clear.onChange(of: frame, initial: true) { progressBarFrame = frame }
                 }
             }
-            .onPreferenceChange(PlaybackCoordinatePreference.self) { value in
-                playbackCoordinate = value
-            }
-            
             Text(player.duration.formatted())
         }
     }
-    
+
     @ViewBuilder
     func PreviewImageView() -> some View {
-        if let previewImage = previewImage,
-           let previewTime = previewTime {
-            VStack(alignment: .center) {
+        if let previewImage, let previewTime {
+            VStack {
                 Image(previewImage, scale: 1, label: Text(previewTime.formatted()))
                     .resizable()
-                    .frame(width: previewImageSize.width,
-                           height: previewImageSize.height)
-                    .scaledToFit()
+                    .frame(width: previewImageHeight * videoAspectRatio, height: previewImageHeight)
                     .cornerRadius()
                 Text(previewTime.formatted())
             }
@@ -282,7 +257,7 @@ extension VideoPlayerView {
 // MARK: Subtitles
 
 extension VideoPlayerView {
-    
+
     @ViewBuilder
     func SubtitleView() -> some View {
         if !subtitleCues.isEmpty {
@@ -302,12 +277,12 @@ extension VideoPlayerView {
                 }
             }
             .padding(.horizontal)
-            .padding(.bottom, playerOverlayPresented ? playbackControlMinSize.height + 24 : 48)
-            .animation(.default, value: playerOverlayPresented)
+            .padding(.bottom, controlsPresented ? controlsHeight + 24 : 48)
+            .animation(.default, value: controlsPresented)
             .allowsHitTesting(false)
         }
     }
-    
+
     /// Finds `Movie.srt`, `Movie.en.srt`, `Subs/…` next to the current item and picks a default.
     func loadSubtitles() async {
         guard let url = player.currentAssetURL else {
@@ -321,81 +296,20 @@ extension VideoPlayerView {
     }
 }
 
-// MARK: Player Settings
+// MARK: Events
 
 extension VideoPlayerView {
-    
-    @ViewBuilder
-    func PlayerSettingsView() -> some View {
-        TabView(selection: $selectedTab) {
-            VideoSettingsView().tag(PlayerSettingsTab.video)
-                .tabItem {
-                    Image(systemName: "video")
-                    Text("Video")
-                }
-            AudioSettingsView().tag(PlayerSettingsTab.audio)
-                .tabItem {
-                    Image(systemName: "waveform")
-                    Text("Audio")
-                }
-        }
-        .autoSize()
-    }
-    
-    @ViewBuilder
-    func VideoSettingsView() -> some View {
-        VideoTrackSection()
-    }
-    
-    @ViewBuilder
-    func VideoTrackSection() -> some View {
-        Section {
-            
-        } header: {
-            Text("Video Track")
-                .font(.title.bold())
-        }
-    }
-    
-    @ViewBuilder
-    func AudioSettingsView() -> some View {
-        AudioTrackSection()
-    }
-    
-    @ViewBuilder
-    func AudioTrackSection() -> some View {
-        Section {
-            
-        } header: {
-            Text("Audio Track")
-                .font(.title.bold())
-        }
-    }
-}
 
-
-
-private struct PlaybackCoordinatePreference: PreferenceKey {
-    static var defaultValue: CGRect = .zero
-
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
-    }
-}
-
-extension VideoPlayerView {
-    
     func onAppear() {
         windowState.enterFullScreen()
         #if canImport(AppKit)
-        NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { event in
+        // Show the controls while the mouse moves, and hide them and the pointer 5 seconds after it stops.
+        guard mouseMonitor == nil else { return }
+        mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { event in
             mouseIsMoving = true
             NSCursor.unhide()
-            if let timer {
-                timer.invalidate()
-                self.timer = nil
-            }
-            timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { _ in
+            hideControlsTimer?.invalidate()
+            hideControlsTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { _ in
                 mouseIsMoving = false
                 NSCursor.hide()
             }
@@ -403,45 +317,90 @@ extension VideoPlayerView {
         }
         #endif
     }
-    
+
+    func onDisappear() {
+        reportCurrentPosition()
+        #if canImport(AppKit)
+        // Left in place, the monitor kept running after the player closed and its timer hid the pointer.
+        if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }
+        mouseMonitor = nil
+        hideControlsTimer?.invalidate()
+        NSCursor.unhide()
+        #endif
+        DispatchQueue.main.async {
+            windowState.exitFullScreen()
+            player.stop()
+        }
+    }
+
     func handleKeyPress(_ keyPress: KeyPress) -> KeyPress.Result {
         switch keyPress.key {
-        case .leftArrow: player.skipBackward(by: 15)
-        case .rightArrow: player.skipForward(by: 15)
+        case .leftArrow: player.skip(by: -15)
+        case .rightArrow: player.skip(by: 15)
         case .space: player.togglePlayPause()
         default: break
         }
         return .handled
     }
-    
-    func handlePreviewTimeChange(oldValue: TimeInterval?, newValue: TimeInterval?) {
-        guard let newPreviewTime = newValue else {
-            previewImage = nil
-            return
-        }
-        if let oldPreviewTime = oldValue,
-            abs(oldPreviewTime - newPreviewTime) < 1 {
-            return
-        }
-        
-        previewImageSize.width = previewImageSize.height * player.aspectRatio
-        let previewProgress = newPreviewTime / player.duration
-        previewImageOffsetX = playbackCoordinate.minX +
-        playbackCoordinate.width * previewProgress - previewImageSize.width / 2
-        let  previewImageOffsetMaxX = playbackCoordinate.width - previewImageSize.width / 2
-        previewImageOffsetX =  previewImageOffsetX.clamp(to: 0...previewImageOffsetMaxX)
-        
-        player.generateImage(for: newPreviewTime) { image in
-            DispatchQueue.main.async {
-                previewImage = image
-            }
+
+    /// Shows a frame of the video above the progress bar, at the hovered time.
+    func showPreview(at time: TimeInterval) {
+        // Skip small mouse movements.
+        if let previewTime, abs(previewTime - time) < 1 { return }
+        previewTime = time
+
+        let width = previewImageHeight * videoAspectRatio
+        let x = progressBarFrame.minX + progressBarFrame.width * time / player.duration - width / 2
+        previewImageOffsetX = x.clamp(to: 0...max(0, progressBarFrame.width - width / 2))
+
+        guard let asset = player.player.currentItem?.asset else { return }
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.generateCGImageAsynchronously(for: CMTime(seconds: time, preferredTimescale: 1)) { image, _, _ in
+            DispatchQueue.main.async { previewImage = image }
         }
     }
-    
-    func onDisappear() {
-        DispatchQueue.main.async {
-            windowState.exitFullScreen()
-            player.optOut()
+
+    func loadAspectRatio() async {
+        guard let asset = player.player.currentItem?.asset,
+              let track = try? await asset.loadTracks(withMediaType: .video).first,
+              let (size, transform) = try? await track.load(.naturalSize, .preferredTransform)
+        else { return }
+        let rotated = size.applying(transform)
+        if rotated.height != 0 { videoAspectRatio = abs(rotated.width / rotated.height) }
+    }
+}
+
+// MARK: Progress
+
+extension VideoPlayerView {
+
+    /// Remembers the playing position and reports it after every `progressReportInterval` seconds of movement.
+    /// When the player moves to another item, the previous item's last position is reported first.
+    private func recordPosition(_ time: TimeInterval) {
+        guard let index = player.currentIndex, time.isFinite else { return }
+        if let lastPosition, lastPosition.index != index, lastPosition != reportedPosition {
+            report(lastPosition)
         }
+        let position = PlaybackPosition(index: index, time: time)
+        lastPosition = position
+        if reportedPosition?.index != index ||
+            abs(time - (reportedPosition?.time ?? 0)) >= progressReportInterval {
+            report(position)
+        }
+    }
+
+    /// Reports where playback is now, e.g. on pause or before this view goes away.
+    private func reportCurrentPosition() {
+        if player.playerState != .stopped, let index = player.currentIndex {
+            let time = player.player.currentTime().seconds
+            if time.isFinite { lastPosition = PlaybackPosition(index: index, time: time) }
+        }
+        guard let lastPosition, lastPosition != reportedPosition else { return }
+        report(lastPosition)
+    }
+
+    private func report(_ position: PlaybackPosition) {
+        reportedPosition = position
+        onProgress(position.index, position.time)
     }
 }

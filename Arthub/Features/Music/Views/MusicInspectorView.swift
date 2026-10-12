@@ -22,9 +22,11 @@ struct MusicInspectorView: View {
     }
     
     @Bindable var song: Song
+    /// After the changes are written into the file.
+    var onSave: (() -> Void)? = nil
     @State private var fileImporterPresented = false
     @State private var currentTab: Tab = .details
-    @State private var error: ArthubError?
+    @State private var error: Error?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -49,6 +51,11 @@ struct MusicInspectorView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // The lyrics editor saves on its own.
+            if currentTab != .lyrics {
+                SaveBar()
+            }
         }
         #if !os(tvOS)
         .fileImporter(isPresented: $fileImporterPresented, allowedContentTypes: [.image]) { result in
@@ -159,20 +166,43 @@ extension MusicInspectorView {
     
     /// `@Observable` notifies on every assignment, even an unchanged one. Text fields write their
     /// value back while updating (formatted ones on every pass), so a plain `$song.x` binding
-    /// re-invalidated the inspector forever and froze the app as soon as it opened.
+    /// re-invalidated the inspector forever and froze the app as soon as it opened; `edit` skips those.
     private func binding<Value: Equatable>(_ keyPath: ReferenceWritableKeyPath<Song, Value>) -> Binding<Value> {
-        Binding(get: { song[keyPath: keyPath] },
-                set: { if song[keyPath: keyPath] != $0 { song[keyPath: keyPath] = $0 } })
+        Binding(get: { song[keyPath: keyPath] }, set: { song.edit(keyPath, to: $0) })
     }
     
     @discardableResult
     func importAlbumCover(_ url: URL) -> Bool {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
         do {
-            song.album.cover = try Data(contentsOf: url)
+            song.edit(\.album.cover, to: try Data(contentsOf: url))
         } catch {
-            self.error = ArthubError.error(error)
+            self.error = error
             return false
         }
         return true
+    }
+
+    @ViewBuilder
+    func SaveBar() -> some View {
+        HStack {
+            Spacer()
+            Button("Save") { saveMetadata() }
+                .disabled(song.unsavedTags.isEmpty || song.isSaving)
+                .help("Writes the changes into the song file.")
+        }
+        .padding()
+    }
+
+    func saveMetadata() {
+        Task {
+            do {
+                try await song.saveMetadata()
+                onSave?()
+            } catch {
+                self.error = .error(error)
+            }
+        }
     }
 }

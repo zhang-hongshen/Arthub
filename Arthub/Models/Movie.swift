@@ -7,6 +7,7 @@
 
 import Foundation
 import TMDb
+import MediaPlayer
 
 @Observable
 class Movie: MediaItem, Identifiable, Hashable {
@@ -22,7 +23,7 @@ class Movie: MediaItem, Identifiable, Hashable {
     var videos: [VideoMetadata] = []
     
     init(fileURL: URL, duration: TimeInterval, addedAt: Date? = nil,
-         metadata: TMDb.Movie, metrics: UserMetrics = UserMetrics(), id: UUID = UUID()) {
+         metadata: TMDb.Movie, metrics: UserMetrics, id: UUID = UUID()) {
         self.id = id
         self.addedAt = addedAt
         self.metadata = metadata
@@ -42,7 +43,16 @@ class Movie: MediaItem, Identifiable, Hashable {
 
 extension Movie {
     var progress: Double {
-        return duration != 0 ? Double(metrics.currentTime) / Double(duration) : 0
+        duration != 0 ? metrics.currentTime / duration : 0
+    }
+
+    /// What the player and the system's Now Playing panel show for this movie.
+    func playlistItem() async -> PlaylistItem {
+        var item = PlaylistItem(id: id.hashValue, url: fileURL, title: metadata.title)
+        if let poster = metadata.posterPath {
+            item.artwork = await MPMediaItemArtwork(contentsOf: poster)
+        }
+        return item
     }
 }
 
@@ -52,85 +62,27 @@ extension Movie {
             Movie(fileURL: URL(string: "")!,
                         duration: 10,
                   metadata: TMDb.Movie(id: 0, title: ""),
-                        metrics: UserMetrics())
+                        metrics: UserMetrics(.movie, tmdbID: 0))
         ]
     }
 }
 
 extension Movie {
-    
+
+    /// Cast, crew, images and videos from TMDb.
     func fetchRelatedData() async throws {
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask{ try await self.fetchCredits() }
-            group.addTask{ try await self.fetchImages() }
-            group.addTask{ try await self.fetchVideos() }
-            try await group.waitForAll()
-        }
+        let id = metadata.id
+        async let images = ConfigurationService.shared.getImageConfiguration()
+        async let credits = MovieService.shared.credits(forMovie: id)
+        async let artwork = MovieService.shared.images(forMovie: id)
+        async let videos = MovieService.shared.videos(forMovie: id)
+
+        let config = try await images
+        cast = try await credits.cast.map { $0.copy(profilePath: config.profileURL(for: $0.profilePath)) }
+        crew = try await credits.crew.map { $0.copy(profilePath: config.profileURL(for: $0.profilePath)) }
+        posters = try await artwork.posters.map { $0.copy(filePath: config.posterURL(for: $0.filePath)) }
+        backdrops = try await artwork.backdrops.map { $0.copy(filePath: config.backdropURL(for: $0.filePath)) }
+        logos = try await artwork.logos.map { $0.copy(filePath: config.posterURL(for: $0.filePath)) }
+        self.videos = try await videos.results
     }
-    
-    func fetchCredits() async throws  {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let fetchCredits = try await MovieService.shared.credits(forMovie: metadata.id)
-        let (imagesConfiguration, credits) = try await(getImageConfiguration, fetchCredits)
-        
-        await withTaskGroup(of: Void.self) { group in
-            
-            group.addTask {
-                var cast: [CastMember] =  []
-                for castMember in credits.cast {
-                    cast.append(castMember.copy(
-                        profilePath: imagesConfiguration.profileURL(for: castMember.profilePath)))
-                }
-                self.cast = cast
-            }
-            
-            group.addTask {
-                var crew: [CrewMember] =  []
-                for crewMember in credits.crew {
-                    crew.append(crewMember.copy(
-                        profilePath: imagesConfiguration.profileURL(for: crewMember.profilePath)))
-                }
-                self.crew = crew
-            }
-            await group.waitForAll()
-        }
-    }
-    
-    func fetchImages() async throws  {
-        async let getImageConfiguration = ConfigurationService.shared.getImageConfiguration()
-        async let fetchImages = MovieService.shared.images(forMovie: metadata.id)
-        let (imagesConfiguration, images) = try await(getImageConfiguration, fetchImages)
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                var posters: [ImageMetadata] =  []
-                for poster in images.posters{
-                    posters.append(poster.copy(filePath: imagesConfiguration.posterURL(for: poster.filePath)))
-                }
-                self.posters = posters
-            }
-            
-            group.addTask {
-                var backdrops: [ImageMetadata] =  []
-                for backdrop in images.backdrops{
-                    backdrops.append(backdrop.copy(filePath: imagesConfiguration.backdropURL(for: backdrop.filePath)))
-                }
-                self.backdrops = backdrops
-            }
-            
-            group.addTask {
-                var logos: [ImageMetadata] =  []
-                for logo in images.logos {
-                    logos.append(logo.copy(filePath: imagesConfiguration.posterURL(for: logo.filePath)))
-                }
-                self.logos = logos
-            }
-            
-            await group.waitForAll()
-        }
-    }
-    
-    func fetchVideos() async throws  {
-        self.videos = try await MovieService.shared.videos(forMovie: metadata.id).results
-    }
-    
 }

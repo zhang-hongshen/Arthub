@@ -9,24 +9,8 @@
 import UIKit
 
 extension UIDevice {
-    
-    #if os(iOS)
-    class var isIPad: Bool {
-        current.userInterfaceIdiom == .pad
-    }
-    class var isIPhone: Bool {
+    static var isIPhone: Bool {
         current.userInterfaceIdiom == .phone
     }
-    
-    class var isLanscape: Bool {
-        .landscapeLeft == current.orientation
-        || .landscapeRight == current.orientation
-    }
-    
-    class var isPortrait: Bool {
-        .portrait == current.orientation
-        || .portraitUpsideDown == current.orientation
-    }
-    #endif
 }
 #endif

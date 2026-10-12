@@ -186,7 +186,6 @@ private struct LibraryFilePlayer: View {
     @Environment(ArthubVideoPlayer.self) private var player
     @Environment(ArthubAudioPlayer.self) private var audioPlayer
     @State private var metrics: UserMetrics?
-    @State private var currentTime: TimeInterval = 0
     @State private var ready = false
     @State private var error: String?
 
@@ -200,38 +199,30 @@ private struct LibraryFilePlayer: View {
             if let error {
                 Text(error).foregroundStyle(.red).padding()
             } else if ready {
-                VideoPlayerView(currentTime: $currentTime)
+                VideoPlayerView(startTime: nil, onProgress: { _, time in
+                    if let metrics { WatchProgressStore.shared.record(time, for: metrics) }
+                })
             } else { ProgressView() }
         }
         .frame(minWidth: 400, minHeight: 300)
         .task {
-            do {
-                guard try await AVURLAsset(url: file.fileURL).load(.isPlayable) else {
-                    error = String(localized: "This file cannot be played by the current player.")
-                    return
-                }
-                if let id = file.movie?.id ?? file.episode?.id {
-                    metrics = try await UserMetrics.getByTMDbID(id)
-                }
-                try Task.checkCancellation()
-                currentTime = metrics?.currentTime ?? 0
-                audioPlayer.optOut()
-                player.optOut()
-                player.preloadItems(playableAssets: [NowPlayableStaticMetadata(
-                    id: NSNumber(value: file.id.hashValue), assetURL: file.fileURL,
-                    mediaType: file.fileURL.isVideo ? .video : .audio,
-                    isLiveStream: false, title: file.title)])
-                try await player.start(at: currentTime)
-                try Task.checkCancellation()
-                ready = true
-            } catch {
-                if !Task.isCancelled { self.error = error.localizedDescription }
+            let isPlayable = (try? await AVURLAsset(url: file.fileURL).load(.isPlayable)) ?? false
+            guard isPlayable else {
+                error = String(localized: "This file cannot be played by the current player.")
+                return
             }
+            if let movie = file.movie {
+                metrics = WatchProgressStore.shared.metrics(.movie, tmdbID: movie.id)
+            } else if let episode = file.episode {
+                metrics = WatchProgressStore.shared.metrics(.episode, tmdbID: episode.id)
+            }
+            audioPlayer.stop()
+            player.stop()
+            player.setPlaylist([PlaylistItem(id: file.id.hashValue, url: file.fileURL, title: file.title)])
+            player.start(at: metrics?.currentTime ?? 0)
+            ready = true
         }
-        .onChange(of: currentTime) { _, value in
-            guard ready, player.playerState != .stopped else { return }
-            metrics?.currentTime = value
-        }
-        .onDisappear { player.optOut() }
+        // Stop on the next turn, after `VideoPlayerView` has reported where playback ended.
+        .onDisappear { DispatchQueue.main.async { player.stop() } }
     }
 }

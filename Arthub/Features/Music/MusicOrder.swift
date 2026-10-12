@@ -26,3 +26,24 @@ enum MusicOrderProperty: String, CaseIterable, Identifiable {
         }
     }
 }
+
+enum MusicViewMode: String, CaseIterable, Identifiable {
+    case songs, albums, artists
+    var id: Self { self }
+
+    var localizedKey: LocalizedStringKey {
+        switch self {
+        case .songs: "as Songs"
+        case .albums: "as Albums"
+        case .artists: "as Artists"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .songs: "list.bullet"
+        case .albums: "square.grid.2x2"
+        case .artists: "music.mic"
+        }
+    }
+}

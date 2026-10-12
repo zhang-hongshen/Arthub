@@ -34,6 +34,34 @@ extension Lyric {
     var duration: TimeInterval {
         end - start
     }
+
+    func isActive(at time: TimeInterval) -> Bool {
+        start <= time && time < end
+    }
+
+    /// Moves the line and its words; a negative offset is earlier. Times before zero are written as zero.
+    func shift(by offset: TimeInterval) {
+        start += offset
+        end += offset
+        phrases.forEach { $0.shift(by: offset) }
+    }
+
+    /// The line split into its timed words and the text between them; nil without word timing,
+    /// or once edited words no longer match the line.
+    var segments: [(text: Substring, phrase: Lyric?)]? {
+        guard !phrases.isEmpty else { return nil }
+        let content = self.content
+        var segments: [(text: Substring, phrase: Lyric?)] = []
+        var cursor = content.startIndex
+        for phrase in phrases where !phrase.content.isEmpty {
+            guard let range = content.range(of: phrase.content, range: cursor..<content.endIndex) else { return nil }
+            if cursor < range.lowerBound { segments.append((content[cursor..<range.lowerBound], nil)) }
+            segments.append((content[range], phrase))
+            cursor = range.upperBound
+        }
+        if cursor < content.endIndex { segments.append((content[cursor...], nil)) }
+        return segments
+    }
 }
 
 extension Lyric {
@@ -42,10 +70,96 @@ extension Lyric {
         if url.isTTML {
             return TTMLParser().parse(url: url)
         }
-        if url.pathExtension.lowercased() == "lrc", let text = SidecarParser.readText(url) {
+        if url.isLRC, let text = SidecarParser.readText(url) {
             return SidecarParser.lyrics(lrc: text)
         }
         return []
+    }
+
+    /// Writes LRC or TTML, by the file's extension.
+    static func write(_ lyrics: [Lyric], to url: URL) throws {
+        let text = url.isTTML ? ttml(lyrics) : lrc(lyrics)
+        try Data(text.utf8).write(to: url, options: .atomic)
+    }
+
+    /// LRC, or plain lines when nothing is timed, for an audio file's lyrics tag.
+    static func tagText(_ lyrics: [Lyric]) -> String {
+        guard lyrics.contains(where: { $0.start != 0 || $0.end != 0 }) else {
+            return lyrics.map(\.content).joined(separator: "\n")
+        }
+        return lrc(lyrics)
+    }
+
+    /// LRC with `<mm:ss.xx>` word timing. A gap before the next line, and the end of the last,
+    /// is marked by a timestamp without text.
+    static func lrc(_ lyrics: [Lyric]) -> String {
+        let lines = lyrics.sorted { $0.start < $1.start }
+        var output: [String] = []
+        var groupEnd: TimeInterval = 0
+        for (index, line) in lines.enumerated() {
+            var text = line.content
+            if let segments = line.segments {
+                text = segments.map { segment in
+                    segment.phrase.map { "<\(timestamp($0.start))>\(segment.text)" } ?? String(segment.text)
+                }.joined()
+                if let last = line.phrases.last, last.end < line.end { text += "<\(timestamp(last.end))>" }
+            }
+            output.append("[\(timestamp(line.start))]\(text)")
+            // Lines sharing a start, like a translation, end together after the last of them.
+            groupEnd = index > 0 && lines[index - 1].start == line.start ? max(groupEnd, line.end) : line.end
+            let next = index + 1 < lines.count ? lines[index + 1] : nil
+            if let next, next.start == line.start { continue }
+            if next.map({ $0.start - groupEnd >= 0.01 }) ?? true {
+                output.append("[\(timestamp(groupEnd))]")
+            }
+        }
+        return output.joined(separator: "\n") + "\n"
+    }
+
+    /// TTML with `<span>` word timing.
+    static func ttml(_ lyrics: [Lyric]) -> String {
+        let lines = lyrics.sorted { $0.start < $1.start }.map { line -> String in
+            let text = line.segments.map { segments in
+                segments.map { segment in
+                    segment.phrase.map {
+                        "<span begin=\"\(ttmlTime($0.start))\" end=\"\(ttmlTime($0.end))\">\(escaped(segment.text))</span>"
+                    } ?? escaped(segment.text)
+                }.joined()
+            } ?? escaped(line.content)
+            return "      <p begin=\"\(ttmlTime(line.start))\" end=\"\(ttmlTime(line.end))\">\(text)</p>"
+        }
+        return """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <tt xmlns="http://www.w3.org/ns/ttml">
+              <body>
+                <div>
+            \(lines.joined(separator: "\n"))
+                </div>
+              </body>
+            </tt>
+
+            """
+    }
+
+    /// `mm:ss.xx`
+    static func timestamp(_ time: TimeInterval) -> String {
+        let centiseconds = Int((max(0, time) * 100).rounded())
+        return String(format: "%02d:%02d.%02d", centiseconds / 6000, centiseconds / 100 % 60, centiseconds % 100)
+    }
+
+    /// `mm:ss.xxx`, or `h:mm:ss.xxx` from an hour on.
+    private static func ttmlTime(_ time: TimeInterval) -> String {
+        let milliseconds = Int((max(0, time) * 1000).rounded())
+        let hours = milliseconds / 3_600_000, minutes = milliseconds / 60_000 % 60
+        let seconds = Double(milliseconds % 60_000) / 1000
+        return hours > 0 ? String(format: "%d:%02d:%06.3f", hours, minutes, seconds)
+                         : String(format: "%02d:%06.3f", minutes, seconds)
+    }
+
+    private static func escaped(_ text: some StringProtocol) -> String {
+        text.replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
     }
     
 }

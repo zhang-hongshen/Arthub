@@ -14,6 +14,7 @@ import Foundation
 ///     TV Shows/Doctor Who (2005)/Specials/Doctor Who (2005) S00E01.mkv
 ///     Music/Artist/Album (2019)/Disc 1/01 Title.flac
 ///     Music/Artist/Album (2019)/01 Title.lrc
+///     Music/Artist/01 Title.mp3              (album from the tags)
 ///
 /// Periods, spaces, underscores and dashes are interchangeable separators.
 enum MediaNaming {
@@ -279,8 +280,9 @@ extension MediaNaming {
 
 extension MediaNaming {
 
-    /// `Artist/Album (Year)/[Disc 1/]01 Title.ext`. Embedded tags take precedence over these values.
-    static func parseTrack(_ url: URL, library: URL? = nil) -> Track {
+    /// `Artist/Album (Year)/[Disc 1/]01 Title.ext`, or `Artist/01 Title.ext` when the tags name an album
+    /// the nearest folder doesn't. Embedded tags take precedence over these values.
+    static func parseTrack(_ url: URL, library: URL? = nil, album taggedAlbum: String? = nil) -> Track {
         var names = folders(of: url, library: library)
         var track = Track(title: url.fileName)
         if let first = names.first, let disc = discNumber(folder: first) {
@@ -292,18 +294,35 @@ extension MediaNaming {
             track.trackNumber = Int(match.output.track)
             if let disc = match.output.disc { track.discNumber = Int(disc) }
         }
-        let named = names.filter { !containerFolders.contains($0.lowercased()) }
-        if let album = named.first {
-            if let match = album.wholeMatch(of: /(.+?)\s*[\(\[]((?:19|20)\d{2})[\)\]]/) {
-                track.album = String(match.output.1); track.year = Int(match.output.2)
-            } else if let match = album.wholeMatch(of: /((?:19|20)\d{2})\s*-\s*(.+)/) {
-                track.album = String(match.output.2); track.year = Int(match.output.1)
-            } else {
-                track.album = album
+        var named = names.filter { !containerFolders.contains($0.lowercased()) }
+        if let folder = named.first {
+            let album = parseAlbum(folder: folder)
+            if taggedAlbum.map({ isAlbum(album.title, named: $0) }) ?? true {
+                track.album = album.title; track.year = album.year
+                named.removeFirst()
             }
         }
-        if named.count > 1 { track.artist = named[1] }
+        track.artist = named.first
         return track
+    }
+
+    /// `Album (2019)`, `Album [2019]`, `2019 - Album` or `Album`.
+    private static func parseAlbum(folder: String) -> (title: String, year: Int?) {
+        if let match = folder.wholeMatch(of: /(.+?)\s*[\(\[]((?:19|20)\d{2})[\)\]]/) {
+            return (String(match.output.1), Int(match.output.2))
+        }
+        if let match = folder.wholeMatch(of: /((?:19|20)\d{2})\s*-\s*(.+)/) {
+            return (String(match.output.2), Int(match.output.1))
+        }
+        return (folder, nil)
+    }
+
+    /// Ignores case, punctuation and extra words, e.g. `Album (Deluxe)` names `Album`.
+    private static func isAlbum(_ folder: String, named album: String) -> Bool {
+        let key = { (text: String) in String(text.lowercased().unicodeScalars.filter(CharacterSet.alphanumerics.contains)) }
+        let folder = key(folder), album = key(album)
+        guard !folder.isEmpty, !album.isEmpty else { return true }
+        return folder.contains(album) || album.contains(folder)
     }
 
     /// `Disc 1`, `CD2`, `Disk 3`
