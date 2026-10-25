@@ -71,19 +71,12 @@ jobs:
 
       - name: Write release notes
         run: |
+          # Release notes are the numbered list in the annotated tag's body, nothing else.
           PREV_TAG=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)
-
           if [ "$(git cat-file -t "$TAG")" = "tag" ]; then
-            git tag -l --format="%(contents)" "$TAG" > notes.md
-          elif [ -n "$PREV_TAG" ]; then
-            git log --no-merges --pretty="- %s (%h)" "$PREV_TAG..$TAG" > notes.md
+            git tag -l --format="%(contents:body)" "$TAG" > notes.md
           else
-            git log --no-merges --pretty="- %s (%h)" "$TAG" > notes.md
-          fi
-
-          if [ -n "$PREV_TAG" ]; then
-            echo "" >> notes.md
-            echo "**Full Changelog**: https://github.com/$GITHUB_REPOSITORY/compare/$PREV_TAG...$TAG" >> notes.md
+            git log --no-merges --pretty="%s" "${PREV_TAG:+$PREV_TAG..}$TAG" | awk '{print NR ". " $0}' > notes.md
           fi
 
           cat notes.md
