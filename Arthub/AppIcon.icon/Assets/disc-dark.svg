@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <circle cx="512" cy="512" r="420" fill="#1A1A1E"/>
+  <circle cx="512" cy="512" r="417" fill="none" stroke="#55555C" stroke-width="5"/>
+  <g fill="none">
+    <circle cx="512" cy="512" r="404" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="396" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="388" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="380" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="372" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="364" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="356" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="348" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="340" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="332" stroke="#45454C" stroke-width="4"/>
+    <circle cx="512" cy="512" r="324" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="316" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="308" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="300" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="292" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="284" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="276" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="268" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="260" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="252" stroke="#45454C" stroke-width="4"/>
+    <circle cx="512" cy="512" r="244" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="236" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="228" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="220" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="212" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="204" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="196" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="188" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="180" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="172" stroke="#2A2A30" stroke-width="2"/>
+    <circle cx="512" cy="512" r="164" stroke="#2A2A30" stroke-width="2"/>
+  </g>
+</svg>

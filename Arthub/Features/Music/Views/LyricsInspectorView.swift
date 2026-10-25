@@ -104,6 +104,9 @@ extension LyricsInspectorView {
                                       blurRadius: isInspector ? 1.2 : fontSize * 0.12)
                                 .id(lyric.id)
                                 .onTapGesture { player.seek(to: lyric.start) }
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityAddTraits(lyric.isActive(at: player.currentTime) ? .isSelected : [])
+                                .accessibilityAction { player.seek(to: lyric.start) }
                         }
                     }
                     .padding(.horizontal, 8)

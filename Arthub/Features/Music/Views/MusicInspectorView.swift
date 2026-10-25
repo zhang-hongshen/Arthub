@@ -33,7 +33,7 @@ struct MusicInspectorView: View {
             HeaderView()
                 .padding()
             
-            Picker("", selection: $currentTab) {
+            Picker("Inspector", selection: $currentTab) {
                 ForEach(Tab.allCases, id: \.self) { tab in
                     Text(tab.title).tag(tab)
                 }
@@ -97,7 +97,7 @@ extension MusicInspectorView {
                 .foregroundStyle(.secondary)
             
             ArtworkImage(data: song.album.cover, aspectRatio: 1) {
-                ImageButton(systemImage: "music.note", action: { fileImporterPresented = true })
+                ImageButton("Add Artwork", systemImage: "music.note", action: { fileImporterPresented = true })
             }
             .aspectRatio(1, contentMode: .fit)
             .frame(maxWidth: .infinity)
@@ -148,6 +148,7 @@ extension MusicInspectorView {
                 .foregroundStyle(.secondary)
                 .gridColumnAlignment(.trailing)
             TextField(text: binding(keyPath), prompt: Text(""), label: { EmptyView() })
+                .accessibilityLabel(title)
         }
     }
     
@@ -158,6 +159,7 @@ extension MusicInspectorView {
                 .foregroundStyle(.secondary)
             TextField(value: binding(keyPath), format: .number, prompt: Text(""), label: { EmptyView() })
                 .frame(width: 60)
+                .accessibilityLabel(title)
         }
     }
 }
@@ -201,7 +203,7 @@ extension MusicInspectorView {
                 try await song.saveMetadata()
                 onSave?()
             } catch {
-                self.error = .error(error)
+                self.error = error
             }
         }
     }

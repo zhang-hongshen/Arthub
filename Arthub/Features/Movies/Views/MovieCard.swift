@@ -37,6 +37,8 @@ struct MovieCard: View {
             
         }
         .frame(width: width)
+        // The play button only shows under the pointer.
+        .accessibilityAction(named: "Play", setupPlayer)
         .navigationDestination(isPresented: $playerPresented) {
             MoviePlayerView(metrics: movie.metrics)
                 .navigationTitle(movie.metadata.title)
@@ -85,7 +87,7 @@ extension MovieCard {
                 .frame(width: width * movie.progress,
                        height: Default.cornerRadius)
             if isHovering && movie.isAvailable {
-                ImageButton(systemImage: "play.fill", action: setupPlayer)
+                ImageButton("Play", systemImage: "play.fill", action: setupPlayer)
             }
         }
     }

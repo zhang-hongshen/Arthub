@@ -169,11 +169,10 @@ extension TVSeasonDetailView {
             
             LazyVStack(alignment: .leading, spacing: 24) {
                 ForEach(episodes) { episode in
-                    TVEpisodeCard(episode: episode, width: 280, axis: .horizontal)
-                        .onTapGesture {
-                            guard episode.isAvailable else { return }
-                            setupPlayer(selected: episode)
-                        }
+                    TVEpisodeCard(episode: episode, width: 280, axis: .horizontal, onPlay: {
+                        guard episode.isAvailable else { return }
+                        setupPlayer(selected: episode)
+                    })
                     if episode.id != episodes.last?.id {
                         Divider()
                     }

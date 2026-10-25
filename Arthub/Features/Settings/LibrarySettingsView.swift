@@ -16,6 +16,7 @@ struct LibrarySettingsView: View {
 
     @State private var libraryIndex = LibraryViewModel.shared
     @State private var fileImporterPresented = false
+    @State private var serverSheetPresented = false
     @State private var folderError: String?
 
     var body: some View {
@@ -36,6 +37,11 @@ struct LibrarySettingsView: View {
                 Button("Add Folder…", systemImage: "plus") {
                     fileImporterPresented = true
                 }
+                #if os(macOS)
+                Button("Connect to Server…", systemImage: "server.rack") {
+                    serverSheetPresented = true
+                }
+                #endif
             }
         }
         .formStyle(.grouped)
@@ -49,6 +55,15 @@ struct LibrarySettingsView: View {
                 addLibrary(url)
             case .failure(let error):
                 folderError = error.localizedDescription
+            }
+        }
+        .sheet(isPresented: $serverSheetPresented) {
+            AddServerView { library in
+                if libraries.contains(library) {
+                    Task { await libraryIndex.refresh() }
+                } else {
+                    libraries.append(library)
+                }
             }
         }
         .alert("Unable to Add Folder", isPresented: Binding(
@@ -67,7 +82,13 @@ extension LibrarySettingsView {
                 VStack(alignment: .leading) {
                     Text(libraryIndex.displayName(for: library))
                     #if os(macOS)
-                    if let url = libraryIndex.folderURL(for: library) {
+                    if RemoteFolder.isRemote(library) {
+                        Text(library)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    } else if let url = libraryIndex.folderURL(for: library) {
                         Text((url.path(percentEncoded: false) as NSString).abbreviatingWithTildeInPath)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -78,7 +99,8 @@ extension LibrarySettingsView {
                 }
             } icon: {
                 Image(systemName: libraryIndex.offlineLibraries.contains(library)
-                      ? "externaldrive.badge.exclamationmark" : "folder")
+                      ? "externaldrive.badge.exclamationmark"
+                      : RemoteFolder.isRemote(library) ? "server.rack" : "folder")
             }
             #if os(macOS)
             Spacer()
@@ -102,6 +124,7 @@ extension LibrarySettingsView {
 
     func remove(_ library: String) {
         libraries.removeAll { $0 == library }
+        if RemoteFolder.isRemote(library) { RemoteFolder.forget(library) }
     }
 
     func addLibrary(_ url: URL) {
@@ -116,6 +139,68 @@ extension LibrarySettingsView {
                 libraries.append(entry)
             }
         } catch { folderError = error.localizedDescription }
+    }
+}
+
+/// Connects an SMB or WebDAV folder, like Finder's Connect to Server.
+private struct AddServerView: View {
+
+    let onAdd: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var address = ""
+    @State private var user = ""
+    @State private var password = ""
+    @State private var isConnecting = false
+    @State private var error: String?
+
+    var body: some View {
+        Form {
+            Section {
+                TextField("Server Address", text: $address, prompt: Text(verbatim: "smb://nas.local/Media"))
+                TextField("User Name", text: $user, prompt: Text("Guest"))
+                SecureField("Password", text: $password)
+            } footer: {
+                VStack(alignment: .leading) {
+                    Text("SMB: smb://server/share/folder. WebDAV: https://server:port/folder.")
+                    if let error {
+                        Text(error).foregroundStyle(.red)
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .disabled(isConnecting)
+        .frame(width: 420)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                if isConnecting {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Button("Connect") { Task { await connect() } }
+                        .disabled(address.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+
+    func connect() async {
+        guard let library = RemoteFolder.library(address: address, user: user) else {
+            error = RemoteFolderError.badAddress.localizedDescription
+            return
+        }
+        isConnecting = true
+        defer { isConnecting = false }
+        do {
+            try await RemoteFolder.connect(library, password: password)
+            onAdd(library)
+            dismiss()
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 }
 

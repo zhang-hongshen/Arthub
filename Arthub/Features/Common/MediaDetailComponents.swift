@@ -13,7 +13,7 @@ enum MediaDetail {
     static let horizontalPadding: CGFloat = 40
     static let sectionSpacing: CGFloat = 36
     static let stillAspectRatio: CGFloat = 16 / 9
-    /// White in light mode, near black in dark mode.
+    /// Warm off-white in light mode, warm near black in dark mode.
     static let background = Color.mediaBackground
 
     static func heroHeight(for size: CGSize) -> CGFloat {
@@ -204,7 +204,7 @@ struct MediaRemainingView: View {
             HStack(spacing: 8) {
                 ProgressView(value: progress)
                     .progressViewStyle(.linear)
-                    .tint(.primary)
+                    .tint(.accent)
                     .frame(width: 80)
                 Text("\(MediaDetail.runtime(duration * (1 - progress))) left")
                     .font(.caption.weight(.medium))
@@ -216,7 +216,7 @@ struct MediaRemainingView: View {
 
 // MARK: Buttons
 
-/// Big rounded button in the inverse of the page, the "Play" button on Apple TV.
+/// Big rounded button in the theme's accent colour, the "Play" button on Apple TV.
 struct MediaPlayButtonStyle: ButtonStyle {
 
     @Environment(\.isEnabled) private var isEnabled
@@ -225,11 +225,11 @@ struct MediaPlayButtonStyle: ButtonStyle {
         configuration.label
             .labelStyle(.titleAndIcon)
             .font(.headline)
-            .foregroundStyle(MediaDetail.background)
+            .foregroundStyle(Color.onAccent)
             .padding(.horizontal, 28)
             .padding(.vertical, 12)
             .frame(minWidth: 160)
-            .background(Color.primary, in: RoundedRectangle(cornerRadius: 10))
+            .background(Color.accent, in: RoundedRectangle(cornerRadius: 10))
             .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
@@ -349,7 +349,7 @@ struct MediaAboutCard: View {
         }
         .padding(20)
         .frame(maxWidth: 560, alignment: .leading)
-        .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.surface, in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, MediaDetail.horizontalPadding)
     }
 }

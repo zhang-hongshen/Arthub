@@ -76,7 +76,7 @@
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "tmdb_api_key"
-            value = "0ae9c415ebc8eb780c066802dbbbe82d"
+            value = "11bc6a7b19148d87e0be96edc251b3a4"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

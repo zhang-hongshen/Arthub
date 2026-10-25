@@ -136,7 +136,8 @@ extension VideoPlayerView {
     func PlayerOverlayView() -> some View {
         VStack(alignment: .leading) {
             HStack {
-                Button("", systemImage: "chevron.left", action: dismiss.callAsFunction)
+                Button("Back", systemImage: "chevron.left", action: dismiss.callAsFunction)
+                    .labelStyle(.iconOnly)
                 Spacer()
             }
             .imageScale(.large)
@@ -156,7 +157,10 @@ extension VideoPlayerView {
                 }
         }
         .safeAreaPadding()
-        .opacity(controlsPresented ? 1 : 0)
+        // SwiftUI drops fully transparent views from the accessibility tree, so the hidden controls
+        // stay a hair above 0 for VoiceOver and agents, and ignore the mouse until they show.
+        .opacity(controlsPresented ? 1 : 0.001)
+        .allowsHitTesting(controlsPresented)
         .buttonStyle(.borderless)
         .overlay(alignment: .trailing) {
             sidebarContent()
@@ -178,10 +182,14 @@ extension VideoPlayerView {
 
                 Spacer()
 
-                Button("", systemImage: "gobackward.15") { player.skip(by: -15) }
-                Button("", systemImage: player.isPlaying ? "pause" : "play", action: player.togglePlayPause)
-                    .symbolVariant(.fill)
-                Button("", systemImage: "goforward.15") { player.skip(by: 15) }
+                Group {
+                    Button("Skip Back 15 Seconds", systemImage: "gobackward.15") { player.skip(by: -15) }
+                    Button(player.isPlaying ? "Pause" : "Play", systemImage: player.isPlaying ? "pause" : "play",
+                           action: player.togglePlayPause)
+                        .symbolVariant(.fill)
+                    Button("Skip Forward 15 Seconds", systemImage: "goforward.15") { player.skip(by: 15) }
+                }
+                .labelStyle(.iconOnly)
 
                 Spacer()
 
@@ -201,13 +209,15 @@ extension VideoPlayerView {
                     }
                     .menuIndicator(.hidden)
                     .fixedSize()
+                    .accessibilityLabel("Subtitles")
                 }
 
-                Picker("", selection: $player.playbackRate) {
+                Picker("Playback Speed", selection: $player.playbackRate) {
                     ForEach(AVPlaybackSpeed.systemDefaultSpeeds, id: \.rate) { speed in
                         Text(speed.localizedNumericName).tag(speed.rate)
                     }
                 }
+                .labelsHidden()
                 .menuIndicator(.hidden)
             }
             .font(.title2)
@@ -230,6 +240,8 @@ extension VideoPlayerView {
                 previewTime = nil
                 previewImage = nil
             }
+            .accessibilityLabel("Playback Position")
+            .accessibilityValue(Text(verbatim: "\(currentTime.formatted()) / \(player.duration.formatted())"))
             .overlay {
                 GeometryReader { proxy in
                     let frame = proxy.frame(in: .global)

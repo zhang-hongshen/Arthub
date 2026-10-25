@@ -21,8 +21,10 @@ struct VolumeBar: View {
             }
             .keyboardShortcut(.downArrow, modifiers: [])
             .buttonStyle(.borderless)
+            .accessibilityLabel("Volume Down")
         
             Slider(value: $volume, in: 0...1)
+                .accessibilityLabel("Volume")
             
             Button {
                 volume = (volume + volumeAdjustStep).clamp(to: 0...1)
@@ -31,6 +33,7 @@ struct VolumeBar: View {
             }
             .keyboardShortcut(.upArrow, modifiers: [])
             .buttonStyle(.borderless)
+            .accessibilityLabel("Volume Up")
         }
         .symbolVariant(.fill)
     }

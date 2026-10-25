@@ -15,6 +15,8 @@ struct TVEpisodeCard: View {
     var episode: TVEpisodeDetail
     var width: CGFloat
     var axis: Axis = .vertical
+    /// Called when the card is clicked.
+    var onPlay: () -> Void = {}
     
     @State private var isHovering = false
     
@@ -30,6 +32,11 @@ struct TVEpisodeCard: View {
         .contentShape(Rectangle())
         .opacity(episode.isAvailable ? 1 : 0.6)
         .onHover { isHovering = $0 }
+        .onTapGesture(perform: onPlay)
+        // One button for VoiceOver and agents, read as its episode number, title and overview.
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onPlay() }
         .contextMenu { TVEpisodeContextMenu() }
         .task{ await fetchData() }
     }

@@ -10,6 +10,6 @@ import SwiftUI
 extension ShapeStyle where Self == Color {
     
     static var random : Color {
-        [.accent, .cyan, .indigo, .mint, .teal].randomElement()!
+        [.accent, .accentSecondary].randomElement()!
     }
 }

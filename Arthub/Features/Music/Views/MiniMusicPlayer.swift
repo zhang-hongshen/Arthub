@@ -52,12 +52,15 @@ extension MiniMusicPlayer {
                 }
                 .foregroundStyle(player.shuffled ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                 .help("Shuffle")
+                .accessibilityLabel("Shuffle")
+                .accessibilityAddTraits(player.shuffled ? .isSelected : [])
             }
 
             Button(action: player.previousTrack) {
                 Image(systemName: "backward.fill").font(.title3)
             }
             .disabled(player.isPlaylistEmpty)
+            .accessibilityLabel("Previous")
 
             Button {
                 player.isPlaylistEmpty ? onStartPlayback() : player.togglePlayPause()
@@ -67,11 +70,13 @@ extension MiniMusicPlayer {
                     .contentTransition(.symbolEffect(.replace))
                     .frame(width: 28)
             }
+            .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
 
             Button(action: player.nextTrack) {
                 Image(systemName: "forward.fill").font(.title3)
             }
             .disabled(player.isPlaylistEmpty)
+            .accessibilityLabel("Next")
 
             if showsSecondaryControls {
                 Button(action: player.nextPlayerMode) {
@@ -79,6 +84,8 @@ extension MiniMusicPlayer {
                 }
                 .foregroundStyle(player.playerMode == .noRepeat ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
                 .help("Repeat")
+                .accessibilityLabel("Repeat")
+                .accessibilityValue(player.playerMode.accessibilityValue)
             }
         }
         .foregroundStyle(.primary)
@@ -147,6 +154,8 @@ extension MiniMusicPlayer {
             }
             .foregroundStyle(lyricsPresented ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
             .help("Lyrics")
+            .accessibilityLabel("Lyrics")
+            .accessibilityAddTraits(lyricsPresented ? .isSelected : [])
 
             DevicePickerView(player: player.player)
                 .frame(width: 22, height: 22)
@@ -172,7 +181,7 @@ fileprivate struct MiniArtwork: View {
                 Image(systemName: "music.note")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.quaternary)
+                    .background(Color.surface)
             }
             .frame(width: size, height: size)
             .overlay {
@@ -194,6 +203,7 @@ fileprivate struct MiniArtwork: View {
         }
         .buttonStyle(.plain)
         .help("Open Player")
+        .accessibilityLabel("Open Player")
         #if os(macOS)
         .onHover { isHovering = $0 }
         #endif
@@ -215,10 +225,13 @@ fileprivate struct VolumeButton: View {
                 .frame(width: 26, alignment: .leading)
         }
         .help("Volume")
+        .accessibilityLabel("Volume")
+        .accessibilityValue(Double(player.volume).formatted(.percent.precision(.fractionLength(0))))
         .popover(isPresented: $popoverPresented, arrowEdge: .top) {
             Slider(value: Binding(get: { player.volume },
                                   set: { player.volume = $0 }),
                    in: 0...1)
+                .accessibilityLabel("Volume")
                 .frame(width: 160)
                 .padding()
         }
@@ -279,6 +292,28 @@ struct PlaybackProgressBar: View {
         .onHover { isHovering = $0 }
         #endif
         .animation(.snappy(duration: 0.2), value: isHovering)
+        .accessibilityElement()
+        .accessibilityLabel("Playback Position")
+        .accessibilityValue(Text(verbatim: "\(currentTime.formatted()) / \(duration.formatted())"))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: onSeek(min(currentTime + 10, duration))
+            case .decrement: onSeek(max(currentTime - 10, 0))
+            @unknown default: break
+            }
+        }
+    }
+}
+
+extension ArthubPlayer.PlayerMode {
+
+    /// What the repeat button reads out, since its icon alone tells "all" from "one".
+    var accessibilityValue: LocalizedStringKey {
+        switch self {
+        case .noRepeat: "Off"
+        case .repeatPlaylist: "Repeat All"
+        case .repeatItem: "Repeat One"
+        }
     }
 }
 

@@ -147,6 +147,9 @@ import AVFoundation
         }
     }
 
+    /// The song shown for a library file, so music started elsewhere plays the same song objects.
+    func song(forFileID id: UUID) -> Song? { indexedSongs[id] }
+
     var lyricsPresented: Bool { inspectorPresented && inspectorContent == .lyrics }
 
     /// Lyrics and Info share the inspector; tapping the active one closes it.

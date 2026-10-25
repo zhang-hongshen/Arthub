@@ -95,7 +95,7 @@ extension MusicPlayer {
     func Backdrop() -> some View {
         let isDark = colorScheme == .dark
         ZStack {
-            Color(white: isDark ? 0.12 : 0.92)
+            Color.playerBackground
             if let backdrop {
                 Image(decorative: backdrop, scale: 1)
                     .resizable()
@@ -208,7 +208,7 @@ extension MusicPlayer {
                 .font(.system(size: size * 0.3))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.quaternary)
+                .background(Color.surface)
         }
         .frame(width: size, height: size)
         .cornerRadius(size * 0.035)
@@ -275,6 +275,7 @@ extension MusicPlayer {
         .glassBackground(in: Circle())
         .disabled(currentSong == nil)
         .help("More")
+        .accessibilityLabel("More")
     }
 }
 
@@ -287,6 +288,7 @@ extension MusicPlayer {
         HStack(spacing: 0) {
             ModeButton(systemImage: "shuffle", isOn: player.shuffled, help: "Shuffle",
                        scale: scale, action: player.toggleShuffle)
+                .accessibilityAddTraits(player.shuffled ? .isSelected : [])
 
             Spacer(minLength: 0)
 
@@ -295,6 +297,7 @@ extension MusicPlayer {
                     .font(.system(size: 28 * scale))
             }
             .disabled(player.isPlaylistEmpty)
+            .accessibilityLabel("Previous")
 
             Spacer(minLength: 0)
 
@@ -305,6 +308,7 @@ extension MusicPlayer {
                     .frame(width: 44 * scale, height: 44 * scale)
             }
             .keyboardShortcut(.space, modifiers: [])
+            .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
 
             Spacer(minLength: 0)
 
@@ -313,12 +317,14 @@ extension MusicPlayer {
                     .font(.system(size: 28 * scale))
             }
             .disabled(player.isPlaylistEmpty)
+            .accessibilityLabel("Next")
 
             Spacer(minLength: 0)
 
             ModeButton(systemImage: player.playerMode == .repeatItem ? "repeat.1" : "repeat",
                        isOn: player.playerMode != .noRepeat, help: "Repeat",
                        scale: scale, action: player.nextPlayerMode)
+                .accessibilityValue(player.playerMode.accessibilityValue)
         }
         .buttonStyle(.borderless)
         .foregroundStyle(.primary)
@@ -339,6 +345,7 @@ extension MusicPlayer {
                 .contentShape(Circle())
         }
         .help(help)
+        .accessibilityLabel(help)
     }
 
     @ViewBuilder
@@ -356,6 +363,8 @@ extension MusicPlayer {
                     .contentShape(Circle())
             }
             .help("Lyrics")
+            .accessibilityLabel("Lyrics")
+            .accessibilityAddTraits(lyricsPresented ? .isSelected : [])
 
             DevicePickerView(player: player.player)
                 .frame(width: 24, height: 24)
@@ -445,10 +454,12 @@ fileprivate struct VolumeControl: View {
             Slider(value: $player.volume, in: 0...1)
                 .frame(width: 110)
                 .controlSize(.small)
+                .accessibilityLabel("Volume")
 
             Image(systemName: player.volume == 0 ? "speaker.slash.fill" : "speaker.wave.3.fill",
                   variableValue: Double(player.volume))
                 .frame(width: 26, alignment: .leading)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, 8)
         .background {

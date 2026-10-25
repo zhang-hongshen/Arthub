@@ -79,14 +79,11 @@ struct LyricsEditView: View {
             }
 
             HStack {
-                Button(action: addLyric) {
-                    Image(systemName: "plus")
-                }
-                Button(action: deleteLyrics) {
-                    Image(systemName: "minus")
-                }
-                .disabled(selectedLyrics.isEmpty)
+                Button("Add Line", systemImage: "plus", action: addLyric)
+                Button("Delete Lines", systemImage: "minus", action: deleteLyrics)
+                    .disabled(selectedLyrics.isEmpty)
             }
+            .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
         }
         #if os(macOS)
@@ -148,6 +145,7 @@ extension LyricsEditView {
                 Image(systemName: "ellipsis.circle")
             }
             .menuIndicator(.hidden)
+            .accessibilityLabel("More")
             .fixedSize()
         }
     }

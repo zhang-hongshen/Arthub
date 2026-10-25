@@ -111,6 +111,19 @@ struct ArthubSlider<V>: View where V : BinaryFloatingPoint,
             }
         }
         .frame(height: 25)
+        // One element that VoiceOver and agents can step, instead of two loose shapes.
+        // Callers give it a label and a value.
+        .accessibilityElement()
+        .accessibilityAdjustableAction { direction in
+            let step = (range.upperBound - range.lowerBound) / 20
+            onEditingChanged(true)
+            switch direction {
+            case .increment: value = (value + step).clamp(to: range)
+            case .decrement: value = (value - step).clamp(to: range)
+            @unknown default: break
+            }
+            onEditingChanged(false)
+        }
     }
     
 }

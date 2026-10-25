@@ -101,6 +101,7 @@ extension AlbumDetailView {
                     }
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.circle)
+                    .accessibilityLabel("Shuffle")
 
                     Button {
                         play(shuffled: false)
@@ -158,9 +159,9 @@ extension AlbumDetailView {
         let isCurrent = player.currentItemID == song.id.hashValue
         let isHovered = hoveredSongID == song.id
         let isSelected = selectedSongID == song.id
-        let primary = isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(song.isAvailable ? .primary : .secondary)
-        let secondary = isSelected ? AnyShapeStyle(.white.opacity(0.8)) : AnyShapeStyle(.secondary)
-        let accent = isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.tint)
+        let primary = isSelected ? AnyShapeStyle(Color.onAccent) : AnyShapeStyle(song.isAvailable ? .primary : .secondary)
+        let secondary = isSelected ? AnyShapeStyle(Color.onAccent.opacity(0.8)) : AnyShapeStyle(.secondary)
+        let accent = isSelected ? AnyShapeStyle(Color.onAccent) : AnyShapeStyle(.tint)
 
         HStack(alignment: .center, spacing: 16) {
             Group {
@@ -213,6 +214,7 @@ extension AlbumDetailView {
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
+            .accessibilityLabel("More")
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 12)
@@ -246,6 +248,15 @@ extension AlbumDetailView {
             })
         )
         .contextMenu { TrackMenuItems(song) }
+        // The row reads as one button that plays the song; the play button only shows under the pointer.
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityAction {
+            selectedSongID = song.id
+            if isCurrent { player.togglePlayPause() } else { play(from: song) }
+        }
+        .accessibilityAction(named: "Edit Metadata") { onEditMetadata?(song) }
     }
 
     @ViewBuilder

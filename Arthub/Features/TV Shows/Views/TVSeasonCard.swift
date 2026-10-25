@@ -47,6 +47,8 @@ struct TVSeasonCardView: View {
         .frame(height: height)
         .transparentEffect()
         .cornerRadius()
+        // The play button only shows under the pointer.
+        .accessibilityAction(named: "Play", setupPlayer)
         .task { await fetchData() }
         .navigationDestination(isPresented: $playerPresented) {
             TVShowPlayerView(playlist: episodes, startAtIndex: playerStartIndex)
@@ -83,7 +85,7 @@ extension TVSeasonCardView {
                 .frame(width: height * Portrait.aspectRatio * season.progress,
                        height: Default.cornerRadius)
             if isHovering && !episodes.isEmpty {
-                ImageButton(systemImage: "play.fill", action: setupPlayer)
+                ImageButton("Play", systemImage: "play.fill", action: setupPlayer)
             }
         }
     }

@@ -63,7 +63,9 @@ struct ContentView: View {
     // ViewModels live here so switching tabs doesn't discard scan results.
     @State private var moviesViewModel = MoviesViewModel()
     @State private var tvShowsViewModel = TVShowsViewModel()
-    @State private var musicViewModel = MusicViewModel()
+    /// Comes from `ArthubApp`, since agents play its songs too.
+    @Environment(MusicViewModel.self) private var musicViewModel
+    @Environment(AgentTools.self) private var agentTools
     #if os(macOS)
     /// Sidebar (200) + `MusicView`'s 600pt minimum + inspector (320) + the two dividers.
     private let musicMinWindowWidth: CGFloat = 200 + 600 + 320 + 2
@@ -76,8 +78,12 @@ struct ContentView: View {
     private var state
 
     var body: some View {
+        @Bindable var agentTools = agentTools
         NavigationView()
             .background(.ultraThinMaterial)
+            .sheet(item: $agentTools.video) { video in
+                LibraryFilePlayer(file: video.file, startTime: video.startTime)
+            }
             .animation(.easeInOut, value: state.columnVisibility)
             .task(id: libraries) {
                 while !Task.isCancelled {

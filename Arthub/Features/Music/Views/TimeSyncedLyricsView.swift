@@ -46,6 +46,8 @@ extension TimeSyncedLyricsView {
                         .blur(radius: !isTimeSynced || lyric.isActive(at: syncedTime) ? 0 : 2)
                         .cornerRadius()
                         .onTapGesture { onLyricClicked(lyric) }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { onLyricClicked(lyric) }
                 }
                 
             }

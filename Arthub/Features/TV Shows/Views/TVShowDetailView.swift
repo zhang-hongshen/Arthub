@@ -202,12 +202,11 @@ extension TVShowDetailView {
             } content: {
                 ForEach(season.episodes.sorted(using: KeyPathComparator(\.metadata.episodeNumber,
                                                                         order: .forward))) { episode in
-                    TVEpisodeCard(episode: episode, width: 300)
-                        .onTapGesture {
-                            guard episode.isAvailable,
-                                  let index = episodes.firstIndex(where: { $0.id == episode.id }) else { return }
-                            setupPlayer(from: index)
-                        }
+                    TVEpisodeCard(episode: episode, width: 300, onPlay: {
+                        guard episode.isAvailable,
+                              let index = episodes.firstIndex(where: { $0.id == episode.id }) else { return }
+                        setupPlayer(from: index)
+                    })
                 }
             }
         }
@@ -231,6 +230,7 @@ extension TVShowDetailView {
                                 .foregroundStyle(isSelected ? HierarchicalShapeStyle.primary : .tertiary)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
                     }
                 }
             }

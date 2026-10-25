@@ -161,7 +161,7 @@ private struct LibraryThumbnail: View {
 
     var body: some View {
         ZStack {
-            Rectangle().fill(.quaternary)
+            Rectangle().fill(Color.surface)
             if let artwork {
                 ArtworkImage(url: artwork) { Image(systemName: "film") }.id(artwork)
             } else if let thumbnail {
@@ -180,8 +180,10 @@ private struct LibraryThumbnail: View {
     }
 }
 
-private struct LibraryFilePlayer: View {
+struct LibraryFilePlayer: View {
     let file: LibraryFile
+    /// `nil` resumes the saved progress.
+    var startTime: TimeInterval? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(ArthubVideoPlayer.self) private var player
     @Environment(ArthubAudioPlayer.self) private var audioPlayer
@@ -219,7 +221,7 @@ private struct LibraryFilePlayer: View {
             audioPlayer.stop()
             player.stop()
             player.setPlaylist([PlaylistItem(id: file.id.hashValue, url: file.fileURL, title: file.title)])
-            player.start(at: metrics?.currentTime ?? 0)
+            player.start(at: startTime ?? metrics?.currentTime ?? 0)
             ready = true
         }
         // Stop on the next turn, after `VideoPlayerView` has reported where playback ended.

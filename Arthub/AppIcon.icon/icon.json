@@ -1,0 +1,55 @@
+{
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "label.svg",
+          "name": "label",
+          "glass": true
+        }
+      ],
+      "shadow": {
+        "kind": "layer-color",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    },
+    {
+      "layers": [
+        {
+          "image-name": "sheen.svg",
+          "name": "sheen",
+          "glass": false
+        },
+        {
+          "image-name": "disc.svg",
+          "name": "disc",
+          "glass": false,
+          "image-name-specializations": [
+            {
+              "value": "disc.svg"
+            },
+            {
+              "appearance": "dark",
+              "value": "disc-dark.svg"
+            }
+          ]
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.6
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

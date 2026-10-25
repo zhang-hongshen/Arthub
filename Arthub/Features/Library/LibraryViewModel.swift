@@ -126,14 +126,26 @@ final class LibraryViewModel {
         for key in Array(accessedURLs.keys) where !libraries.contains(key) {
             accessedURLs.removeValue(forKey: key)?.stopAccessingSecurityScopedResource()
         }
-        let roots = libraries.compactMap { library -> (String, URL)? in
-            guard let url = resolveFolder(library) else { return nil }
-            return (library, url)
+        var roots: [(String, URL)] = []
+        // Servers that cannot be mounted keep their files, marked unavailable.
+        var unreachable: Set<String> = []
+        var mountErrors: [String] = []
+        for library in libraries {
+            if RemoteFolder.isRemote(library) {
+                do {
+                    roots.append((library, try await RemoteFolder.folder(for: library)))
+                } catch {
+                    unreachable.insert(library)
+                    mountErrors.append("\(displayName(for: library)): \(error.localizedDescription)")
+                }
+            } else if let url = resolveFolder(library) {
+                roots.append((library, url))
+            }
         }
         resolvedFolders = Dictionary(uniqueKeysWithValues: roots)
         let previous = files
-        let snapshot = await Task.detached(priority: .utility) {
-            Self.discover(roots: roots, previous: previous)
+        let snapshot = await Task.detached(priority: .utility) { [roots, unreachable] in
+            Self.discover(roots: roots, unreachable: unreachable, previous: previous)
         }.value
         // A folder removed while scanning must not reappear in the library.
         let currentLibraries: [String] = UserDefaults.standard.value(forKey: UserDefaults.library, default: [])
@@ -142,7 +154,7 @@ final class LibraryViewModel {
             return
         }
         offlineLibraries = snapshot.offline
-        scanErrors = snapshot.errors
+        scanErrors = mountErrors + snapshot.errors
         files = snapshot.files
         if snapshot.changed { revision += 1 }
         if snapshot.changed { await save() }
@@ -408,13 +420,14 @@ extension LibraryFile: Equatable {
 }
 
 extension LibraryViewModel {
-    nonisolated private static func discover(roots: [(String, URL)], previous: [LibraryFile])
+    nonisolated private static func discover(roots: [(String, URL)], unreachable: Set<String>,
+                                             previous: [LibraryFile])
         -> (files: [LibraryFile], offline: Set<String>, errors: [String], changed: Bool) {
         let manager = FileManager.default
         let keys: [URLResourceKey] = [.isRegularFileKey, .isSymbolicLinkKey, .contentModificationDateKey,
                                       .fileSizeKey, .volumeUUIDStringKey]
         var found: [(String, URL, URLResourceValues, String?)] = []
-        var offline: Set<String> = []
+        var offline = unreachable
         var errors: [String] = []
         var paths: Set<URL> = []
         var images: [String: URL] = [:]
@@ -476,7 +489,7 @@ extension LibraryViewModel {
                 : nil
             result.append(file)
         }
-        let active = Set(roots.map(\.0))
+        let active = Set(roots.map(\.0)).union(unreachable)
         for var file in remaining.values where active.contains(file.library) {
             file.isAvailable = false
             result.append(file)

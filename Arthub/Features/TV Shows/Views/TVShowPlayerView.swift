@@ -37,6 +37,8 @@ struct TVShowPlayerView: View {
             } label: {
                 Image(systemName: "square.stack")
             }
+            .accessibilityLabel("Episodes")
+            .accessibilityAddTraits(episodesViewPresented ? .isSelected : [])
         }
         .task {
             guard !didStartPlayback else { return }
@@ -74,6 +76,10 @@ extension TVShowPlayerView {
                 .onTapGesture {
                     selectEpisode(at: index)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAddTraits(index == currentTVEpisodeIndex ? .isSelected : [])
+                .accessibilityAction { selectEpisode(at: index) }
             }
         }
     }

@@ -182,7 +182,20 @@
       }
     },
     "Add Artwork" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加插图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增插圖"
+          }
+        }
+      }
     },
     "Add Folder…" : {
       "localizations" : {
@@ -196,6 +209,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "加入資料夾…"
+          }
+        }
+      }
+    },
+    "Add Line" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加行"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增行"
           }
         }
       }
@@ -435,6 +464,7 @@
       }
     },
     "Audio" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -451,6 +481,7 @@
       }
     },
     "Audio Track" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -462,6 +493,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "音軌"
+          }
+        }
+      }
+    },
+    "Back" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
           }
         }
       }
@@ -567,6 +614,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "作曲家"
+          }
+        }
+      }
+    },
+    "Connect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接"
+          }
+        }
+      }
+    },
+    "Connect to Server…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接服务器…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接伺服器…"
           }
         }
       }
@@ -703,6 +782,22 @@
         }
       }
     },
+    "Delete Lines" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除行"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除行"
+          }
+        }
+      }
+    },
     "Descending" : {
       "localizations" : {
         "zh-Hans" : {
@@ -827,6 +922,22 @@
         }
       }
     },
+    "Enter an address such as smb://nas.local/Media or https://nas.local/Media." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入地址，例如 smb://nas.local/Media 或 https://nas.local/Media。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入位址，例如 smb://nas.local/Media 或 https://nas.local/Media。"
+          }
+        }
+      }
+    },
     "Episode %lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -860,6 +971,7 @@
       }
     },
     "Error" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -996,6 +1108,22 @@
         }
       }
     },
+    "Guest" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "客人"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訪客"
+          }
+        }
+      }
+    },
     "Hi-Res Lossless" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1081,7 +1209,20 @@
 
     },
     "Inspector" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢閱器"
+          }
+        }
+      }
     },
     "Known For" : {
       "localizations" : {
@@ -1400,6 +1541,38 @@
     "Network" : {
 
     },
+    "Network servers are only supported on Mac." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅 Mac 支持网络服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "僅 Mac 支援網路伺服器。"
+          }
+        }
+      }
+    },
+    "Next" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一首"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一首"
+          }
+        }
+      }
+    },
     "No Folders" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1529,7 +1702,20 @@
       }
     },
     "Off" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關"
+          }
+        }
+      }
     },
     "Offline" : {
       "localizations" : {
@@ -1551,7 +1737,20 @@
 
     },
     "Open Player" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开播放器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開播放器"
+          }
+        }
+      }
     },
     "Original Audio" : {
 
@@ -1575,6 +1774,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "其他檔案保留 S01E01 格式檔名中的季數與集數。"
+          }
+        }
+      }
+    },
+    "Password" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密码"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密碼"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂停"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫停"
           }
         }
       }
@@ -1617,6 +1848,38 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Play S%1$lld, E%2$lld"
+          }
+        }
+      }
+    },
+    "Playback Position" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放位置"
+          }
+        }
+      }
+    },
+    "Playback Speed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放速度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放速度"
           }
         }
       }
@@ -1704,6 +1967,22 @@
         }
       }
     },
+    "Previous" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一首"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一首"
+          }
+        }
+      }
+    },
     "Profiles" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1775,7 +2054,52 @@
       }
     },
     "Repeat" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重複"
+          }
+        }
+      }
+    },
+    "Repeat All" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部重复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部重複"
+          }
+        }
+      }
+    },
+    "Repeat One" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单曲重复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "單曲重複"
+          }
+        }
+      }
     },
     "Resume" : {
       "localizations" : {
@@ -1961,6 +2285,22 @@
     "See All" : {
 
     },
+    "Server Address" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器地址"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器位址"
+          }
+        }
+      }
+    },
     "Settings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2026,7 +2366,68 @@
       }
     },
     "Shuffle" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "随机播放"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隨機播放"
+          }
+        }
+      }
+    },
+    "Skip Back 15 Seconds" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "后退 15 秒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "倒退 15 秒"
+          }
+        }
+      }
+    },
+    "Skip Forward 15 Seconds" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前进 15 秒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快轉 15 秒"
+          }
+        }
+      }
+    },
+    "SMB: smb://server/share/folder. WebDAV: https://server:port/folder." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMB：smb://服务器/共享/文件夹。WebDAV：https://服务器:端口/文件夹。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMB：smb://伺服器/共享/資料夾。WebDAV：https://伺服器:埠/資料夾。"
+          }
+        }
+      }
     },
     "Songs" : {
       "extractionState" : "stale",
@@ -2110,7 +2511,20 @@
       }
     },
     "Subtitles" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "字幕"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "字幕"
+          }
+        }
+      }
     },
     "System" : {
       "localizations" : {
@@ -2156,6 +2570,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "封面太大，無法寫入此檔案。"
+          }
+        }
+      }
+    },
+    "The user name or password is incorrect." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用户名或密码不正确。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用者名稱或密碼不正確。"
           }
         }
       }
@@ -2220,6 +2650,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此檔案的標籤版本較舊，無法寫入。"
+          }
+        }
+      }
+    },
+    "This folder was not found on the server." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在服务器上找不到此文件夹。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在伺服器上找不到此資料夾。"
           }
         }
       }
@@ -2343,6 +2789,22 @@
         }
       }
     },
+    "Unable to connect to the server (error %lld)." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接服务器（错误 %lld）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連接伺服器（錯誤 %lld）。"
+          }
+        }
+      }
+    },
     "Unavailable" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2423,6 +2885,22 @@
         }
       }
     },
+    "User Name" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用户名"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用者名稱"
+          }
+        }
+      }
+    },
     "Username" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2441,6 +2919,7 @@
       }
     },
     "Video" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2457,6 +2936,7 @@
       }
     },
     "Video Track" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2505,7 +2985,52 @@
       }
     },
     "Volume" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音量"
+          }
+        }
+      }
+    },
+    "Volume Down" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "降低音量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調低音量"
+          }
+        }
+      }
+    },
+    "Volume Up" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提高音量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調高音量"
+          }
+        }
+      }
     },
     "Watching" : {
       "localizations" : {
