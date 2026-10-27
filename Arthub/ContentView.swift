@@ -15,7 +15,7 @@ import AppKit
 
 struct ContentView: View {
     
-    fileprivate enum AppTab: Identifiable, Hashable {
+    enum AppTab: Identifiable, Hashable {
         case movies, tvshows, music, files
         case library(String)
         case settings
@@ -105,6 +105,8 @@ struct ContentView: View {
                     currentTab = .movies
                 }
             }
+            // View ▸ Movies / TV Shows / Music (see `ArthubCommands`).
+            .focusedSceneValue(\.selectedTab, $currentTab)
     }
 }
 
