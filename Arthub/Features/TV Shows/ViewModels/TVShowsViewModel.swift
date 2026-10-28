@@ -67,11 +67,15 @@ import AVFoundation
             let previousEpisodes = Dictionary(uniqueKeysWithValues: tvShows.flatMap { $0.seasons.flatMap { $0.episodes } }.map { ($0.fileID, $0) })
             let progress = WatchProgressStore.shared
             var result: [Int: TVShowDetail] = [:]
-            for file in library.files {
+            // Files matched to the same episode are its versions.
+            let episodeFiles = library.files.filter { $0.series != nil && $0.season != nil && $0.episode != nil }
+            for files in Dictionary(grouping: episodeFiles, by: { $0.episode!.id }).values {
+                let files = files.sortedByQuality()
+                let file = files.first(where: \.isAvailable) ?? files[0]
                 guard let series = file.seriesWithArtwork, let seasonMetadata = file.seasonWithArtwork,
                       let episodeMetadata = file.episodeWithArtwork else { continue }
                 let episode: TVEpisodeDetail
-                if let existing = previousEpisodes[file.id], existing.metadata.id == episodeMetadata.id {
+                if let existing = files.lazy.compactMap({ previousEpisodes[$0.id] }).first(where: { $0.metadata.id == episodeMetadata.id }) {
                     episode = existing
                     episode.metadata = episodeMetadata
                     episode.fileURL = file.fileURL
@@ -81,6 +85,7 @@ import AVFoundation
                         duration: file.duration, metrics: progress.metrics(.episode, tmdbID: episodeMetadata.id),
                         metadata: episodeMetadata, fileID: file.id)
                 }
+                episode.versions = files.filter(\.isAvailable).map(\.version)
                 episode.isAvailable = file.isAvailable
                 let show = result[series.id] ?? TVShowDetail(addedAt: file.addedAt, metadata: series)
                 let season = show.seasons.first { $0.metadata.seasonNumber == seasonMetadata.seasonNumber }

@@ -62,6 +62,7 @@ struct VideoPlayerView<SidebarContent: View, ControlsContent: View>: View {
 
     private let previewImageHeight: CGFloat = 100
     private var controlsPresented: Bool { isHovering && mouseIsMoving }
+    private var versions: [MediaVersion] { player.currentIndex.map { player.items[$0].versions } ?? [] }
 
     init(startTime: TimeInterval?, onProgress: @escaping (_ index: Int, _ time: TimeInterval) -> Void,
          onTapOverlay: @escaping () -> Void = {},
@@ -195,6 +196,23 @@ extension VideoPlayerView {
 
                 controlsTrailingContent()
 
+                if versions.count > 1 {
+                    Menu {
+                        Picker("Version", selection: Binding(get: { player.currentAssetURL },
+                                                             set: { if let url = $0 { player.switchVersion(to: url) } })) {
+                            ForEach(versions, id: \.fileURL) { version in
+                                Text(verbatim: version.label).tag(Optional(version.fileURL))
+                            }
+                        }
+                        .pickerStyle(.inline)
+                    } label: {
+                        Image(systemName: "rectangle.stack")
+                    }
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .accessibilityLabel("Version")
+                }
+
                 if !subtitles.isEmpty {
                     Menu {
                         Picker("Subtitles", selection: $selectedSubtitle) {
@@ -304,6 +322,8 @@ extension VideoPlayerView {
         }
         let found = await Task.detached { MediaNaming.subtitles(for: url) }.value
         subtitles = found
+        // Switching versions keeps a subtitle the new version shares.
+        if let selectedSubtitle, found.contains(selectedSubtitle) { return }
         selectedSubtitle = MediaNaming.preferredSubtitle(in: found)
     }
 }

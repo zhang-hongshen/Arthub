@@ -77,10 +77,14 @@ import TMDb
             let previous = Dictionary(uniqueKeysWithValues: movies.map { ($0.id, $0) })
             let progress = WatchProgressStore.shared
             var result: Set<Movie> = []
-            for file in library.files {
+            // Files matched to the same movie are its versions.
+            let movieFiles = library.files.filter { $0.movie != nil }
+            for files in Dictionary(grouping: movieFiles, by: { $0.movie!.id }).values {
+                let files = files.sortedByQuality()
+                let file = files.first(where: \.isAvailable) ?? files[0]
                 guard let metadata = file.movieWithArtwork else { continue }
                 let movie: Movie
-                if let existing = previous[file.id] {
+                if let existing = files.lazy.compactMap({ previous[$0.id] }).first {
                     movie = existing
                     if movie.metadata.id != metadata.id {
                         movie.metrics = progress.metrics(.movie, tmdbID: metadata.id)
@@ -95,6 +99,7 @@ import TMDb
                                   addedAt: file.addedAt, metadata: metadata,
                                   metrics: progress.metrics(.movie, tmdbID: metadata.id), id: file.id)
                 }
+                movie.versions = files.filter(\.isAvailable).map(\.version)
                 movie.isAvailable = file.isAvailable
                 result.insert(movie)
             }

@@ -8,6 +8,7 @@ import Foundation
 /// Folder and file naming rules used to identify media and its sidecar files.
 ///
 ///     Movies/Inception (2010)/Inception (2010).mkv
+///     Movies/Inception (2010)/Inception (2010) - 4K.mkv      (another version of the same movie)
 ///     Movies/Inception (2010)/Inception (2010).zh-Hans.srt
 ///     Movies/Inception (2010)/Trailers/Official Trailer.mp4
 ///     TV Shows/Doctor Who (2005)/Season 01/Doctor Who (2005) S01E01.mkv
@@ -18,9 +19,6 @@ import Foundation
 ///
 /// Periods, spaces, underscores and dashes are interchangeable separators.
 enum MediaNaming {
-
-    /// Bump when the rules change so the library identifies existing files again.
-    static let version = 1
 
     struct Movie: Equatable {
         var title: String
@@ -276,6 +274,49 @@ extension MediaNaming {
     }
 }
 
+// MARK: Versions
+
+extension MediaNaming {
+
+    /// The version a file name gives after the title, as Infuse and Plex name them:
+    ///
+    ///     Inception (2010) - 4K.mkv                 4K
+    ///     Inception (2010) - Director's Cut.mkv     Director's Cut
+    ///     Inception (2010) {edition-Extended}.mkv   Extended
+    ///
+    /// The dash must follow the bracketed year, so `Mission Impossible - Fallout (2018)` has no version.
+    static func versionName(_ url: URL) -> String? {
+        let name = url.fileName
+        if let match = name.firstMatch(of: /(?i)\{edition-([^}]+)\}/) { return String(match.output.1) }
+        let stripped = name.replacing(/\s*\{[^}]*\}/, with: "")
+        guard let match = stripped.firstMatch(of: /[\)\]]\s+-\s+(.+)$/) else { return nil }
+        return match.output.1.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// The file name without its version, e.g. `Inception (2010)` for `Inception (2010) - 4K`,
+    /// so every version finds the subtitles and artwork named after the movie.
+    static func nameWithoutVersion(_ url: URL) -> String {
+        let name = url.fileName.replacing(/(?i)\s*\{edition-[^}]+\}/, with: "")
+        guard let match = name.firstMatch(of: /[\)\]]\s+-\s+.+$/) else { return name }
+        return String(name[...match.range.lowerBound])
+    }
+
+    /// The picture width a release name implies: `2160p` or `4K` is 3840, `1080p` is 1920.
+    static func videoWidth(named name: String) -> Int? {
+        guard let match = name.firstMatch(of: /(?i)(?:^|[\s._\-\[\(])(2160p|4k|uhd|1440p|1080[pi]|720p|576p|480p)(?=$|[\s._\-\]\)])/) else {
+            return nil
+        }
+        return switch match.output.1.lowercased() {
+        case "2160p", "4k", "uhd": 3840
+        case "1440p": 2560
+        case "1080p", "1080i": 1920
+        case "720p": 1280
+        case "576p": 720
+        default: 640
+        }
+    }
+}
+
 // MARK: Music
 
 extension MediaNaming {
@@ -421,9 +462,10 @@ extension MediaNaming {
                 artwork.seasonPoster = find(posterNames, in: folder)
             }
         case .movie, nil:
-            artwork.poster = find([base, base + "-poster"], in: folder)
+            let plain = nameWithoutVersion(video)
+            artwork.poster = find([base, base + "-poster", plain, plain + "-poster"], in: folder)
                 ?? (isRoot(folder) ? nil : find(posterNames, in: folder))
-            artwork.backdrop = find([base + "-fanart", base + "-backdrop"], in: folder)
+            artwork.backdrop = find([base + "-fanart", base + "-backdrop", plain + "-fanart", plain + "-backdrop"], in: folder)
                 ?? (isRoot(folder) ? nil : find(backdropNames, in: folder))
         }
         return artwork
@@ -440,10 +482,12 @@ extension MediaNaming {
     ///     Subs/Movie.en.srt  Subs/Movie/2_English.srt
     ///
     /// Files in `Subs/` need not repeat the video name when it is the only video in its folder.
+    /// Versions such as `Movie - 4K.mkv` also find the subtitles named after `Movie`.
     static func subtitles(for video: URL) -> [Subtitle] {
         let manager = FileManager.default
         let directory = video.deletingLastPathComponent()
         let base = video.deletingPathExtension().lastPathComponent
+        let bases = Set([base, nameWithoutVersion(video)].map { $0.lowercased() })
         let siblings = (try? manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil,
                                                          options: .skipsHiddenFiles)) ?? []
         let isOnlyVideo = siblings.filter(\.isVideo).count <= 1
@@ -453,9 +497,9 @@ extension MediaNaming {
             for item in items where subtitleExtensions.contains(item.pathExtension.lowercased()) {
                 let name = item.deletingPathExtension().lastPathComponent
                 let tags: String
-                if name.caseInsensitiveCompare(base) == .orderedSame {
+                if bases.contains(name.lowercased()) {
                     tags = ""
-                } else if name.lowercased().hasPrefix(base.lowercased() + ".") {
+                } else if let base = bases.first(where: { name.lowercased().hasPrefix($0 + ".") }) {
                     tags = String(name.dropFirst(base.count + 1))
                 } else if !requireName {
                     tags = name

@@ -17,6 +17,8 @@ struct PlaylistItem {
     var albumTitle: String? = nil
     var albumArtist: String? = nil
     var artwork: MPMediaItemArtwork? = nil
+    /// The files the player can switch between, e.g. `4K` and `1080p`; `url` is the one playing.
+    var versions: [MediaVersion] = []
 }
 
 /// Plays a playlist and keeps the system's Now Playing panel and media keys in sync.
@@ -160,6 +162,14 @@ struct PlaylistItem {
         player.seek(to: CMTime(seconds: time, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
             if finished { self?.updateNowPlayingPlayback() }
         }
+    }
+
+    /// Plays another version of the current item from where playback is now.
+    func switchVersion(to url: URL) {
+        guard playerState != .stopped, let currentIndex, items[currentIndex].url != url else { return }
+        let time = player.currentTime().seconds
+        items[currentIndex].url = url
+        playItem(at: currentIndex, from: time.isFinite ? time : currentTime)
     }
 
     func skip(by seconds: TimeInterval) {

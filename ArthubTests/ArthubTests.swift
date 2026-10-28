@@ -190,6 +190,25 @@ final class ArthubTests: XCTestCase {
             .flatMap { if case .movie = $0 { true } else { nil } })
     }
 
+    func testVersions() {
+        let cases: [(String, String, String?)] = [
+            ("Inception (2010) - 4K.mkv", "Inception", "4K"),
+            ("Inception (2010) - Director's Cut.mkv", "Inception", "Director's Cut"),
+            ("Inception (2010) {edition-Extended}.mkv", "Inception", "Extended"),
+            ("Inception (2010).mkv", "Inception", nil),
+            ("Mission Impossible - Fallout (2018).mkv", "Mission Impossible - Fallout", nil),
+        ]
+        for (name, title, version) in cases {
+            let url = library.appending(path: "Movies/" + name)
+            XCTAssertEqual(MediaNaming.versionName(url), version, name)
+            guard case .movie(let movie) = MediaNaming.parseVideo(url, library: library) else { XCTFail(name); continue }
+            XCTAssertEqual(movie.title, title, name)
+        }
+        XCTAssertEqual(MediaNaming.nameWithoutVersion(library.appending(path: "Inception (2010) - 4K.mkv")), "Inception (2010)")
+        XCTAssertEqual(MediaNaming.videoWidth(named: "The.Matrix.1999.2160p.BluRay"), 3840)
+        XCTAssertNil(MediaNaming.videoWidth(named: "Avatar 1920x1080"))
+    }
+
     func testExtras() {
         XCTAssertTrue(MediaNaming.isExtra(library.appending(path: "Movies/Inception-2010-trailer.mp4"), library: library))
         XCTAssertTrue(MediaNaming.isExtra(library.appending(path: "Movies/Inception (2010)/Deleted Scenes/Level 3.mkv"), library: library))

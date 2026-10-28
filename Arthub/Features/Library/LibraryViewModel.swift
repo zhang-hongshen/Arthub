@@ -21,7 +21,6 @@ struct LibraryFile: Codable, Identifiable {
     var localArtwork: MediaNaming.Artwork?
     var isManuallyMatched = false
     var didIdentify = false
-    var namingVersion: Int?
     var error: String?
 
     var isMatched: Bool { movie != nil || episode != nil }
@@ -39,6 +38,20 @@ struct LibraryFile: Codable, Identifiable {
     }
     var seasonWithArtwork: TVSeason? { season?.copy(posterPath: localArtwork?.seasonPoster) }
     var episodeWithArtwork: TVEpisode? { episode?.copy(stillPath: localArtwork?.thumbnail) }
+
+    /// This file as one version of its movie or episode, with the width its name implies.
+    var version: MediaVersion {
+        // Episode names such as `Show (2005) - S01E01 - Pilot` read like a version, so only movies take it from the name.
+        MediaVersion(fileURL: fileURL, name: movie != nil ? MediaNaming.versionName(fileURL) : nil,
+                     width: MediaNaming.videoWidth(named: fileURL.fileName))
+    }
+}
+
+extension [LibraryFile] {
+    /// The files of one movie or episode, the widest picture their names imply first.
+    func sortedByQuality() -> [LibraryFile] {
+        sorted { $0.version.ranksAbove($1.version) }
+    }
 }
 
 @MainActor @Observable
@@ -104,15 +117,6 @@ final class LibraryViewModel {
             } catch {
                 canSave = false
                 storageError = error.localizedDescription
-            }
-            // Files identified under older naming rules are matched again once.
-            for index in files.indices where files[index].namingVersion != MediaNaming.version {
-                files[index].namingVersion = MediaNaming.version
-                files[index].didIdentify = false
-                if !files[index].isManuallyMatched {
-                    files[index].movie = nil; files[index].series = nil
-                    files[index].season = nil; files[index].episode = nil
-                }
             }
             // Audio read by an older tag reader, e.g. before embedded lyrics were parsed, is read again once.
             for index in files.indices
@@ -468,7 +472,7 @@ extension LibraryViewModel {
             let old = byURL[url]?.first ?? identity.flatMap { key in
                 byIdentity[key]?.map(\.1).first { remaining[$0.id] != nil && !paths.contains($0.fileURL) }
             }
-            var file = old ?? LibraryFile(fileURL: url, library: library, namingVersion: MediaNaming.version)
+            var file = old ?? LibraryFile(fileURL: url, library: library)
             remaining.removeValue(forKey: file.id)
             // A moved or renamed file is identified again, since its folders and name carry metadata.
             if old == nil || file.fileURL != url || file.modifiedAt != values.contentModificationDate ||

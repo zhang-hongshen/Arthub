@@ -48,6 +48,11 @@ extension TVEpisodeDetail {
     /// What the player and the system's Now Playing panel show for this episode.
     func playlistItem() async -> PlaylistItem {
         var item = PlaylistItem(id: id, url: fileURL, title: metadata.name)
+        if versions.count > 1 {
+            // The widths come from the files only now, so the sharpest version plays by default.
+            item.versions = await versions.loadingWidths()
+            item.url = item.versions[0].fileURL
+        }
         if let still = metadata.stillPath {
             item.artwork = await MPMediaItemArtwork(contentsOf: still)
         }

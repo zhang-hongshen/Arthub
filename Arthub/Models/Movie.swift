@@ -49,6 +49,11 @@ extension Movie {
     /// What the player and the system's Now Playing panel show for this movie.
     func playlistItem() async -> PlaylistItem {
         var item = PlaylistItem(id: id.hashValue, url: fileURL, title: metadata.title)
+        if versions.count > 1 {
+            // The widths come from the files only now, so the sharpest version plays by default.
+            item.versions = await versions.loadingWidths()
+            item.url = item.versions[0].fileURL
+        }
         if let poster = metadata.posterPath {
             item.artwork = await MPMediaItemArtwork(contentsOf: poster)
         }
