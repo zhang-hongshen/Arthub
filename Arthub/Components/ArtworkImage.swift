@@ -64,7 +64,7 @@ struct ArtworkImage<Placeholder: View>: View {
 }
 
 /// Keeps every image on disk. File URLs are read in place; TMDb URLs are
-/// downloaded once into Application Support/Arthub/Artwork, named after their
+/// downloaded once into Application Support/<bundle ID>/Artwork, named after their
 /// TMDb size and file name (e.g. `w500/kqjL17yufvn9OVLyXYpvtyrFfak.jpg`), and
 /// read from there afterwards.
 final class ArtworkStore: @unchecked Sendable {
@@ -72,8 +72,8 @@ final class ArtworkStore: @unchecked Sendable {
     static let shared = ArtworkStore()
 
     private let memory = NSCache<NSURL, PlatformImage>()
-    private let directory = URL.applicationSupportDirectory
-        .appending(path: "Arthub/Artwork", directoryHint: .isDirectory)
+    private let directory = URL.appSupportDirectory
+        .appending(path: "Artwork", directoryHint: .isDirectory)
 
     func cachedImage(for url: URL) -> PlatformImage? {
         memory.object(forKey: url as NSURL)

@@ -12,7 +12,7 @@ import TMDb
 ///
 /// Library rescans re-discover the same files over and over; this cache
 /// prevents re-querying the TMDb API for media whose metadata hasn't
-/// changed. Entries live in Application Support/Arthub/MetadataCache
+/// changed. Entries live in Application Support/<bundle ID>/MetadataCache
 /// and expire after `expiryInterval`.
 actor MetadataCache {
 
@@ -21,8 +21,8 @@ actor MetadataCache {
     /// Cached entries older than this are fetched again.
     private let expiryInterval: TimeInterval = 60 * 60 * 24 * 7 // 1 week
 
-    private let directory = URL.applicationSupportDirectory
-        .appending(path: "Arthub/MetadataCache", directoryHint: .isDirectory)
+    private let directory = URL.appSupportDirectory
+        .appending(path: "MetadataCache", directoryHint: .isDirectory)
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
 
@@ -157,4 +157,11 @@ private extension String {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? self
     }
+}
+
+extension URL {
+    /// The app's own folder, `Application Support/<bundle ID>`, where every
+    /// file Arthub saves lives.
+    static let appSupportDirectory = URL.applicationSupportDirectory
+        .appending(path: Bundle.main.bundleIdentifier ?? "com.zhanghongshen.Arthub", directoryHint: .isDirectory)
 }

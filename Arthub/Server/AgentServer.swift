@@ -62,11 +62,7 @@ final class AgentServer: @unchecked Sendable {
     // MARK: - Endpoint file
 
     static func endpointFile() throws -> URL {
-        let bundleId = Bundle.main.bundleIdentifier ?? "com.zhanghongshen.Arthub"
-        return try FileManager.default
-            .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent(bundleId, isDirectory: true)
-            .appendingPathComponent("mcp.json")
+        URL.appSupportDirectory.appending(path: "mcp.json")
     }
 
     static func endpointJSON(port: Int, token: String) throws -> Data {

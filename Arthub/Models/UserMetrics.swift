@@ -33,7 +33,7 @@ final class UserMetrics {
 }
 
 /// Saves watch progress. Kept in memory while developing; release builds keep it at
-/// `Application Support/Arthub/Arthub.store`.
+/// `Application Support/<bundle ID>/Arthub.store`.
 @MainActor
 final class WatchProgressStore {
     static let shared = WatchProgressStore()
@@ -46,7 +46,7 @@ final class WatchProgressStore {
         #if DEBUG
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         #else
-        let configuration = ModelConfiguration(url: URL.applicationSupportDirectory.appending(path: "Arthub/Arthub.store"))
+        let configuration = ModelConfiguration(url: URL.appSupportDirectory.appending(path: "Arthub.store"))
         #endif
         // If the file can't be opened, progress lasts until the app quits.
         container = (try? ModelContainer(for: UserMetrics.self, configurations: configuration))

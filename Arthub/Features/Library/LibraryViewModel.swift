@@ -72,8 +72,8 @@ final class LibraryViewModel {
     @ObservationIgnored private var resolvedFolders: [String: URL] = [:]
     @ObservationIgnored private var accessedURLs: [String: URL] = [:]
     private static let bookmarkKey = "libraryBookmarks"
-    nonisolated private static let indexURL = URL.applicationSupportDirectory
-        .appending(path: "Arthub/Library.json")
+    nonisolated private static let indexURL = URL.appSupportDirectory
+        .appending(path: "Library.json")
 
     func rememberFolder(_ url: URL) throws {
         let accessing = url.startAccessingSecurityScopedResource()
