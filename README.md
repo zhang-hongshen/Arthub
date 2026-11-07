@@ -27,10 +27,6 @@ Download the DMG from [GitHub Releases](https://github.com/zhang-hongshen/Arthub
 2. Browse Movies, TV Shows, Music or Files; correct a match when needed.
 3. Choose a media version and start playback.
 
-## Upgrade status
-
-The development version stores app data under the bundle identifier. Automatic migration from the earlier `Application Support/Arthub` folder is not implemented, so a new release is deferred.
-
 ## Build from source
 
 Open `Arthub.xcodeproj` in Xcode, select the `Arthub` scheme and My Mac, resolve its Swift packages, then build and run.
