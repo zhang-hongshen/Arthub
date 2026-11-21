@@ -231,6 +231,9 @@ extension ContentView {
                 Label(AppTab.music.localizedName,
                       systemImage: AppTab.music.systemImage)
                 .tag(AppTab.music)
+
+                Label(AppTab.files.localizedName, systemImage: AppTab.files.systemImage)
+                    .tag(AppTab.files)
             }   header: {
                 Text("Home")
             }

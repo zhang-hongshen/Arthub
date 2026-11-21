@@ -18,7 +18,10 @@ class Movie: MediaItem, Identifiable, Hashable {
     var posters: [ImageMetadata] = []
     var logos: [ImageMetadata] = []
     var backdrops: [ImageMetadata] = []
-    var cast: [CastMember] = []
+    var cast: [CastMember] = [] {
+        didSet { featuredCast = Array(cast.sorted(using: KeyPathComparator(\.order)).prefix(30)) }
+    }
+    private(set) var featuredCast: [CastMember] = []
     var crew: [CrewMember] = []
     var videos: [VideoMetadata] = []
     

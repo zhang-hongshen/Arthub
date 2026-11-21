@@ -15,7 +15,10 @@ class TVShowDetail: Identifiable, Hashable{
     var addedAt: Date?
     var metadata: TVSeries
     var seasons: Set<TVSeasonDetail>
-    var cast: [CastMember] = []
+    var cast: [CastMember] = [] {
+        didSet { featuredCast = Array(cast.sorted(using: KeyPathComparator(\.order)).prefix(30)) }
+    }
+    private(set) var featuredCast: [CastMember] = []
     var crew: [CrewMember] = []
     
     init(addedAt: Date? = nil, metadata: TVSeries,

@@ -15,6 +15,13 @@ struct LibraryView: View {
     @State private var visibleFiles: [LibraryFile] = []
     @State private var matchingFile: LibraryFile?
     @State private var playingFile: LibraryFile?
+    @State private var playingStartTime: TimeInterval?
+    @State private var dialogue = DialogueSearch.shared
+    @State private var dialogueGroups: [DialogueGroup] = []
+    @State private var scopedFiles: [LibraryFile] = []
+
+    private var isSearching: Bool { !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var dialogueSearchKey: String { "\(search)|\(index.revision)|\(dialogue.revision)" }
 
     private var root: URL? { directory ?? library.flatMap { index.folderURL(for: $0) } }
 
@@ -35,12 +42,30 @@ struct LibraryView: View {
                     Label(folder.lastPathComponent, systemImage: "folder")
                 }
             }
-            ForEach(visibleFiles) { file in
-                LibraryFileRow(file: file, isOffline: index.offlineLibraries.contains(file.library),
-                               matchDisabled: index.isScanning || index.isMatching,
-                               play: { playingFile = file }, match: { matchingFile = file })
+            Section {
+                ForEach(visibleFiles) { file in
+                    LibraryFileRow(file: file, isOffline: index.offlineLibraries.contains(file.library),
+                                   matchDisabled: index.isScanning || index.isMatching,
+                                   play: { playingStartTime = nil; playingFile = file }, match: { matchingFile = file })
+                }
+            } header: {
+                if isSearching { Text("Media") }
             }
-            if folders.isEmpty && visibleFiles.isEmpty {
+            if isSearching {
+                DialogueResults(groups: dialogueGroups, files: scopedFiles) { file, time in
+                    playingStartTime = time
+                    playingFile = file
+                }
+                if dialogue.isIndexing {
+                    Label("Indexing dialogue…", systemImage: "text.magnifyingglass")
+                        .foregroundStyle(.secondary)
+                }
+                if let error = dialogue.error {
+                    Text("Some subtitles could not be indexed: \(error)")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            if !isSearching && folders.isEmpty && visibleFiles.isEmpty {
                 ContentUnavailableView {
                     Label(unmatchedOnly ? "No Unmatched Media" : "No Media", systemImage: "folder")
                 } description: {
@@ -67,25 +92,41 @@ struct LibraryView: View {
             }
         }
         .sheet(item: $matchingFile) { file in LibraryMatchView(file: file) }
-        .sheet(item: $playingFile) { file in LibraryFilePlayer(file: file) }
+        .sheet(item: $playingFile) { file in LibraryFilePlayer(file: file, startTime: playingStartTime) }
         .onChange(of: index.revision, initial: true) { _, _ in updateRows() }
-        .onChange(of: search) { _, _ in updateRows() }
+        .onChange(of: search) { _, _ in
+            dialogueGroups = []
+            updateRows()
+        }
+        .task(id: dialogueSearchKey) {
+            guard isSearching else { dialogueGroups = []; return }
+            do { try await Task.sleep(for: .milliseconds(200)) }
+            catch { return }
+            let results = await dialogue.search(search, files: scopedFiles)
+            guard !Task.isCancelled else { return }
+            dialogueGroups = results
+        }
     }
 
     private func updateRows() {
         var directories: Set<URL> = []
         var items: [LibraryFile] = []
+        var scope: [LibraryFile] = []
         for file in index.files {
             if let library, file.library != library {
                 guard let source = index.folderURL(for: library),
                       file.fileURL.standardizedFileURL.pathComponents.starts(with: source.standardizedFileURL.pathComponents) else { continue }
             }
             guard !unmatchedOnly || (file.fileURL.isVideo && !file.isMatched) else { continue }
-            if !search.isEmpty {
-                guard file.title.localizedStandardContains(search) ||
-                    file.fileURL.lastPathComponent.localizedStandardContains(search) else { continue }
+            if let root {
+                guard file.fileURL.standardizedFileURL.pathComponents.starts(with: root.standardizedFileURL.pathComponents) else { continue }
             }
-            if let root, !unmatchedOnly && search.isEmpty {
+            scope.append(file)
+            if isSearching {
+                guard file.title.localizedStandardContains(search.trimmingCharacters(in: .whitespacesAndNewlines)) ||
+                    file.fileURL.lastPathComponent.localizedStandardContains(search.trimmingCharacters(in: .whitespacesAndNewlines)) else { continue }
+            }
+            if let root, !unmatchedOnly && !isSearching {
                 let base = root.standardizedFileURL.pathComponents
                 let path = file.fileURL.standardizedFileURL.pathComponents
                 guard path.starts(with: base) else { continue }
@@ -98,6 +139,7 @@ struct LibraryView: View {
         }
         folders = directories.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
         visibleFiles = items
+        scopedFiles = scope
     }
 }
 

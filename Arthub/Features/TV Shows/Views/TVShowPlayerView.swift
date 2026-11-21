@@ -55,7 +55,7 @@ extension TVShowPlayerView {
     @ViewBuilder
     func EpisodesView() -> some View {
         ScrollView {
-            ForEach(Array(playlist.enumerated()), id: \.offset) { index, episode in
+            ForEach(Array(playlist.enumerated()), id: \.element.id) { index, episode in
                 HStack(alignment: .center) {
                     ArtworkImage(url: episode.metadata.stillPath, aspectRatio: Landscape.aspectRatio)
                         .frame(width: Portrait.width(.small))

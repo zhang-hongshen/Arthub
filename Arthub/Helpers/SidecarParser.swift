@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct SubtitleCue: Equatable {
+struct SubtitleCue: Codable, Equatable {
     var start: TimeInterval
     var end: TimeInterval
     var text: String

@@ -210,7 +210,7 @@ extension MovieDetailView {
     func CastAndCrewSectionView() -> some View {
         if !movie.cast.isEmpty || !featuredCrew.isEmpty {
             MediaShelf("Cast & Crew") {
-                ForEach(movie.cast.sorted(using: KeyPathComparator(\.order)).prefix(30)) { castMember in
+                ForEach(movie.featuredCast) { castMember in
                     NavigationLink {
                         PersonDetailView(person: Person(metadata: TMDb.Person(
                             id: castMember.id,

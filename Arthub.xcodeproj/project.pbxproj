@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D1A1060E000000000000000E /* MatroskaSubtitles.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A1060E0000000000000004 /* MatroskaSubtitles.swift */; };
+		D1A1060E000000000000000D /* DialogueResults.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A1060E0000000000000003 /* DialogueResults.swift */; };
+		D1A1060E000000000000000C /* EmbeddedSubtitles.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A1060E0000000000000002 /* EmbeddedSubtitles.swift */; };
+		D1A1060E000000000000000B /* DialogueIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A1060E0000000000000001 /* DialogueIndex.swift */; };
 		0D0F7A570DB4456E86DB5280 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F12981891F604375B53CE692 /* LibraryViewModel.swift */; };
 		40AF9DC00CE34114B8C8632C /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98B95209BB884665835FCAC6 /* LibraryView.swift */; };
 		6C9E4C27F4B641A1AFC46CBF /* MetadataCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8799F36C2DE64628A435F145 /* MetadataCache.swift */; };
@@ -147,6 +151,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D1A1060E0000000000000004 /* MatroskaSubtitles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MatroskaSubtitles.swift; path = ../Dialogue/MatroskaSubtitles.swift; sourceTree = "<group>"; };
+		D1A1060E0000000000000003 /* DialogueResults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DialogueResults.swift; path = ../Dialogue/DialogueResults.swift; sourceTree = "<group>"; };
+		D1A1060E0000000000000002 /* EmbeddedSubtitles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EmbeddedSubtitles.swift; path = ../Dialogue/EmbeddedSubtitles.swift; sourceTree = "<group>"; };
+		D1A1060E0000000000000001 /* DialogueIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DialogueIndex.swift; path = ../Dialogue/DialogueIndex.swift; sourceTree = "<group>"; };
 		0BA8512A39254C819489C588 /* LibraryMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryMatchView.swift; sourceTree = "<group>"; };
 		701123352B847C77002BB21E /* PersonDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailView.swift; sourceTree = "<group>"; };
 		701123372B847E24002BB21E /* Person.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Person.swift; sourceTree = "<group>"; };
@@ -650,6 +658,10 @@
 			isa = PBXGroup;
 			children = (
 				F12981891F604375B53CE692 /* LibraryViewModel.swift */,
+				D1A1060E0000000000000004 /* MatroskaSubtitles.swift */,
+				D1A1060E0000000000000003 /* DialogueResults.swift */,
+				D1A1060E0000000000000002 /* EmbeddedSubtitles.swift */,
+				D1A1060E0000000000000001 /* DialogueIndex.swift */,
 				98B95209BB884665835FCAC6 /* LibraryView.swift */,
 				0BA8512A39254C819489C588 /* LibraryMatchView.swift */,
 			);
@@ -840,6 +852,10 @@
 				A1B2C3D4E5F60718293A4B03 /* SidecarParser.swift in Sources */,
 				A1B2C3D4E5F60718293A4B01 /* MediaNaming.swift in Sources */,
 				0D0F7A570DB4456E86DB5280 /* LibraryViewModel.swift in Sources */,
+				D1A1060E000000000000000E /* MatroskaSubtitles.swift in Sources */,
+				D1A1060E000000000000000D /* DialogueResults.swift in Sources */,
+				D1A1060E000000000000000C /* EmbeddedSubtitles.swift in Sources */,
+				D1A1060E000000000000000B /* DialogueIndex.swift in Sources */,
 				40AF9DC00CE34114B8C8632C /* LibraryView.swift in Sources */,
 				7A8386E8C11D469ABCC833B6 /* LibraryMatchView.swift in Sources */,
 				705DF72A2B6C9FB9006D9726 /* MusicView.swift in Sources */,

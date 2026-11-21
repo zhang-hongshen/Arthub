@@ -160,6 +160,7 @@ final class LibraryViewModel {
         offlineLibraries = snapshot.offline
         scanErrors = mountErrors + snapshot.errors
         files = snapshot.files
+        DialogueSearch.shared.refresh(files)
         if snapshot.changed { revision += 1 }
         if snapshot.changed { await save() }
         var identifiedCount = 0

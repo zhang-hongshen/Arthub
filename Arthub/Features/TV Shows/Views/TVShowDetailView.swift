@@ -17,6 +17,7 @@ struct TVShowDetailView: View {
     @State private var playerPresented: Bool = false
     @State private var playerStartIndex: Int = 0
     @State private var selectedSeasonNumber: Int? = nil
+    @State private var displayedEpisodes: [TVEpisodeDetail] = []
 
     @Environment(ArthubVideoPlayer.self) private var player
 
@@ -200,8 +201,7 @@ extension TVShowDetailView {
             MediaShelf {
                 SeasonTabsView(selected: season)
             } content: {
-                ForEach(season.episodes.sorted(using: KeyPathComparator(\.metadata.episodeNumber,
-                                                                        order: .forward))) { episode in
+                ForEach(displayedEpisodes) { episode in
                     TVEpisodeCard(episode: episode, width: 300, onPlay: {
                         guard episode.isAvailable,
                               let index = episodes.firstIndex(where: { $0.id == episode.id }) else { return }
@@ -209,9 +209,23 @@ extension TVShowDetailView {
                     })
                 }
             }
+            .onChange(of: episodeOrder(in: season), initial: true) {
+                updateDisplayedEpisodes(in: season)
+            }
+            .onChange(of: season.id) {
+                updateDisplayedEpisodes(in: season)
+            }
         }
     }
     
+    private func episodeOrder(in season: TVSeasonDetail) -> [UUID: Int] {
+        Dictionary(uniqueKeysWithValues: season.episodes.map { ($0.fileID, $0.metadata.episodeNumber) })
+    }
+
+    private func updateDisplayedEpisodes(in season: TVSeasonDetail) {
+        displayedEpisodes = season.episodes.sorted(using: KeyPathComparator(\.metadata.episodeNumber))
+    }
+
     /// "Season 1  Season 2  Season 3 ... See All" like the Apple TV season picker.
     @ViewBuilder
     func SeasonTabsView(selected: TVSeasonDetail) -> some View {
@@ -261,7 +275,7 @@ extension TVShowDetailView {
     func CastAndCrewSectionView() -> some View {
         if !tvShow.cast.isEmpty || !creators.isEmpty {
             MediaShelf("Cast & Crew") {
-                ForEach(tvShow.cast.sorted(using: KeyPathComparator(\.order)).prefix(30)) { castMember in
+                ForEach(tvShow.featuredCast) { castMember in
                     NavigationLink {
                         PersonDetailView(person: Person(metadata: TMDb.Person(
                             id: castMember.id,

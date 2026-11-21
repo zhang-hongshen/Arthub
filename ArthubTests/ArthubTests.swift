@@ -309,4 +309,76 @@ final class ArthubTests: XCTestCase {
         XCTAssertNotNil(saved.first?.watchedAt)
     }
 
+    func testEmbeddedSubtitlePayloads() {
+        let tx3g = EmbeddedSubtitles.fourCC("tx3g")
+        let payload = Data("<i>Hello</i> 世界".utf8)
+        let packet = Data([UInt8(payload.count >> 8), UInt8(payload.count & 255)]) + payload
+        XCTAssertEqual(EmbeddedSubtitles.text(packet, codec: tx3g), "Hello 世界")
+        XCTAssertNil(EmbeddedSubtitles.text(Data([0, 10, 65]), codec: tx3g))
+        XCTAssertNil(EmbeddedSubtitles.text(Data([0, 0]), codec: tx3g))
+        func box(_ type: String, _ body: Data) -> Data {
+            var size = UInt32(body.count + 8).bigEndian
+            return withUnsafeBytes(of: &size) { Data($0) } + Data(type.utf8) + body
+        }
+        let vtt = box("vttc", box("payl", Data("Hello".utf8)))
+        XCTAssertEqual(EmbeddedSubtitles.text(vtt, codec: EmbeddedSubtitles.fourCC("wvtt")), "Hello")
+    }
+
+    func testMatroskaDialogue() throws {
+        // Minimal EBML: one ASS track, one bitmap track, and a text BlockGroup.
+        func element(_ id: [UInt8], _ body: Data) -> Data {
+            precondition(body.count < 16383)
+            let size: [UInt8] = body.count < 127 ? [0x80 | UInt8(body.count)]
+                : [0x40 | UInt8(body.count >> 8), UInt8(body.count & 255)]
+            return Data(id + size) + body
+        }
+        let track = element([0xAE], element([0xD7], Data([1]))
+            + element([0x86], Data("S_TEXT/ASS".utf8)))
+        let imageTrack = element([0xAE], element([0xD7], Data([2]))
+            + element([0x86], Data("S_HDMV/PGS".utf8)))
+        let text = Data([0x81, 0xFF, 0x9C, 0]) + Data(#"0,0,Default,,0,0,0,,{\i1}你好\NWorld"#.utf8)
+        let block = element([0xA0], element([0xA1], text) + element([0x9B], Data([0x07, 0xD0])))
+        let cluster = element([0x1F, 0x43, 0xB6, 0x75], element([0xE7], Data([0x03, 0xE8])) + block)
+        let segment = element([0x18, 0x53, 0x80, 0x67], element([0x16, 0x54, 0xAE, 0x6B], track + imageTrack) + cluster)
+        let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID()).mkv")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try (element([0x1A, 0x45, 0xDF, 0xA3], Data()) + segment).write(to: url)
+        let tracks = try MatroskaSubtitles.read(url)
+        XCTAssertEqual(tracks.count, 1)
+        XCTAssertEqual(tracks.first?.cues, [SubtitleCue(start: 0.9, end: 2.9, text: "你好\nWorld")])
+        try Data([0x1A, 0]).write(to: url)
+        XCTAssertThrowsError(try MatroskaSubtitles.read(url))
+    }
+
+    func testDialogueIndexUpdatesAndContext() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let video = directory.appending(path: "Film.mkv")
+        // Valid empty Matroska segment, so this test needs no real video or AVFoundation decoding.
+        try Data([0x1A, 0x45, 0xDF, 0xA3, 0x80, 0x18, 0x53, 0x80, 0x67, 0x80]).write(to: video)
+        let subtitle = directory.appending(path: "Film.srt")
+        try "1\n00:00:01,000 --> 00:00:02,000\nBefore\n\n2\n00:00:03,000 --> 00:00:04,000\n你好 World\n\n3\n00:00:05,000 --> 00:00:06,000\nAfter".write(to: subtitle, atomically: true, encoding: .utf8)
+        let file = LibraryFile(fileURL: video, library: directory.absoluteString)
+        let cache = directory.appending(path: "index.json")
+        let index = DialogueIndex(url: cache)
+        try await index.refresh([file])
+        let found = await index.search("你好", fileIDs: [file.id])
+        XCTAssertEqual(found.count, 1)
+        XCTAssertEqual(found.first?.cue.start, 3)
+        XCTAssertEqual(found.first?.context.map(\.text), ["Before", "你好 World", "After"])
+        let restored = await DialogueIndex(url: cache).search("world", fileIDs: [file.id])
+        XCTAssertEqual(restored.count, 1)
+        try "1\n00:00:01,000 --> 00:00:02,000\nChanged".write(to: subtitle, atomically: true, encoding: .utf8)
+        try await index.refresh([file])
+        let old = await index.search("你好", fileIDs: [file.id])
+        XCTAssertTrue(old.isEmpty)
+        let changed = await index.search("changed", fileIDs: [file.id])
+        XCTAssertEqual(changed.count, 1)
+        try FileManager.default.removeItem(at: subtitle)
+        try await index.refresh([file])
+        let deleted = await index.search("changed", fileIDs: [file.id])
+        XCTAssertTrue(deleted.isEmpty)
+    }
+
 }
